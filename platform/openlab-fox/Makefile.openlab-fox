@@ -97,10 +97,7 @@ OPENLAB_SRC += 					\
 	\
 	lsm303dlhc/lsm303dlhc.c			\
 	lps331ap/lps331ap.c			\
-	l3g4200d/l3g4200d.c			\
-
-#	agile-fox/agilefox_net.c		\
-#
+	l3g4200d/l3g4200d.c
 
 ##
 ## Wrappers from Openlab to Contiki API
