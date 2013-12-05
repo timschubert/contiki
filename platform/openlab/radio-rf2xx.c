@@ -32,7 +32,7 @@
 
 #include "platform.h"
 #define NO_DEBUG_HEADER
-#define LOG_LEVEL LOG_LEVEL_DEBUG
+#define LOG_LEVEL LOG_LEVEL_INFO
 #include "debug.h"
 #include "event.h"
 #include "phy.h"
