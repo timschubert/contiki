@@ -30,6 +30,9 @@
 #define LOG_LEVEL LOG_LEVEL_INFO
 #include "debug.h"
 
+#include "exti.h"
+#define BUTTON_EXTI_LINE   EXTI_LINE_Px13
+
 #include "contiki.h"
 #include "lib/sensors.h"
 
@@ -44,7 +47,7 @@ static int
 value(int type)
 {
     (void)type;
-    return button_state();
+    return button_state() ? 1 : 0;
 }
 /*---------------------------------------------------------------------------*/
 static void 
@@ -60,23 +63,24 @@ configure(int type, int c)
 {
     switch (type)
     {
-    case SENSORS_HW_INIT:
-	return 1;
-    case SENSORS_ACTIVE:
-	if (c == 0) 
-	{
-	    button_set_handler(NULL, NULL);
-	    button_active = 0;
-	} 
-	else 
-	{
-	    button_set_handler(dev_button_handler, NULL);
-	    button_active = 1;
-	}
-	return 1;
-    default:
-	log_error("button: unknown command");
-	break;
+        case SENSORS_HW_INIT:
+            return 1;
+        case SENSORS_ACTIVE:
+            if (c == 0)
+            {
+                exti_disable_interrupt_line(BUTTON_EXTI_LINE);
+                button_active = 0;
+            }
+            else
+            {
+                button_active = 1;
+                exti_set_handler(BUTTON_EXTI_LINE, dev_button_handler, NULL);
+                exti_enable_interrupt_line(BUTTON_EXTI_LINE, EXTI_TRIGGER_BOTH);
+            }
+            return 1;
+        default:
+            log_error("button: unknown command");
+            break;
     }
     return 0;
 }
