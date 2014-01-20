@@ -20,6 +20,8 @@
 
 OPENLAB = $(CONTIKI)/platform/openlab
 OPENLAB_GIT = $(OPENLAB)/git
+OPENLAB_REL = ../openlab
+OPENLAB_GIT_REL = $(OPENLAB_REL)/git
 
 DEBUG            = 1
 CFLAGS          += -DFITECO_M3 -DKEEP_UART=1 -DENABLE_DEBUG=1 -DRELEASE=0
@@ -42,12 +44,12 @@ OPENLAB_INCLUDE_PATH += \
 	-I$(OPENLAB_GIT)/drivers/stm32f1xx
 
 OPENLAB_TARGET_DIRS  += . 			\
-	$(OPENLAB)				\
-	$(OPENLAB_GIT)/drivers			\
-	$(OPENLAB_GIT)/lib	 		\
-	$(OPENLAB_GIT)/net	 		\
-	$(OPENLAB_GIT)/periph 			\
-	$(OPENLAB_GIT)/platform
+	$(OPENLAB_REL)				\
+	$(OPENLAB_GIT_REL)/drivers		\
+	$(OPENLAB_GIT_REL)/lib	 		\
+	$(OPENLAB_GIT_REL)/net	 		\
+	$(OPENLAB_GIT_REL)/periph 		\
+	$(OPENLAB_GIT_REL)/platform
 
 OPENLAB_SRC += 					\
 	\

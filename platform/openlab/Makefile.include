@@ -39,6 +39,7 @@ CFLAGS   += -Wredundant-decls -Wshadow -Wcast-qual -Wcast-align
 CFLAGS   += -DGCC_ARMCM3 -DENABLE_DEBUG=${DEBUG}
 CFLAGS   += -gdwarf-2 -fno-builtin -fsingle-precision-constant
 CFLAGS   += -mcpu=cortex-m3 -mthumb -mthumb-interwork -mfix-cortex-m3-ldrd -msoft-float
+CFLAGS   += -mno-unaligned-access
 CFLAGS   += -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 LDFLAGS  += -nostartfiles
@@ -85,7 +86,6 @@ debug:
 	-c "telnet_port ${TELNET_PORT}" \
 	-c "init" \
 	-c "targets" \
-	-c "reset halt"
 
 reset: 
 	$(OOCD) \
