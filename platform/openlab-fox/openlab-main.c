@@ -31,7 +31,7 @@
 #include "platform.h"
 #include "drivers/unique_id.h"
 #define NO_DEBUG_HEADER
-#define LOG_LEVEL LOG_LEVEL_INFO
+//#define LOG_LEVEL LOG_LEVEL_INFO
 #include "debug.h"
 
 
@@ -53,21 +53,43 @@ void xputc(char c);
 /*---------------------------------------------------------------------------*/
 void set_rime_addr()
 {
-    if (rimeaddr_node_addr.u8[0] != 0xBA)
+    /* Company 3 Bytes */
+    rimeaddr_node_addr.u8[0] = 0x01;
+    rimeaddr_node_addr.u8[1] = 0x23;
+    rimeaddr_node_addr.u8[2] = 0x45;
+
+    /* Platform identifier */
+    rimeaddr_node_addr.u8[3] = 0x00;
+
+    /* Generate 4 remaining bytes using uid of processor */
+    int i;
+    for (i = 0; i < 4; i++)
     {
-        /* Company 3 Bytes */
-	rimeaddr_node_addr.u8[0] = 0xBA;
-	rimeaddr_node_addr.u8[1] = 0xDB;
-	rimeaddr_node_addr.u8[2] = 0x0B;
-        /* Product Type 1 Byte */
-	rimeaddr_node_addr.u8[3] = PLATFORM_TYPE;
-        /* Product Version 1 Byte */
-	rimeaddr_node_addr.u8[4] = PLATFORM_VERSION;
-        /* Serial Number 3 Bytes */
-	rimeaddr_node_addr.u8[5] = uid->uid8[9];
-	rimeaddr_node_addr.u8[6] = uid->uid8[10];
-	rimeaddr_node_addr.u8[7] = uid->uid8[11];
+        rimeaddr_node_addr.u8[i+4] = uid->uid8[i+6];
     }
+
+    log_debug("Uid: %02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
+            uid->uid8[0],
+            uid->uid8[1],
+            uid->uid8[2],
+            uid->uid8[3],
+            uid->uid8[4],
+            uid->uid8[5],
+            uid->uid8[6],
+            uid->uid8[7],
+            uid->uid8[8],
+            uid->uid8[9],
+            uid->uid8[10],
+            uid->uid8[11]);
+    log_debug("Rime Addr: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
+            rimeaddr_node_addr.u8[0],
+            rimeaddr_node_addr.u8[1],
+            rimeaddr_node_addr.u8[2],
+            rimeaddr_node_addr.u8[3],
+            rimeaddr_node_addr.u8[4],
+            rimeaddr_node_addr.u8[5],
+            rimeaddr_node_addr.u8[6],
+            rimeaddr_node_addr.u8[7]);
 }
 /*---------------------------------------------------------------------------*/
 static void
