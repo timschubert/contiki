@@ -66,8 +66,8 @@ typedef int32_t  s32_t;
  */
 
 #define WITH_UIP                        1
-//#define UIP_CONF_IPV6                   1
-
+#define UIP_CONF_IPV6                   1
+#define UIP_CONF_LL_802154              1
 
 typedef unsigned int uip_stats_t;
 
