@@ -14,17 +14,16 @@
  * License along with HiKoB Openlab. If not, see
  * <http://www.gnu.org/licenses/>.
  *
- * Copyright (C) 2011,2012 HiKoB.
+ * Copyright (C) 2011-2014 HiKoB.
  */
 
 /**
  * \file radio-rf2xx.c
- *         Configuration for HiKoB OpenLab platforms
- *         This file contains wrappers around the OpenLab phy layer
+ *         This file contains wrappers around the OpenLab rf2Xx periph layer
  *
  * \author
  *         Antoine Fraboulet <antoine.fraboulet.at.hikob.com>
- *
+ *         Damien Hedde <damien.hedde.at.hikob.com>
  */
 
 #include <stdlib.h>
@@ -32,17 +31,21 @@
 
 #include "platform.h"
 #define NO_DEBUG_HEADER
-#define NO_DEBUG_COLOR
 #define LOG_LEVEL LOG_LEVEL_WARNING
 #include "debug.h"
-#include "event.h"
-#include "phy.h"
+#include "periph/rf2xx.h"
+#include "periph/rf2xx.h"
 
 #include "contiki.h"
 #include "contiki-net.h"
-
+#include "sys/rtimer.h"
+#include "dev/leds.h"
 /*---------------------------------------------------------------------------*/
 
+#ifndef RF2XX_DEVICE
+#error "RF2XX_DEVICE is not defined"
+#endif
+extern rf2xx_t RF2XX_DEVICE;
 #ifndef RF2XX_CHANNEL
 #define RF2XX_CHANNEL   11
 #endif
@@ -50,46 +53,58 @@
 #define RF2XX_TX_POWER  PHY_POWER_0dBm
 #endif
 
-static phy_packet_t          tx_pkt;
-static void                  rf2xx_tx_done(phy_status_t status);
-static volatile int          tx_pkt_pending;
-static volatile phy_status_t tx_pkt_status;
+#define RF2XX_MAX_PAYLOAD 125
+static uint8_t tx_buf[RF2XX_MAX_PAYLOAD];
+static uint8_t tx_len;
 
-enum rx_state
+enum rf2xx_state
 {
-    RX_IDLE,
-    RX_LISTEN,
-    RX_PENDING,
-    RX_ERROR,
-    RX_READ,
+    RF_IDLE = 0,
+    RF_BUSY,
+    RF_TX,
+    RF_TX_DONE,
+    RF_LISTEN,
+    RF_RX,
+    RF_RX_DONE,
+    RF_RX_READ,
 };
-
-static phy_packet_t           rx_pkt;
-static void                   rf2xx_rx_done(phy_status_t status);
-static volatile enum rx_state rx_state;
-static volatile phy_status_t  rx_pkt_status;
-
+static volatile enum rf2xx_state rf2xx_state;
 static volatile int rf2xx_on;
+static volatile int cca_pending;
+
+static int read(uint8_t *buf, uint8_t buf_len);
+static void listen(void);
+static void idle(void);
+static void reset(void);
+static void restart(void);
+static void irq_handler(handler_arg_t arg);
 
 PROCESS(rf2xx_process, "rf2xx driver");
 
 static int rf2xx_wr_on(void);
 static int rf2xx_wr_off(void);
-static void rf2xx_rx_start(void);
-static void rf2xx_reset(void);
+static int rf2xx_wr_prepare(const void *, unsigned short);
+static int rf2xx_wr_transmit(unsigned short);
+static int rf2xx_wr_send(const void *, unsigned short);
+static int rf2xx_wr_read(void *, unsigned short);
+static int rf2xx_wr_channel_clear(void);
+static int rf2xx_wr_receiving_packet(void);
+static int rf2xx_wr_pending_packet(void);
 
 /*---------------------------------------------------------------------------*/
 
 static int
 rf2xx_wr_init(void)
 {
-    log_error("rf2xx_wr_init (channel %u)", RF2XX_CHANNEL);
+    log_info("rf2xx_wr_init (channel %u)", RF2XX_CHANNEL);
 
     rf2xx_on = 0;
-    rx_state = RX_IDLE;
-    tx_pkt_pending = 0;
+    cca_pending = 0;
+    tx_len = 0;
+    rf2xx_state = RF_IDLE;
 
-    rf2xx_reset();
+    reset();
+    idle();
     process_start(&rf2xx_process, NULL);
 
     return 1;
@@ -101,18 +116,17 @@ rf2xx_wr_init(void)
 static int
 rf2xx_wr_prepare(const void *payload, unsigned short payload_len)
 {
-    log_debug("rf2xx_wr_prepare %d :: %d",payload_len,soft_timer_time());
+    log_debug("rf2xx_wr_prepare %d",payload_len);
 
-    if (payload_len > PHY_MAX_TX_LENGTH)
+    if (payload_len > RF2XX_MAX_PAYLOAD)
     {
         log_error("payload is too big");
-        tx_pkt.length = 0;
+        tx_len = 0;
         return 1;
     }
 
-    tx_pkt.data   = tx_pkt.raw_data;
-    tx_pkt.length = payload_len;
-    memcpy(tx_pkt.data, payload, tx_pkt.length);
+    tx_len = payload_len;
+    memcpy(tx_buf, payload, tx_len);
 
     return 0;
 }
@@ -123,62 +137,97 @@ rf2xx_wr_prepare(const void *payload, unsigned short payload_len)
 static int
 rf2xx_wr_transmit(unsigned short transmit_len)
 {
-    int ret;
-    log_debug("rf2xx_wr_transmit %d :: %d\n", transmit_len, soft_timer_time());
+    int ret, flag;
+    uint8_t reg;
+    rtimer_clock_t time;
+    log_info("rf2xx_wr_transmit %d", transmit_len);
 
-    if (tx_pkt_pending == 1)
+    if (tx_len != transmit_len)
     {
-        log_error("    Tx too early, another tx still active");
+        log_error("Length is has changed (was %u now %u)", tx_len, transmit_len);
         return RADIO_TX_ERR;
     }
 
-    if (tx_pkt.length != transmit_len)
+    // Check state
+    platform_enter_critical();
+    // critical section ensures
+    // no packet reception will be started
+    flag = 0;
+    switch (rf2xx_state)
     {
-        log_error("    pkt.length (%d) != transmit_len (%d) !", tx_pkt.length, transmit_len);
-    }
-
-    // TODO:  if(packetbuf_attr(PACKETBUF_ATTR_RADIO_TXPOWER) > 0) {
-
-    /* if we received a packet, abort sending */
-    switch (rx_state)
-    {
-        case RX_LISTEN:
-        case RX_IDLE:
+        case RF_LISTEN:
+            flag = 1;
+        case RF_IDLE:
+            rf2xx_state = RF_TX;
             break;
         default:
-            log_error("Tx colision");
+            platform_exit_critical();
             return RADIO_TX_COLLISION;
     }
+    platform_exit_critical();
 
-    /* send... */
-    phy_idle(phy);
-    rx_state = RX_IDLE;
-    tx_pkt_pending = 1;
-    switch (phy_tx_now(phy, &tx_pkt, rf2xx_tx_done))
+    if (flag)
     {
-        case PHY_SUCCESS:
-            //log_printf("TX\n");
-            while (tx_pkt_pending)
-            {
-                //clock_delay_usec(100);
-            }
-            ret = (tx_pkt_status == PHY_SUCCESS) ? RADIO_TX_OK : RADIO_TX_ERR;
-            break;
-        case PHY_ERR_INVALID_STATE:
-        case PHY_ERR_INTERNAL:
-            rf2xx_reset();
-        default:
-            log_error("Tx failed");
-            tx_pkt_pending = 0;
-            ret = RADIO_TX_ERR;
+        idle();
     }
 
-    /* Eventually restart listening */
-    if (rf2xx_on)
+    if (transmit_len > 10)
     {
-        rf2xx_rx_start();
+        leds_on(LEDS_RED);
     }
 
+    // Read IRQ to clear it
+    rf2xx_reg_read(RF2XX_DEVICE, RF2XX_REG__IRQ_STATUS);
+
+    // If radio has external PA, enable DIG3/4
+    if (rf2xx_has_pa(RF2XX_DEVICE))
+    {
+        // Enable the PA
+        rf2xx_pa_enable(RF2XX_DEVICE);
+
+        // Activate DIG3/4 pins
+        reg = rf2xx_reg_read(RF2XX_DEVICE, RF2XX_REG__TRX_CTRL_1);
+        reg |= RF2XX_TRX_CTRL_1_MASK__PA_EXT_EN;
+        rf2xx_reg_write(RF2XX_DEVICE, RF2XX_REG__TRX_CTRL_1, reg);
+    }
+
+    // Wait until PLL ON state
+    time = RTIMER_NOW() + RTIMER_SECOND / 1000;
+    do
+    {
+        reg = rf2xx_get_status(RF2XX_DEVICE);
+
+        // Check for block
+        if (RTIMER_CLOCK_LT(time, RTIMER_NOW()))
+        {
+            log_error("Failed to enter tx");
+            restart();
+            return RADIO_TX_ERR;
+        }
+    } while (reg != RF2XX_TRX_STATUS__PLL_ON);
+
+    // Enable IRQ interrupt
+    rf2xx_irq_enable(RF2XX_DEVICE);
+
+    // Copy the packet to the radio FIFO
+    rf2xx_fifo_write_first(RF2XX_DEVICE, tx_len + 2);
+    rf2xx_fifo_write_remaining_async(RF2XX_DEVICE, tx_buf,
+            tx_len, NULL, NULL);
+
+    // Start TX
+    rf2xx_slp_tr_set(RF2XX_DEVICE);
+
+    // Wait until the end of the packet
+    while (rf2xx_state == RF_TX)
+    {
+        ;
+    }
+
+    ret = (rf2xx_state == RF_TX_DONE) ? RADIO_TX_OK : RADIO_TX_ERR;
+
+    leds_off(LEDS_RED);
+
+    restart();
     return ret;
 }
 
@@ -188,7 +237,7 @@ rf2xx_wr_transmit(unsigned short transmit_len)
 static int
 rf2xx_wr_send(const void *payload, unsigned short payload_len)
 {
-    log_debug("rf2xx_wr_send %d :: %d", payload_len,soft_timer_time());
+    log_debug("rf2xx_wr_send %d", payload_len);
     if (rf2xx_wr_prepare(payload, payload_len))
     {
         return RADIO_TX_ERR;
@@ -202,28 +251,23 @@ rf2xx_wr_send(const void *payload, unsigned short payload_len)
 static int
 rf2xx_wr_read(void *buf, unsigned short buf_len)
 {
-    int len = 0;
-    log_info("rf2xx_wr_read %d :: %d", buf_len, soft_timer_time());
+    int len;
+    log_info("rf2xx_wr_read %d", buf_len);
 
-    /* handle packet */
-    if (rx_state == RX_PENDING)
+    // Is there a packet pending
+    platform_enter_critical();
+    if (rf2xx_state != RF_RX_DONE)
     {
-        rx_state = RX_READ;
-        len = rx_pkt.length;
-        if (buf_len < len)
-        {
-            len = buf_len;
-        }
-        memcpy(buf, rx_pkt.data, len);
-
-        /* eventually restart listening */
-        rx_state = RX_IDLE;
-        if (rf2xx_on)
-        {
-            rf2xx_rx_start();
-        }
+        platform_exit_critical();
+        return 0;
     }
+    rf2xx_state = RF_RX_READ;
+    platform_exit_critical();
 
+    // Get the packet
+    len = read(buf, buf_len);
+
+    restart();
     return len;
 }
 
@@ -234,54 +278,49 @@ rf2xx_wr_read(void *buf, unsigned short buf_len)
 static int
 rf2xx_wr_channel_clear(void)
 {
-    int32_t flag;
-    phy_status_t result;
+    int clear = 1;
+    log_debug("rf2xx_wr_channel_clear");
 
-    log_info("rf2xx_wr_channel_clear :: %d", soft_timer_time());
-
-    switch (rx_state)
+    // critical section is necessary
+    // to avoid spi access conflicts
+    // with irq_handler
+    switch (rf2xx_state)
     {
-        case RX_LISTEN:
-            flag = 0;
-            // radio must be in idle before a cca
-            result = phy_rx_busy(phy, &flag);
-            //log_warning("bsy%d",flag);
-            //if (flag)
-            //{
-            //    log_warning("bsy");
-            //}
-            flag = !flag;
+        uint8_t reg;
+        case RF_LISTEN:
+            //initiate a cca request
+            platform_enter_critical();
+            reg = RF2XX_PHY_CC_CCA_DEFAULT__CCA_MODE |
+                (RF2XX_CHANNEL & RF2XX_PHY_CC_CCA_MASK__CHANNEL) |
+                RF2XX_PHY_CC_CCA_MASK__CCA_REQUEST;
+            rf2xx_reg_write(RF2XX_DEVICE, RF2XX_REG__PHY_CC_CCA, reg);
+            platform_exit_critical();
+
+            // wait cca to be done
+            do
+            {
+                platform_enter_critical();
+                reg = rf2xx_reg_read(RF2XX_DEVICE, RF2XX_REG__TRX_STATUS);
+                platform_exit_critical();
+            }
+            while (rf2xx_state == RF_LISTEN && !(reg & RF2XX_TRX_STATUS_MASK__CCA_DONE));
+
+            // get result
+            if (!(reg & RF2XX_TRX_STATUS_MASK__CCA_STATUS))
+            {
+                clear = 0;
+            }
             break;
 
-        case RX_IDLE:
-            flag = 1;
-            result = phy_cca(phy,&flag);
-            //if (!flag)
-            //{
-            //    log_warning("cca");
-            //}
-            //log_warning("cca%d",flag);
+        case RF_RX:
+            clear = 0;
             break;
 
         default:
-            // it seems we can't do cca too soon after rx
-            // without breaking the radio
-            return 1;
-    }
-
-    switch (result)
-    {
-        case PHY_SUCCESS:
             break;
-        case PHY_ERR_INTERNAL:
-            log_error("fatal error\n");
-            rf2xx_reset();
-        default:
-            return 1;
     }
 
-    flag = flag ? 1 : 0;
-    return flag;
+    return clear;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -290,12 +329,7 @@ rf2xx_wr_channel_clear(void)
 static int
 rf2xx_wr_receiving_packet(void)
 {
-    phy_status_t result;
-    int32_t bsy = 0;
-    log_debug("rf2xx_wr_receiving_packet : %d :: %d",rx_pkt_receiving,soft_timer_time());
-
-    result = phy_rx_busy(phy, &bsy);
-    return (result == PHY_SUCCESS) && bsy;
+    return (rf2xx_state == RF_RX) ? 1 : 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -304,8 +338,7 @@ rf2xx_wr_receiving_packet(void)
 static int
 rf2xx_wr_pending_packet(void)
 {
-    log_debug("rf2xx_wr_pending_packet : %d :: %d",rx_pkt_pending,soft_timer_time());
-    return (rx_state == RX_PENDING);
+    return (rf2xx_state == RF_RX_DONE) ? 1 : 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -314,13 +347,25 @@ rf2xx_wr_pending_packet(void)
 static int
 rf2xx_wr_on(void)
 {
-    log_info("rf2xx_wr_on :: %d",soft_timer_time());
-    //log_printf("on\n");
+    int flag = 0;
+    log_debug("rf2xx_wr_on");
 
+    platform_enter_critical();
     if (!rf2xx_on)
     {
         rf2xx_on = 1;
-        rf2xx_rx_start();
+        leds_on(LEDS_GREEN);
+        if (rf2xx_state == RF_IDLE)
+        {
+            flag = 1;
+            rf2xx_state == RF_BUSY;
+        }
+    }
+    platform_exit_critical();
+
+    if (flag)
+    {
+        listen();
     }
     return 1;
 }
@@ -331,24 +376,27 @@ rf2xx_wr_on(void)
 static int
 rf2xx_wr_off(void)
 {
-    int stop = 0;
-    log_info("rf2xx_wr_off :: %d",soft_timer_time());
-    //log_printf("off\n");
+    int flag = 0;
+    log_debug("rf2xx_wr_off");
 
-    rf2xx_on = 0;
     platform_enter_critical();
-    if (rx_state == RX_LISTEN)
+    if (rf2xx_on)
     {
-        rx_state = RX_IDLE;
-        stop = 1;
+        rf2xx_on = 0;
+        leds_off(LEDS_GREEN);
+        if (rf2xx_state == RF_LISTEN)
+        {
+            flag = 1;
+            rf2xx_state = RF_BUSY;
+        }
     }
     platform_exit_critical();
 
-    if (stop)
+    if (flag)
     {
-        phy_idle(phy);
+        idle();
+        rf2xx_state = RF_IDLE;
     }
-
     return 1;
 }
 
@@ -372,157 +420,49 @@ const struct radio_driver rf2xx_driver =
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
 
-static void rf2xx_reset(void)
-{
-    phy_reset(phy);
-    phy_set_channel(phy, RF2XX_CHANNEL);
-    phy_idle(phy);
-}
-static void rf2xx_tx_done(phy_status_t status)
-{
-    /*
-     * Called in irq handler
-     */
-    //log_error("tx done");
-    if (tx_pkt_pending)
-    {
-        tx_pkt_status = status;
-        tx_pkt_pending = 0;
-    }
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void rf2xx_rx_done(phy_status_t status)
-{
-    /*
-     * Called in irq handler
-     */
-    //log_error("rx_done");
-    if (rx_state != RX_LISTEN)
-    {
-        log_debug("rx_done but not listening");
-        return;
-    }
-
-    // Check status
-    rx_pkt_status = status;
-    switch (status)
-    {
-        case PHY_SUCCESS:
-            rx_state = RX_PENDING;
-            //log_printf("RX\n");
-            break;
-        case PHY_RX_TIMEOUT_ERROR:
-        case PHY_RX_CRC_ERROR:
-        case PHY_RX_LENGTH_ERROR:
-        default:
-            log_debug("PHY RX error %x\n", status);
-            rx_state = RX_ERROR;
-            break;
-    }
-    //log_error("rx_done done");
-    process_poll(&rf2xx_process);
-}
-
-/*---------------------------------------------------------------------------*/
-
-event_status_t event_post_from_isr(event_queue_t queue, handler_t event, handler_arg_t arg)
-{
-    event(arg);
-    return EVENT_OK;
-}
-
-/*---------------------------------------------------------------------------*/
-
-static void rf2xx_rx_start(void)
-{
-    int start = 0;
-    log_info("rf2xx_rx_start");
-
-    platform_enter_critical();
-    if (rf2xx_on && rx_state == RX_IDLE)
-    {
-        rx_state = RX_LISTEN;
-        rx_pkt.data     = rx_pkt.raw_data;
-        rx_pkt.length   = 0;
-        start = 1;
-    }
-    platform_exit_critical();
-
-    if (start)
-    {
-        phy_status_t status = phy_rx_now(phy, &rx_pkt, rf2xx_rx_done);
-        switch (status)
-        {
-            case PHY_SUCCESS:
-                break;
-            default:
-                rx_pkt_status = status;
-                rx_state = RX_ERROR;
-                log_error("Failed to start start listenning");
-                process_poll(&rf2xx_process);
-                break;
-        }
-    }
-}
-
-/*---------------------------------------------------------------------------*/
-
 PROCESS_THREAD(rf2xx_process, ev, data)
 {
     PROCESS_BEGIN();
 
     while(1)
     {
+        static int len;
+        static int flag;
         PROCESS_YIELD_UNTIL(ev == PROCESS_EVENT_POLL);
 
         /*
          * at this point, we may be in any state
          *
-         * this process can be concurrent to rtimer tasks
+         * this process can be 'interrupted' by rtimer tasks
          * such as contikimac rdc listening task
+         * which may call on/off/read/receiving/pending
          */
 
-        switch (rx_state)
+        len = 0;
+        flag = 0;
+        platform_enter_critical();
+        if (rf2xx_state == RF_RX_DONE)
         {
-            int len;
-            case RX_PENDING:
-                /* read packet */
-                packetbuf_clear();
-                len = rf2xx_wr_read(packetbuf_dataptr(), PACKETBUF_SIZE);
+            // the process will do the read
+            rf2xx_state = RF_RX_READ;
+            flag = 1;
+        }
+        platform_exit_critical();
 
-                /* give packet to netstack */
-                if (len > 0)
-                {
-                    packetbuf_set_datalen(len);
-                    /* this callback can do anything */
-                    NETSTACK_RDC.input();
-                }
-                break;
+        if (flag)
+        {
+            // get data
+            packetbuf_clear();
+            len = read(packetbuf_dataptr(), PACKETBUF_SIZE - PACKETBUF_HDR_SIZE);
 
-            case RX_ERROR:
+            restart();
 
-                /* need reset ? */
-                switch (rx_pkt_status)
-                {
-                        case PHY_ERR_INTERNAL:
-                        case PHY_ERR_INVALID_STATE:
-                            rf2xx_reset();
-                        default:
-                            break;
-                }
-
-                /* eventually start listening */
-                rx_state = RX_IDLE;
-                if (rf2xx_on)
-                {
-                    rf2xx_rx_start();
-                }
-                break;
-
-            default:
-                break;
+            // eventually call upper layer
+            if (len > 0)
+            {
+                packetbuf_set_datalen(len);
+                NETSTACK_RDC.input();
+            }
         }
     }
 
@@ -531,3 +471,217 @@ PROCESS_THREAD(rf2xx_process, ev, data)
 
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
+
+static void reset(void)
+{
+    uint8_t reg;
+    // Stop any Asynchronous access
+    rf2xx_fifo_access_cancel(RF2XX_DEVICE);
+
+    // Configure the radio interrupts
+    rf2xx_irq_disable(RF2XX_DEVICE);
+    rf2xx_irq_configure(RF2XX_DEVICE, irq_handler, NULL);
+
+    // Disable DIG2 pin
+    if (rf2xx_has_dig2(RF2XX_DEVICE))
+    {
+        rf2xx_dig2_disable(RF2XX_DEVICE);
+    }
+
+    // Reset the SLP_TR output
+    rf2xx_slp_tr_clear(RF2XX_DEVICE);
+
+    // Reset the radio chip
+    rf2xx_reset(RF2XX_DEVICE);
+
+    // Enable Dynamic Frame Buffer Protection, standard data rate (250kbps)
+    reg = RF2XX_TRX_CTRL_2_MASK__RX_SAFE_MODE;
+    rf2xx_reg_write(RF2XX_DEVICE, RF2XX_REG__TRX_CTRL_2, reg);
+
+    // Set max TX power
+    reg = RF2XX_PHY_TX_PWR_DEFAULT__PA_BUF_LT
+            | RF2XX_PHY_TX_PWR_DEFAULT__PA_LT
+            | RF2XX_PHY_TX_PWR_TX_PWR_VALUE__3dBm;
+    rf2xx_reg_write(RF2XX_DEVICE, RF2XX_REG__PHY_TX_PWR, reg);
+
+    // Disable CLKM signal
+    reg = RF2XX_TRX_CTRL_0_DEFAULT__PAD_IO
+            | RF2XX_TRX_CTRL_0_DEFAULT__PAD_IO_CLKM
+            | RF2XX_TRX_CTRL_0_DEFAULT__CLKM_SHA_SEL
+            | RF2XX_TRX_CTRL_0_CLKM_CTRL__OFF;
+    rf2xx_reg_write(RF2XX_DEVICE, RF2XX_REG__TRX_CTRL_0, reg);
+
+    /** Set XCLK TRIM
+     * \todo this highly depends on the board
+     */
+    reg = RF2XX_XOSC_CTRL__XTAL_MODE_CRYSTAL | 0x0;
+    rf2xx_reg_write(RF2XX_DEVICE, RF2XX_REG__XOSC_CTRL, reg);
+
+    // Set channel
+    reg = RF2XX_PHY_CC_CCA_DEFAULT__CCA_MODE |
+        (RF2XX_CHANNEL & RF2XX_PHY_CC_CCA_MASK__CHANNEL);
+    rf2xx_reg_write(RF2XX_DEVICE, RF2XX_REG__PHY_CC_CCA, reg);
+
+    // Set IRQ to TRX END/RX_START/CCA_DONE
+    rf2xx_reg_write(RF2XX_DEVICE, RF2XX_REG__IRQ_MASK,
+            RF2XX_IRQ_STATUS_MASK__TRX_END |
+            RF2XX_IRQ_STATUS_MASK__RX_START);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void idle(void)
+{
+    // Disable the interrupts
+    rf2xx_irq_disable(RF2XX_DEVICE);
+
+    // Cancel any ongoing transfer
+    rf2xx_fifo_access_cancel(RF2XX_DEVICE);
+
+    // Clear slp/tr
+    rf2xx_slp_tr_clear(RF2XX_DEVICE);
+
+    // Force IDLE
+    rf2xx_set_state(RF2XX_DEVICE, RF2XX_TRX_STATE__FORCE_PLL_ON);
+
+    // If radio has external PA, disable DIG3/4
+    if (rf2xx_has_pa(RF2XX_DEVICE))
+    {
+        // Enable the PA
+        rf2xx_pa_disable(RF2XX_DEVICE);
+
+        // De-activate DIG3/4 pins
+        uint8_t reg = rf2xx_reg_read(RF2XX_DEVICE, RF2XX_REG__TRX_CTRL_1);
+        reg &= ~RF2XX_TRX_CTRL_1_MASK__PA_EXT_EN;
+        rf2xx_reg_write(RF2XX_DEVICE, RF2XX_REG__TRX_CTRL_1, reg);
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void listen(void)
+{
+    uint8_t reg;
+    rtimer_clock_t time;
+
+    // Read IRQ to clear it
+    rf2xx_reg_read(RF2XX_DEVICE, RF2XX_REG__IRQ_STATUS);
+
+    // If radio has external PA, enable DIG3/4
+    if (rf2xx_has_pa(RF2XX_DEVICE))
+    {
+        // Enable the PA
+        rf2xx_pa_enable(RF2XX_DEVICE);
+
+        // Activate DIG3/4 pins
+        reg = rf2xx_reg_read(RF2XX_DEVICE, RF2XX_REG__TRX_CTRL_1);
+        reg |= RF2XX_TRX_CTRL_1_MASK__PA_EXT_EN;
+        rf2xx_reg_write(RF2XX_DEVICE, RF2XX_REG__TRX_CTRL_1, reg);
+    }
+
+    // Enable IRQ interrupt
+    rf2xx_irq_enable(RF2XX_DEVICE);
+
+    // Start RX
+    platform_enter_critical();
+    rf2xx_state = RF_LISTEN;
+    rf2xx_set_state(RF2XX_DEVICE, RF2XX_TRX_STATE__RX_ON);
+    platform_exit_critical();
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void restart(void)
+{
+    idle();
+
+    if (rf2xx_on)
+    {
+        listen();
+    }
+    else
+    {
+        rf2xx_state = RF_IDLE;
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int read(uint8_t *buf, uint8_t buf_len)
+{
+    uint8_t len;
+    // Check the CRC is good
+    if (!(rf2xx_reg_read(RF2XX_DEVICE, RF2XX_REG__PHY_RSSI)
+            & RF2XX_PHY_RSSI_MASK__RX_CRC_VALID))
+    {
+        log_warning("Received packet with bad crc");
+        return 0;
+    }
+
+    // Get payload length
+    len = rf2xx_fifo_read_first(RF2XX_DEVICE) - 2;
+    log_info("Received packet of length: %u", len);
+
+    // Check valid length (not zero and enough space to store it)
+    if (len > buf_len)
+    {
+        log_warning("Received packet is too big (%u)", len);
+        // Error length, end transfer
+        rf2xx_fifo_read_remaining(RF2XX_DEVICE, buf, 0);
+        return 0;
+    }
+
+    // Read payload
+    rf2xx_fifo_read_remaining(RF2XX_DEVICE, buf, len);
+    return len;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void irq_handler(handler_arg_t arg)
+{
+    (void) arg;
+    uint8_t reg;
+    int state = rf2xx_state;
+    switch (state)
+    {
+        case RF_TX:
+        case RF_LISTEN:
+        case RF_RX:
+            break;
+        default:
+            log_warning("unexpected irq while state %d", state);
+            // may eventually happen when transitioning
+            // from listen to idle for example
+            return;
+    }
+
+    // only read irq_status in somes states to avoid any
+    // concurrency problem on spi access
+    reg = rf2xx_reg_read(RF2XX_DEVICE, RF2XX_REG__IRQ_STATUS);
+
+    // rx start detection
+    if (reg & RF2XX_IRQ_STATUS_MASK__RX_START && state == RF_LISTEN)
+    {
+        rf2xx_state = state = RF_RX;
+    }
+
+    // rx/tx end
+    if (reg & RF2XX_IRQ_STATUS_MASK__TRX_END)
+    {
+        switch (state)
+        {
+            case RF_TX:
+                rf2xx_state = state = RF_TX_DONE;
+                break;
+            case RF_RX:
+            case RF_LISTEN:
+                rf2xx_state = state = RF_RX_DONE;
+                // we do not want to start a 2nd RX
+                rf2xx_set_state(RF2XX_DEVICE, RF2XX_TRX_STATE__PLL_ON);
+                process_poll(&rf2xx_process);
+                break;
+        }
+    }
+}
+
