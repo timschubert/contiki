@@ -28,27 +28,13 @@
 #ifndef __RTIMER_ARCH_H__
 #define __RTIMER_ARCH_H__
 
-#include "platform.h"
 #include "soft_timer_delay.h"
-
-#include "contiki-conf.h"
-#include "sys/rtimer.h"
-
-
-/*
- * rtimer are mapped on real timer
- */
-
-#define RTIMER_TIMER        tim3
-#define RTIMER_CHANNEL      TIMER_CHANNEL_1
 
 #define RTIMER_ARCH_SECOND (SOFT_TIMER_FREQUENCY)
 
 /*
  * Contiki support functions
  */
-
-void rtimer_arch_set(rtimer_clock_t t);
 
 rtimer_clock_t rtimer_arch_now(void);
 
