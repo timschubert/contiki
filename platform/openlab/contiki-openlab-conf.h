@@ -64,48 +64,68 @@ typedef int32_t  s32_t;
  * Networking
  *
  */
+#ifndef NETSTACK_CONF_RADIO
+#define NETSTACK_CONF_RADIO         rf2xx_driver
+#endif
+
+
+#ifndef NETSTACK_CONF_RDC
+//#define NETSTACK_CONF_RDC           nullrdc_driver
+//#define NETSTACK_CONF_RDC           cxmac_driver
+#define NETSTACK_CONF_RDC           contikimac_driver
+//#define NETSTACK_CONF_RDC           sicslowmac_driver
+#endif
+
+#ifndef NETSTACK_CONF_MAC
+//#define NETSTACK_CONF_MAC           nullmac_driver
+#define NETSTACK_CONF_MAC           csma_driver
+#endif
+
+#ifndef NETSTACK_CONF_FRAMER
+//#define NETSTACK_CONF_FRAMER        framer_nullmac
+#define NETSTACK_CONF_FRAMER        framer_802154
+#endif
+
+/*
+ * configure contikimac:
+ * + has to do the csma
+ * + has to receive the ack
+ * + has to send the ack
+ * + no additionanal header
+ */
+#define RDC_CONF_HARDWARE_CSMA 0
+#define RDC_CONF_HARDWARE_ACK 0
+#define RDC_CONF_HARDWARE_SEND_ACK 0
+#define CONTIKIMAC_CONF_WITH_CONTIKIMAC_HEADER 0
+
+#define NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE 64
+#define CONTIKIMAC_CONF_CCA_COUNT_MAX 16
+#define CONTIKIMAC_CONF_WITH_PHASE_OPTIMIZATION 0
+#define CONTIKIMAC_CONF_INTER_PACKET_INTERVAL (RTIMER_ARCH_SECOND / 1000)
+
+/*
+ * Max payload of rf2xx is 125 bytes (excluding crc)
+ */
+#define PACKETBUF_CONF_HDR_SIZE 23
+#define PACKETBUF_CONF_SIZE (125 + 23)
+#define SICSLOWPAN_CONF_MAX_MAC_PAYLOAD 102
 
 #define WITH_UIP                        1
 #define UIP_CONF_IPV6                   1
 #define UIP_CONF_LL_802154              1
+#define UIP_CONF_LLH_LEN 0
 
 typedef unsigned int uip_stats_t;
 
-#ifndef NETSTACK_CONF_MAC
-#define NETSTACK_CONF_MAC           nullmac_driver
-//#define NETSTACK_CONF_MAC           csma_driver
-#endif /* NETSTACK_CONF_MAC */
-
-#ifndef NETSTACK_CONF_RDC
-#define NETSTACK_CONF_RDC           nullrdc_driver
-//#define NETSTACK_CONF_RDC           cxmac_driver
-//#define NETSTACK_CONF_RDC           contikimac_driver
-//#define NETSTACK_CONF_RDC           sicslowmac_driver
-#endif /* NETSTACK_CONF_RDC */
-
-#ifndef NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE
-#define NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE 8
-#endif /* NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE */
-
-#ifndef NETSTACK_CONF_RADIO
-#define NETSTACK_CONF_RADIO         rf2xx_driver
-#endif /* NETSTACK_CONF_RADIO */
-
-#ifndef NETSTACK_CONF_FRAMER
-#define NETSTACK_CONF_FRAMER        framer_nullmac
-//#define NETSTACK_CONF_FRAMER        framer_802154
-#endif /* NETSTACK_CONF_FRAMER */
-
-#if UIP_CONF_IPV6
 #define RIMEADDR_CONF_SIZE          8
+#if UIP_CONF_IPV6
 #define UIP_CONF_ICMP6              1
 #define UIP_CONF_UDP                1
 #define UIP_CONF_TCP                1
 #define UIP_CONF_IPV6_RPL           1
 #define NETSTACK_CONF_NETWORK       sicslowpan_driver
-#define SICSLOWPAN_CONF_COMPRESSION SICSLOWPAN_COMPRESSION_HC06
+#define SICSLOWPAN_CONF_COMPRESSION SICSLOWPAN_COMPRESSION_IPV6
 #else  /* UIP_CONF_IPV6 */
-#define RIMEADDR_CONF_SIZE          8
 #define NETSTACK_CONF_NETWORK       rime_driver
 #endif /* UIP_CONF_IPV6 */
 
