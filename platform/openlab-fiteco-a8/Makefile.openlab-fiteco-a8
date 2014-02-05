@@ -85,7 +85,6 @@ OPENLAB_SRC += 					\
 	fiteco-a8/fiteco-a8_drivers.c		\
 	fiteco-a8/fiteco-a8_lib.c		\
 	fiteco-a8/fiteco-a8_periph.c		\
-	fiteco-a8/fiteco-a8_net.c		\
 	\
 	printf/printf.c				\
 	printf/printf_float.c			\
@@ -106,6 +105,7 @@ OPENLAB_CONTIKI_WRAPPERS +=			\
 	clock-systick.c				\
 	watchdog.c				\
 	radio-rf2xx.c				\
+	slip-arch.c				\
 	\
 	openlab-port.c				\
 	rtimer-arch.c				\
@@ -121,7 +121,8 @@ endif
 
 CONTIKI_SRC += 					\
 	leds.c 					\
-	sensors.c
+	sensors.c				\
+	slip.c					\
 
 ##
 ## Full source setup

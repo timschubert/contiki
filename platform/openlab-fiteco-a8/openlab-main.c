@@ -41,6 +41,10 @@
 #include "dev/watchdog.h"
 #include "contiki-net.h"
 
+#ifndef SLIP_ARCH_CONF_ENABLE
+#define SLIP_ARCH_CONF_ENABLE 0
+#endif
+
 int putchar(int c);
 void xputc(char c);
 
@@ -49,6 +53,19 @@ void xputc(char c);
 #if RIMEADDR_SIZE != 8
 #error "RIME address size should be set to 8"
 #endif /*RIMEADDR_SIZE == 8*/
+
+/*-----------------------------------------------------------------------------------*/
+/*
+ * Openlab FitEco A8 platform, sensors definition
+ *
+ */
+
+/** Sensors **/
+const struct sensors_sensor *sensors[] = {
+    0
+};
+
+unsigned char sensors_flags[(sizeof(sensors) / sizeof(struct sensors_sensor *))];
 
 /*---------------------------------------------------------------------------*/
 void set_rime_addr()
@@ -164,21 +181,24 @@ int main()
 #endif /* UIP_CONF_IPV6 */
 
     /*
-     * Serial communication
-     *
-     * We use the debug port as the default serial i/o
-     * TODO: enable USB port and CDC_ACM driver.
-     *
+     * init serial line
      */
-
-#if SLIP_ARCH_CONF_ENABLE
-    // enable slip on CDC_ACM
-    //slip_arch_init(0);
-#else
     serial_line_init();
     uart_set_rx_handler(uart_print, char_rx, NULL);
+
+    /*
+     * eventually init slip device
+     * wich may override serial line
+     */
+#if SLIP_ARCH_CONF_ENABLE
+#ifndef UIP_CONF_LLH_LEN
+#error "LLH_LEN is not defined"
+#elif UIP_CONF_LLH_LEN != 0
+#error "LLH_LEN must be 0 to use slip interface"
 #endif
-    
+    slip_arch_init(SLIP_ARCH_CONF_BAUDRATE);
+#endif
+
     /*
      * Start
      *
