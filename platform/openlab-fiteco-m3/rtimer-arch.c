@@ -25,23 +25,35 @@
  *         Antoine Fraboulet <antoine.fraboulet.at.hikob.com>
  */
 
-#include "platform.h"
-#include "drivers/timer.h"
-#include "drivers/drivers.h"
-#include "platform/fiteco-m3/fiteco-m3.h"
-#define LOG_LEVEL LOG_LEVEL_DEBUG
-#include "debug.h"
-
 #include "contiki-conf.h"
 #include "sys/energest.h"
 #include "sys/rtimer.h"
 #include "rtimer-arch.h"
- 
+
+#include "stm32/timer_.h"
+#include "stm32f1xx/rcc.h"
+#include "cortex-m3/cm3_nvic_registers.h"
+#include "softtimer/soft_timer_.h"
+
+#define LOG_LEVEL LOG_LEVEL_INFO
+#define NO_DEBUG_HEADER
+#include "lib/debug.h"
+
+/*
+ * rtimer is mapped on the soft_timer
+ */
+#define RTIMER_TIMER        ((const _openlab_timer_t *) softtim.timer)
+#define RTIMER_CHANNEL      softtim.channel
+#define RTIMER_IRQ_LINE     RTIMER_TIMER->irq_line
+
 /*-----------------------------------------------------------------------------------*/
 
 void rtimer_arch_init(void) 
 {
+    /* timer is already started in agilefox_drivers.c */
     log_debug("rtimer_arch_init() called");
+    // ensure lowest priority so that rtimer tasks can be interrupted
+    nvic_set_priority(RTIMER_IRQ_LINE, 0xff);
 }
 
 /*-----------------------------------------------------------------------------------*/
