@@ -28,27 +28,11 @@
 
 #include <stdint.h>
 
+#include "fiteco-a8/fiteco-a8.h"
 #include "softtimer/soft_timer_.h"
-
-#include "sys/timer.h"
-#include "contiki.h"
-#include "lib/sensors.h"
+#include "event.h"
 
 #include "debug.h"
-#include "rf2xx.h"
-
-/*-----------------------------------------------------------------------------------*/
-/*
- * Openlab FitEco A8 platform, sensors definition
- *
- */
-
-/** Sensors **/
-const struct sensors_sensor *sensors[] = {
-    0
-};
-
-unsigned char sensors_flags[(sizeof(sensors) / sizeof(struct sensors_sensor *))];
 
 /*-----------------------------------------------------------------------------------*/
 /*
@@ -99,6 +83,7 @@ void soft_timer_update(handler_arg_t arg, uint16_t count)
  */
 void platform_prevent_low_power() { }
 void platform_release_low_power() { }
+void platform_net_setup(void) { }
 
 platform_reset_cause_t platform_reset_cause;
 
