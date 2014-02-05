@@ -24,7 +24,7 @@ OPENLAB_REL = ../openlab
 OPENLAB_GIT_REL = $(OPENLAB_REL)/git
 
 DEBUG            = 1
-CFLAGS          += -DAGILE_FOX -DKEEP_UART=1 -DENABLE_DEBUG=1 -DRELEASE=0
+CFLAGS          += -DAGILE_FOX -DKEEP_UART=1 -DENABLE_DEBUG=1
 LINKERSCRIPT     = $(OPENLAB_GIT)/platform/scripts/stm32f103rey6.ld
 
 OOCD_TARGET      = stm32f1x
@@ -86,14 +86,12 @@ OPENLAB_SRC += 					\
 	agile-fox/agilefox_lib.c		\
 	agile-fox/agilefox_periph.c		\
 	agile-fox/agilefox_button.c		\
-	agile-fox/agilefox_net.c		\
 	\
 	printf/printf.c				\
 	printf/printf_float.c			\
 	printf/prints.c				\
 	\
 	rf2xx/rf2xx.c				\
-	phy_rf2xx/phy_rf2xx.c			\
 	\
 	lsm303dlhc/lsm303dlhc.c			\
 	lps331ap/lps331ap.c			\
@@ -107,6 +105,7 @@ OPENLAB_CONTIKI_WRAPPERS +=			\
 	clock-systick.c				\
 	watchdog.c				\
 	radio-rf2xx.c				\
+	slip-arch.c				\
 	\
 	openlab-port.c				\
 	rtimer-arch.c				\
@@ -123,7 +122,8 @@ endif
 
 CONTIKI_SRC += 					\
 	leds.c 					\
-	sensors.c
+	sensors.c				\
+	slip.c					\
 
 ##
 ## Full source setup

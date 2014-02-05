@@ -34,12 +34,16 @@
 //#define LOG_LEVEL LOG_LEVEL_INFO
 #include "debug.h"
 
-
 #include "contiki.h"
 #include "lib/sensors.h"
 #include "dev/serial-line.h"
 #include "dev/watchdog.h"
 #include "contiki-net.h"
+#include "slip.h"
+
+#ifndef SLIP_ARCH_CONF_ENABLE
+#define SLIP_ARCH_CONF_ENABLE 0
+#endif
 
 int putchar(int c);
 void xputc(char c);
@@ -49,6 +53,23 @@ void xputc(char c);
 #if RIMEADDR_SIZE != 8
 #error "RIME address size should be set to 8"
 #endif /*RIMEADDR_SIZE == 8*/
+
+/*---------------------------------------------------------------------------*/
+/*
+ * Openlab Fox platform, sensors definition
+ *
+ */
+
+/** Fox Button **/
+extern const struct sensors_sensor button_sensor;
+
+/** Sensors **/
+const struct sensors_sensor *sensors[] = {
+    &button_sensor,
+    0
+};
+
+unsigned char sensors_flags[(sizeof(sensors) / sizeof(struct sensors_sensor *))];
 
 /*---------------------------------------------------------------------------*/
 void set_rime_addr()
@@ -121,10 +142,6 @@ int main()
      */
 
     platform_init();
-    // OpenLab default serial speed is 500kBps
-    // uncomment the following line to change to 115200Bps
-    // uart_enable(uart_print, 115200);
-
 
     /*
      * Contiki core 
@@ -133,6 +150,7 @@ int main()
 
     clock_init();
     process_init();
+    rtimer_init();
     process_start(&etimer_process, NULL);
     ctimer_init();
 
@@ -174,26 +192,27 @@ int main()
 #endif /* UIP_CONF_IPV6 */
 
     /*
-     * Serial communication
-     *
-     * We use the debug port as the default serial i/o
-     * TODO: enable USB port and CDC_ACM driver.
-     *
+     * init serial line
      */
-
-#if SLIP_ARCH_CONF_ENABLE
-    // enable slip on CDC_ACM
-    //slip_arch_init(0);
-#else
     serial_line_init();
     uart_set_rx_handler(uart_print, char_rx, NULL);
+
+    /*
+     * eventually init slip device
+     * wich may override serial line
+     */
+#if SLIP_ARCH_CONF_ENABLE
+#ifndef UIP_CONF_LLH_LEN
+#error "LLH_LEN is not defined"
+#elif UIP_CONF_LLH_LEN != 0
+#error "LLH_LEN must be 0 to use slip interface"
 #endif
-    
+    slip_arch_init(SLIP_ARCH_CONF_BAUDRATE);
+#endif
+
     /*
      * Start
-     *
      */
-
     print_processes(autostart_processes);
     autostart_start(autostart_processes);
     watchdog_start();
@@ -211,4 +230,4 @@ int main()
 
     return 0;
 }
-/*---------------------------------------------------------------------------*/
+
