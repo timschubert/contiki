@@ -171,10 +171,12 @@ rf2xx_wr_transmit(unsigned short transmit_len)
         idle();
     }
 
+#ifdef RF2XX_LEDS_ON
     if (transmit_len > 10)
     {
         leds_on(LEDS_RED);
     }
+#endif
 
     // Read IRQ to clear it
     rf2xx_reg_read(RF2XX_DEVICE, RF2XX_REG__IRQ_STATUS);
@@ -225,7 +227,9 @@ rf2xx_wr_transmit(unsigned short transmit_len)
 
     ret = (rf2xx_state == RF_TX_DONE) ? RADIO_TX_OK : RADIO_TX_ERR;
 
+#ifdef RF2XX_LEDS_ON
     leds_off(LEDS_RED);
+#endif
 
     restart();
     return ret;
@@ -354,7 +358,6 @@ rf2xx_wr_on(void)
     if (!rf2xx_on)
     {
         rf2xx_on = 1;
-        leds_on(LEDS_GREEN);
         if (rf2xx_state == RF_IDLE)
         {
             flag = 1;
@@ -383,7 +386,6 @@ rf2xx_wr_off(void)
     if (rf2xx_on)
     {
         rf2xx_on = 0;
-        leds_off(LEDS_GREEN);
         if (rf2xx_state == RF_LISTEN)
         {
             flag = 1;
@@ -618,6 +620,10 @@ static int read(uint8_t *buf, uint8_t buf_len)
         return 0;
     }
 
+#ifdef RF2XX_LEDS_ON
+        leds_on(LEDS_GREEN);
+#endif
+
     // Get payload length
     len = rf2xx_fifo_read_first(RF2XX_DEVICE) - 2;
     log_info("Received packet of length: %u", len);
@@ -633,6 +639,11 @@ static int read(uint8_t *buf, uint8_t buf_len)
 
     // Read payload
     rf2xx_fifo_read_remaining(RF2XX_DEVICE, buf, len);
+
+#ifdef RF2XX_LEDS_ON
+        leds_off(LEDS_GREEN);
+#endif
+
     return len;
 }
 
