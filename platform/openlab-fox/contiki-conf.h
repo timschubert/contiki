@@ -29,26 +29,23 @@
 #ifndef __CONTIKI_CONF_H__
 #define __CONTIKI_CONF_H__
 
-/* 
- * some files include /core/dev/leds.h before contiki-conf.h 
- *  ex: /core/net/mac/xmac.c
- */
-
-#undef LEDS_GREEN
-#undef LEDS_YELLOW
-#undef LEDS_RED
-#undef LEDS_BLUE
-
 /* Fox specific defines */
 
-#define LEDS_GREEN       LED_0
+#define LEDS_GREEN       1
 #define LEDS_YELLOW      0
-#define LEDS_RED         LED_1
+#define LEDS_RED         2
 #define LEDS_BLUE        0
 #define LEDS_CONF_ALL   (LEDS_GREEN | LEDS_YELLOW | LEDS_RED | LEDS_BLUE)
 
+#define RF2XX_DEVICE rf231
+#define SLIP_ARCH_CONF_UART uart_print
+
+#ifndef SLIP_ARCH_CONF_BAUDRATE
+#define SLIP_ARCH_CONF_BAUDRATE 115200
+#endif
+
 /* Openlab common definitions */
 
-#include "../openlab/contiki-conf.h"
+#include "../openlab/contiki-openlab-conf.h"
 
 #endif /* __CONTIKI_CONF_H__ */
