@@ -72,6 +72,11 @@ const struct sensors_sensor *sensors[] = {
 unsigned char sensors_flags[(sizeof(sensors) / sizeof(struct sensors_sensor *))];
 
 /*---------------------------------------------------------------------------*/
+void uip_log(char *msg)
+{
+    log_printf("%s\n", msg);
+}
+/*---------------------------------------------------------------------------*/
 void set_rime_addr()
 {
     /* Company 3 Bytes */

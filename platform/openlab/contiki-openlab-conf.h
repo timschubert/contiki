@@ -118,6 +118,7 @@ typedef int32_t  s32_t;
 typedef unsigned int uip_stats_t;
 
 #define RIMEADDR_CONF_SIZE          8
+#define UIP_CONF_LOGGING 0
 #if UIP_CONF_IPV6
 #define UIP_CONF_ICMP6              1
 #define UIP_CONF_UDP                1
