@@ -18,6 +18,10 @@
 *.avr-raven
 *.exp5438
 *.mbxxx
+*.openlab-fiteco-a8
+*.openlab-fiteco-m3
+*.openlab-fox
+*.openlab-newt
 *.win32
 *.apple2enh
 *.atarixl
