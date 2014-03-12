@@ -23,7 +23,7 @@
  *
  * \author
  *         Antoine Fraboulet <antoine.fraboulet.at.hikob.com>
- *         
+ *
  */
 
 #include "platform.h"
@@ -43,21 +43,22 @@ const struct sensors_sensor button_sensor;
 static volatile uint8_t button_active = 0;
 
 /*---------------------------------------------------------------------------*/
-static int 
+static int
 value(int type)
 {
     (void)type;
     return button_state() ? 1 : 0;
 }
 /*---------------------------------------------------------------------------*/
-static void 
+static void
 dev_button_handler(void *dummy)
 {
     ENERGEST_ON(ENERGEST_TYPE_IRQ);
-    sensors_changed(&button_sensor); 
+    sensors_changed(&button_sensor);
     ENERGEST_OFF(ENERGEST_TYPE_IRQ);
 }
 /*---------------------------------------------------------------------------*/
+
 static int
 configure(int type, int c)
 {
@@ -89,7 +90,7 @@ static int
 status(int type)
 {
     int ret = 0;
-    switch (type) 
+    switch (type)
     {
     case SENSORS_ACTIVE:
     case SENSORS_READY:

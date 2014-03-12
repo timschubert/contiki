@@ -21,7 +21,7 @@
  * \file
  *         leds-arch.c for OpenLab FitEco M3 platform
  * \author
- *         Clement Burin Des Roziers <clement.burin-des-roziers.at.hikob.com> 
+ *         Clement Burin Des Roziers <clement.burin-des-roziers.at.hikob.com>
  *         Antoine Fraboulet <antoine.fraboulet.at.hikob.com>
  */
 
@@ -53,7 +53,7 @@ void platform_leds_setup(void)
 }
 
 /*
- * Contiki support 
+ * Contiki support
  *
  */
 
@@ -67,7 +67,7 @@ unsigned char leds_arch_get(void)
     int l0 = gpio_pin_read(LED_0_PORT, LED_0_PIN);
     int l1 = gpio_pin_read(LED_1_PORT, LED_1_PIN);
     int l2 = gpio_pin_read(LED_2_PORT, LED_2_PIN);
-    
+
     return (l0 ? LED_0 : 0) | (l1 ? LED_1 : 0) | (l2 ? LED_2 : 0);
 }
 

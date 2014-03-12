@@ -5,6 +5,9 @@
 PROCESS(sensor_collection, "Sensors collection");
 AUTOSTART_PROCESSES(&sensor_collection);
 
+/*
+ * Light sensor
+ */
 static void config_light()
 {
   light_sensor.configure(LIGHT_SENSOR_SOURCE, ISL29020_LIGHT__AMBIENT);
@@ -14,11 +17,13 @@ static void config_light()
 }
 static void process_light()
 {
-    int light_val = light_sensor.value(0);
-    float light = ((float)light_val) / LIGHT_SENSOR_VALUE_SCALE;
-
-    printf("light_sensor: %f lux\n", light);
+  int light_val = light_sensor.value(0);
+  float light = ((float)light_val) / LIGHT_SENSOR_VALUE_SCALE;
+  printf("light_sensor: %f lux\n", light);
 }
+
+
+
 
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(sensor_collection, ev, data)
