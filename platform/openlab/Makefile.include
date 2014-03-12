@@ -43,7 +43,7 @@ CFLAGS   += -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 LDFLAGS  += -nostartfiles
 LDFLAGS  += -nodefaultlibs
-LDFLAGS  += -T${LINKERSCRIPT} 
+LDFLAGS  += -T${LINKERSCRIPT}
 LDFLAGS  += -mcpu=cortex-m3 -mthumb -mthumb-interwork
 LDFLAGS  += -ffunction-sections -fdata-sections -Wl,--gc-sections
 
@@ -57,7 +57,7 @@ OOCD      = openocd
 %.od: %.$(TARGET)
 	$(OBJDUMP) -S $< > $@
 
-%.u: %.$(TARGET)
+%.flash: %.$(TARGET)
 	$(OOCD) \
 	-f "${OOCD_ITF}" \
 	-f "target/${OOCD_TARGET}.cfg" \
@@ -79,7 +79,7 @@ OOCD      = openocd
 ## make debug will start a GDB SRP socket on port 3333
 ##
 
-debug: 
+debug:
 	$(OOCD) \
 	-f "${OOCD_ITF}" \
 	-f "target/${OOCD_TARGET}.cfg" \
@@ -88,7 +88,7 @@ debug:
 	-c "init" \
 	-c "targets" \
 
-reset: 
+reset:
 	$(OOCD) \
 	-f "${OOCD_ITF}" \
 	-f "target/${OOCD_TARGET}.cfg" \
