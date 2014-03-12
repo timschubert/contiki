@@ -45,6 +45,7 @@ OPENLAB_INCLUDE_PATH += \
 
 OPENLAB_TARGET_DIRS  += . 			\
 	$(OPENLAB_REL)				\
+	$(OPENLAB_REL)/dev				\
 	$(OPENLAB_GIT_REL)/drivers		\
 	$(OPENLAB_GIT_REL)/lib	 		\
 	$(OPENLAB_GIT_REL)/net	 		\
@@ -111,6 +112,8 @@ OPENLAB_CONTIKI_WRAPPERS +=			\
 	openlab-port.c				\
 	rtimer-arch.c				\
 	leds-arch.c				\
+	\
+	light-sensor.c
 
 ifndef CONTIKI_TARGET_MAIN
 CONTIKI_TARGET_MAIN += openlab-main.c
