@@ -4,7 +4,6 @@
 #include "lib/sensors.h"
 #include "isl29020.h"
 
-
 /** Configure types */
 enum {
   LIGHT_SENSOR_SOURCE = 0,
