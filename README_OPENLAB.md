@@ -2,7 +2,7 @@ Compiling Contiki for IoT-Lab nodes
 ===================================
 
 
-    cd contiki-os/platform/
+    cd platform/openlab/
     ln -s /path/to/openlab/git git
 
 
