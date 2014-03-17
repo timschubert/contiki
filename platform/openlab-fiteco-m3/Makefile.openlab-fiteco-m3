@@ -32,7 +32,7 @@ OOCD_ITF         = $(OPENLAB_GIT)/platform/scripts/fiteco-m3.cfg
 
 include $(OPENLAB)/Makefile.include
 
-## 
+##
 ## Openlab sources
 ##
 
@@ -113,14 +113,15 @@ OPENLAB_CONTIKI_WRAPPERS +=			\
 	rtimer-arch.c				\
 	leds-arch.c				\
 	\
-	light-sensor.c
+	light-sensor.c     \
+	acc-mag-sensor.c
 
 ifndef CONTIKI_TARGET_MAIN
 CONTIKI_TARGET_MAIN += openlab-main.c
 endif
 
 ##
-## Contiki apps and drivers 
+## Contiki apps and drivers
 ##
 
 CONTIKI_SRC += 					\
@@ -138,13 +139,13 @@ CONTIKI_TARGET_SOURCEFILES +=  			\
 	$(OPENLAB_SRC)		 		\
 	$(OPENLAB_CONTIKI_WRAPPERS)		\
 	$(CONTIKI_SRC)                          \
-	$(CONTIKI_TARGET_MAIN) 
+	$(CONTIKI_TARGET_MAIN)
 
-CONTIKI_SOURCEFILES += $(CONTIKI_TARGET_SOURCEFILES) 
+CONTIKI_SOURCEFILES += $(CONTIKI_TARGET_SOURCEFILES)
 
 ##
 ## We need to redefine the default compilation target so
-## that the build process is not confused 
+## that the build process is not confused
 ##
 
 OPENLAB_PLATFORM_SUBDIR=${dir $(OPENLAB_SRC)}
