@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "dev/light-sensor.h"
 #include "dev/acc-mag-sensor.h"
+#include "dev/pressure-sensor.h"
 
 PROCESS(sensor_collection, "Sensors collection");
 AUTOSTART_PROCESSES(&sensor_collection);
@@ -67,6 +68,22 @@ static void process_mag()
   printf("magnetometer: x %d y %d z %d\n", xyz[0], xyz[1], xyz[2]);
 }
 
+/*
+ * Pressure
+ */
+static void config_pressure()
+{
+  pressure_sensor.configure(PRESSURE_SENSOR_DATARATE, LPS331AP_P_12_5HZ_T_1HZ);
+  SENSORS_ACTIVATE(pressure_sensor);
+}
+
+static void process_pressure()
+{
+  int pressure;
+  pressure = pressure_sensor.value(0);
+  printf("pressure: %f mbar\n", (float)pressure / PRESSURE_SENSOR_VALUE_SCALE);
+}
+
 
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(sensor_collection, ev, data)
@@ -77,6 +94,7 @@ PROCESS_THREAD(sensor_collection, ev, data)
   config_light();
   config_acc();
   config_mag();
+  config_pressure();
 
   etimer_set(&timer, CLOCK_SECOND);
 
@@ -84,8 +102,9 @@ PROCESS_THREAD(sensor_collection, ev, data)
     PROCESS_WAIT_EVENT();
     if (ev == PROCESS_EVENT_TIMER) {
       process_light();
+      process_pressure();
 
-      etimer_reset(&timer);
+      etimer_restart(&timer);
     } else if (ev == sensors_event && data == &acc_sensor) {
       process_acc();
     } else if (ev == sensors_event && data == &mag_sensor) {
