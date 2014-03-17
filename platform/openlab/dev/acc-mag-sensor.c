@@ -4,6 +4,8 @@
 #include "lib/sensors.h"
 #include "dev/acc-mag-sensor.h"
 
+#include "lib/debug.h"
+
 PROCESS(acc_mag_update, "acc_mag_update");
 
 const struct sensors_sensor acc_sensor;
@@ -248,20 +250,24 @@ PROCESS_THREAD(acc_mag_update, ev, data)
   //
   // We add a watchdog to send an event to the process to force recheck status
   // variables
-  static struct etimer acc_mag_watchdog;
-  etimer_set(&acc_mag_watchdog, CLOCK_SECOND);
-  etimer_stop(&acc_mag_watchdog);
+  static struct etimer acc_watchdog;
+  etimer_set(&acc_watchdog, 2 * CLOCK_SECOND); // 2 * ACC sensor min rate
+  etimer_stop(&acc_watchdog);
 
   while (1) {
 
     PROCESS_WAIT_EVENT_UNTIL(
         (lsm303dlhc_acc_get_drdy_int1_pin_value()) ||  // Accelerometer
-        (conf.mag.new_val)  // Magnetometer
+        (conf.mag.new_val) ||  // Magnetometer
+        (ev == PROCESS_EVENT_TIMER)
         );
-    etimer_restart(&acc_mag_watchdog);  // reset watchdog
 
-    // pin value is quite always non zero (not usable I think)
-    // (mag_new_val = lsm303dlhc_mag_get_drdy_pin_value()) ||
+    if (ev == PROCESS_EVENT_TIMER)
+      log_warning("acc-sensor watchdog\n");
+    etimer_restart(&acc_watchdog);  // reset watchdog
+
+    // pin value is quite always non zero, so I don't use it
+    // (mag_new_val = lsm303dlhc_mag_get_drdy_pin_value())
     if (conf.mag.new_val) {
       conf.mag.new_val = 0;
       lsm303dlhc_read_mag(conf.mag.xyz);
