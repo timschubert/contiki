@@ -13,8 +13,10 @@ enum {
 };
 
 enum {
-  // check sensor temp values LOOKS STRANGE
-  TEMP_SENSOR_VALUE_SCALE = 64,  // drivers say 256
+  // According to the documentation page 39
+  // Current driver says 256 but it's wrong
+  // 8 LSB/deg, resolution on 12 bits
+  TEMP_SENSOR_VALUE_SCALE = 8 * (1 << 3),
 };
 
 
