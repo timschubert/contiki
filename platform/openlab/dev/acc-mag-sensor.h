@@ -9,15 +9,7 @@ enum {
   ACC_MAG_SENSOR_X = 0,
   ACC_MAG_SENSOR_Y = 1,
   ACC_MAG_SENSOR_Z = 2,
-  TEMP_SENSOR      = 3,
 };
-
-enum {
-  // According to the lsm303dlhc documentation page 39 and driver implem
-  // 8 LSB/deg, resolution on 12 bits
-  TEMP_SENSOR_VALUE_SCALE = 8 * (1 << 4),
-};
-
 
 /** Configure types */
 enum {
@@ -27,8 +19,7 @@ enum {
 
 };
 
-
 extern const struct sensors_sensor acc_sensor;
-extern const struct sensors_sensor mag_temp_sensor;
+extern const struct sensors_sensor mag_sensor;
 
 #endif /* ACC_MAG_SENSOR_H */

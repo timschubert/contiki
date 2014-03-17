@@ -9,7 +9,7 @@
 PROCESS(acc_mag_update, "acc_mag_update");
 
 const struct sensors_sensor acc_sensor;
-const struct sensors_sensor mag_temp_sensor;
+const struct sensors_sensor mag_sensor;
 
 static struct {
   struct {
@@ -55,17 +55,16 @@ static int acc_value(int type)
     case ACC_MAG_SENSOR_Y:
     case ACC_MAG_SENSOR_Z:
       raw = conf.acc.xyz[type];
-      break;
+      return raw / conf.acc.sensitivity;
     default:
       return 0;  // invalid argument
   }
-  return raw / conf.acc.sensitivity;
 }
 
 /*---------------------------------------------------------------------------*/
-/** Magnetometer or temperature value in mgauss
- * type == axis: X Y Z or temperature */
-static int mag_temp_value(int type)
+/** Magnetometer value in mgauss
+ * type == axis: X Y Z */
+static int mag_value(int type)
 {
   int32_t raw = 0;
   switch (type) {
@@ -74,11 +73,6 @@ static int mag_temp_value(int type)
     case ACC_MAG_SENSOR_Z:
       raw = conf.mag.xyz[type];
       return (1000 * raw) / conf.mag.sensitivity;
-
-    /** Temp sensor updated only on read */
-    case TEMP_SENSOR:
-      lsm303dlhc_read_temp((int16_t *)&raw);
-      return raw;
     default:
       return 0;  // invalid argument
   }
@@ -90,7 +84,7 @@ static int acc_status(int type)
   return conf.acc.active;
 }
 
-static int mag_temp_status(int type)
+static int mag_status(int type)
 {
   return conf.mag.active;
 }
@@ -161,7 +155,7 @@ static int acc_configure(int type, int c)
 static void mag_start()
 {
   lsm303dlhc_mag_config(conf.mag.datarate, conf.mag.scale, conf.mag.update,
-      LSM303DLHC_TEMP_MODE_ON);
+      LSM303DLHC_TEMP_MODE_OFF);
   lsm303dlhc_mag_set_drdy_int(measure_isr, &conf.mag.new_val);
 }
 
@@ -173,16 +167,16 @@ static void mag_stop()
   lsm303dlhc_mag_set_drdy_int(NULL, NULL);
 }
 
-static int mag_temp_configure(int type, int c)
+static int mag_configure(int type, int c)
 {
   switch (type) {
     case SENSORS_HW_INIT:
       process_start(&acc_mag_update, NULL);
 
       lsm303dlhc_powerdown();
-      mag_temp_configure(ACC_MAG_SENSOR_DATARATE, LSM303DLHC_MAG_RATE_0_75HZ);
-      mag_temp_configure(ACC_MAG_SENSOR_SCALE, LSM303DLHC_MAG_SCALE_1_3GAUSS);
-      mag_temp_configure(ACC_MAG_SENSOR_MODE, LSM303DLHC_MAG_MODE_CONTINUOUS);
+      mag_configure(ACC_MAG_SENSOR_DATARATE, LSM303DLHC_MAG_RATE_0_75HZ);
+      mag_configure(ACC_MAG_SENSOR_SCALE, LSM303DLHC_MAG_SCALE_1_3GAUSS);
+      mag_configure(ACC_MAG_SENSOR_MODE, LSM303DLHC_MAG_MODE_CONTINUOUS);
       break;
     case SENSORS_ACTIVE:
       conf.mag.active = c;
@@ -266,7 +260,7 @@ PROCESS_THREAD(acc_mag_update, ev, data)
     if (conf.mag.new_val) {
       conf.mag.new_val = 0;
       lsm303dlhc_read_mag(conf.mag.xyz);
-      sensors_changed(&mag_temp_sensor);
+      sensors_changed(&mag_sensor);
     }
 
     if (lsm303dlhc_acc_get_drdy_int1_pin_value()) {
@@ -284,5 +278,5 @@ PROCESS_THREAD(acc_mag_update, ev, data)
 SENSORS_SENSOR(acc_sensor, "Accelerometer", acc_value, acc_configure,
     acc_status);
 
-SENSORS_SENSOR(mag_temp_sensor, "Magnetometer-Temperature", mag_temp_value,
-    mag_temp_configure, mag_temp_status);
+SENSORS_SENSOR(mag_sensor, "Magnetometer", mag_value,
+    mag_configure, mag_status);

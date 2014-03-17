@@ -54,26 +54,18 @@ static void process_acc()
 
 static void config_mag()
 {
-  SENSORS_ACTIVATE(mag_temp_sensor);
+  SENSORS_ACTIVATE(mag_sensor);
 }
 
 static void process_mag()
 {
   int xyz[3];
-  xyz[0] = mag_temp_sensor.value(ACC_MAG_SENSOR_X);
-  xyz[1] = mag_temp_sensor.value(ACC_MAG_SENSOR_Y);
-  xyz[2] = mag_temp_sensor.value(ACC_MAG_SENSOR_Z);
+  xyz[0] = mag_sensor.value(ACC_MAG_SENSOR_X);
+  xyz[1] = mag_sensor.value(ACC_MAG_SENSOR_Y);
+  xyz[2] = mag_sensor.value(ACC_MAG_SENSOR_Z);
 
   printf("magnetometer: x %d y %d z %d\n", xyz[0], xyz[1], xyz[2]);
 }
-
-static void process_temp()
-{
-  printf("temperature: %d °C\n", mag_temp_sensor.value(TEMP_SENSOR) / \
-      TEMP_SENSOR_VALUE_SCALE);
-}
-
-
 
 
 /*---------------------------------------------------------------------------*/
@@ -92,12 +84,11 @@ PROCESS_THREAD(sensor_collection, ev, data)
     PROCESS_WAIT_EVENT();
     if (ev == PROCESS_EVENT_TIMER) {
       process_light();
-      process_temp();
 
       etimer_reset(&timer);
     } else if (ev == sensors_event && data == &acc_sensor) {
       process_acc();
-    } else if (ev == sensors_event && data == &mag_temp_sensor) {
+    } else if (ev == sensors_event && data == &mag_sensor) {
       process_mag();
     }
   }
