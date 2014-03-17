@@ -66,7 +66,7 @@ void xputc(char c);
 
 /** Sensors **/
 const struct sensors_sensor *sensors[] = {
-    &light_sensor, &acc_sensor, &mag_temp_sensor, 0
+    &light_sensor, &acc_sensor, &mag_sensor, 0
 };
 
 unsigned char sensors_flags[(sizeof(sensors) / sizeof(struct sensors_sensor *))];
