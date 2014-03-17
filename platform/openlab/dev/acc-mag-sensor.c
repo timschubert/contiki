@@ -1,6 +1,4 @@
-#include <string.h>
 #include "contiki.h"
-#include "lib/assert.h"
 #include "lib/sensors.h"
 #include "dev/acc-mag-sensor.h"
 

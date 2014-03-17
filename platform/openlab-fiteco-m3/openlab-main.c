@@ -42,6 +42,7 @@
 
 #include "dev/light-sensor.h"
 #include "dev/acc-mag-sensor.h"
+#include "dev/pressure-sensor.h"
 
 #include "contiki-net.h"
 
@@ -66,7 +67,7 @@ void xputc(char c);
 
 /** Sensors **/
 const struct sensors_sensor *sensors[] = {
-    &light_sensor, &acc_sensor, &mag_sensor, 0
+    &light_sensor, &acc_sensor, &mag_sensor, &pressure_sensor, 0
 };
 
 unsigned char sensors_flags[(sizeof(sensors) / sizeof(struct sensors_sensor *))];
