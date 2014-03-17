@@ -29,6 +29,12 @@ static void process_light()
  */
 static void config_acc()
 {
+  acc_sensor.configure(ACC_MAG_SENSOR_DATARATE,
+      LSM303DLHC_ACC_RATE_1344HZ_N_5376HZ_LP);
+  acc_sensor.configure(ACC_MAG_SENSOR_SCALE,
+      LSM303DLHC_ACC_SCALE_2G);
+  acc_sensor.configure(ACC_MAG_SENSOR_MODE,
+      LSM303DLHC_ACC_UPDATE_ON_READ);
   SENSORS_ACTIVATE(acc_sensor);
 }
 
@@ -36,14 +42,35 @@ static void process_acc()
 {
   int xyz[3];
   static unsigned count = 0;
-  if ((++count % 10000) == 0) {
-    xyz[0] = acc_sensor.value(ACCELEROMETER_SENSOR_X);
-    xyz[1] = acc_sensor.value(ACCELEROMETER_SENSOR_Y);
-    xyz[2] = acc_sensor.value(ACCELEROMETER_SENSOR_Z);
+  if ((++count % 1000) == 0) {
+    // print every 1000 values
+    xyz[0] = acc_sensor.value(ACC_MAG_SENSOR_X);
+    xyz[1] = acc_sensor.value(ACC_MAG_SENSOR_Y);
+    xyz[2] = acc_sensor.value(ACC_MAG_SENSOR_Z);
 
-    printf("Got %d accelerometer values\n", count);
-    printf("x %d y %d z %d\n", xyz[0], xyz[1], xyz[2]);
+    printf("accelerometer: x %d y %d z %d\n", xyz[0], xyz[1], xyz[2]);
   }
+}
+
+static void config_mag()
+{
+  SENSORS_ACTIVATE(mag_temp_sensor);
+}
+
+static void process_mag()
+{
+  int xyz[3];
+  xyz[0] = mag_temp_sensor.value(ACC_MAG_SENSOR_X);
+  xyz[1] = mag_temp_sensor.value(ACC_MAG_SENSOR_Y);
+  xyz[2] = mag_temp_sensor.value(ACC_MAG_SENSOR_Z);
+
+  printf("magnetometer: x %d y %d z %d\n", xyz[0], xyz[1], xyz[2]);
+}
+
+static void process_temp()
+{
+  printf("temperature: %d °C\n", mag_temp_sensor.value(TEMP_SENSOR) / \
+      TEMP_SENSOR_VALUE_SCALE);
 }
 
 
@@ -57,6 +84,7 @@ PROCESS_THREAD(sensor_collection, ev, data)
 
   config_light();
   config_acc();
+  config_mag();
 
   etimer_set(&timer, CLOCK_SECOND);
 
@@ -64,10 +92,13 @@ PROCESS_THREAD(sensor_collection, ev, data)
     PROCESS_WAIT_EVENT();
     if (ev == PROCESS_EVENT_TIMER) {
       process_light();
+      process_temp();
 
       etimer_reset(&timer);
     } else if (ev == sensors_event && data == &acc_sensor) {
       process_acc();
+    } else if (ev == sensors_event && data == &mag_temp_sensor) {
+      process_mag();
     }
   }
 
