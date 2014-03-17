@@ -13,10 +13,9 @@ enum {
 };
 
 enum {
-  // According to the documentation page 39
-  // Current driver says 256 but it's wrong
+  // According to the lsm303dlhc documentation page 39 and driver implem
   // 8 LSB/deg, resolution on 12 bits
-  TEMP_SENSOR_VALUE_SCALE = 8 * (1 << 3),
+  TEMP_SENSOR_VALUE_SCALE = 8 * (1 << 4),
 };
 
 
