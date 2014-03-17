@@ -27,8 +27,7 @@ static struct {
 
     lsm303dlhc_mag_datarate_t datarate;
     lsm303dlhc_mag_scale_t scale;
-    int sensitivity_xy;
-    int sensitivity_z;
+    int sensitivity;
     lsm303dlhc_acc_update_t update;
 
     int new_val;
@@ -41,8 +40,7 @@ static struct {
 /* Sensitivity for acc scales values >> 4 (0-3) */
 static const int acc_scale_sens[] = {1, 2, 4, 12};
 /* Sensitivity for mag scales values >> 6 (0-3) */
-static const int mag_scale_sens_xy[] = {1100, 855, 670, 450, 400, 330, 230};
-static const int mag_scale_sens_z[] = {980, 760, 600, 400, 355, 295, 205};
+static const int mag_scale_sens[] = {1100, 855, 670, 450, 400, 330, 230};
 
 static void measure_isr(void *arg);
 
@@ -73,11 +71,9 @@ static int mag_temp_value(int type)
   switch (type) {
     case ACC_MAG_SENSOR_X:
     case ACC_MAG_SENSOR_Y:
-      raw = conf.mag.xyz[type];
-      return (1000 * raw) / conf.mag.sensitivity_xy;
     case ACC_MAG_SENSOR_Z:
       raw = conf.mag.xyz[type];
-      return (1000 * raw) / conf.mag.sensitivity_z;
+      return (1000 * raw) / conf.mag.sensitivity;
 
     /** Temp sensor updated only on read */
     case TEMP_SENSOR:
@@ -210,8 +206,7 @@ static int mag_temp_configure(int type, int c)
       break;
     case ACC_MAG_SENSOR_SCALE:
       conf.mag.scale = c;
-      conf.mag.sensitivity_xy = mag_scale_sens_xy[conf.mag.scale >> 6];
-      conf.mag.sensitivity_z = mag_scale_sens_z[conf.mag.scale >> 6];
+      conf.mag.sensitivity = mag_scale_sens[conf.mag.scale >> 6];
       break;
     case ACC_MAG_SENSOR_MODE:
       // xyz values integrity not ensured with UPDATE_CONTINUOUS
