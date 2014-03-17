@@ -23,7 +23,7 @@
  *
  * \author
  *         Antoine Fraboulet <antoine.fraboulet.at.hikob.com>
- *         
+ *
  */
 
 #include <string.h>
@@ -123,7 +123,7 @@ print_processes(struct process * const processes[])
 {
 #if !PROCESS_CONF_NO_PROCESS_NAMES
     printf(" Starting");
-    while(*processes != NULL) 
+    while(*processes != NULL)
     {
 	printf(" '%s'", (*processes)->name);
 	processes++;
@@ -141,15 +141,15 @@ int main()
 {
     static uint32_t idle_count = 0;
 
-    /* 
+    /*
      * OpenLab Platform init
-     * 
+     *
      */
 
     platform_init();
 
     /*
-     * Contiki core 
+     * Contiki core
      *
      */
 
@@ -159,8 +159,8 @@ int main()
     process_start(&etimer_process, NULL);
     ctimer_init();
 
-    /* 
-     * Sensors 
+    /*
+     * Sensors
      *
      * registered sensors: button
      *
@@ -169,8 +169,8 @@ int main()
 
     process_start(&sensors_process, NULL);
 
-    /* 
-     * Network 
+    /*
+     * Network
      *
      */
 
@@ -222,10 +222,10 @@ int main()
     autostart_start(autostart_processes);
     watchdog_start();
 
-    while(1) 
+    while(1)
     {
 	int r;
-	do 
+	do
 	{
 	    watchdog_periodic();
 	    r = process_run();

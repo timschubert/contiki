@@ -1,6 +1,7 @@
 #include "contiki.h"
 #include <stdio.h>
 #include "dev/light-sensor.h"
+#include "dev/acc-mag-sensor.h"
 
 PROCESS(sensor_collection, "Sensors collection");
 AUTOSTART_PROCESSES(&sensor_collection);
@@ -23,6 +24,29 @@ static void process_light()
 }
 
 
+/*
+ * Accelerometer / magnetometer
+ */
+static void config_acc()
+{
+  SENSORS_ACTIVATE(acc_sensor);
+}
+
+static void process_acc()
+{
+  int xyz[3];
+  static unsigned count = 0;
+  if ((++count % 10000) == 0) {
+    xyz[0] = acc_sensor.value(ACCELEROMETER_SENSOR_X);
+    xyz[1] = acc_sensor.value(ACCELEROMETER_SENSOR_Y);
+    xyz[2] = acc_sensor.value(ACCELEROMETER_SENSOR_Z);
+
+    printf("Got %d accelerometer values\n", count);
+    printf("x %d y %d z %d\n", xyz[0], xyz[1], xyz[2]);
+  }
+}
+
+
 
 
 /*---------------------------------------------------------------------------*/
@@ -32,6 +56,8 @@ PROCESS_THREAD(sensor_collection, ev, data)
   static struct etimer timer;
 
   config_light();
+  config_acc();
+
   etimer_set(&timer, CLOCK_SECOND);
 
   while(1) {
@@ -39,7 +65,9 @@ PROCESS_THREAD(sensor_collection, ev, data)
     if (ev == PROCESS_EVENT_TIMER) {
       process_light();
 
-      etimer_set(&timer, CLOCK_SECOND);
+      etimer_reset(&timer);
+    } else if (ev == sensors_event && data == &acc_sensor) {
+      process_acc();
     }
   }
 
