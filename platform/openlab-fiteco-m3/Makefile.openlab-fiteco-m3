@@ -109,13 +109,14 @@ OPENLAB_CONTIKI_WRAPPERS +=			\
 	radio-rf2xx.c				\
 	slip-arch.c				\
 	\
-	openlab-port.c				\
-	rtimer-arch.c				\
+	openlab-port.c		\
+	rtimer-arch.c			\
 	leds-arch.c				\
 	\
 	light-sensor.c     \
 	acc-mag-sensor.c   \
-	pressure-sensor.c
+	pressure-sensor.c  \
+	gyr-sensor.c
 
 ifndef CONTIKI_TARGET_MAIN
 CONTIKI_TARGET_MAIN += openlab-main.c
