@@ -1,8 +1,10 @@
 #include "contiki.h"
 #include <stdio.h>
+
 #include "dev/light-sensor.h"
 #include "dev/acc-mag-sensor.h"
 #include "dev/pressure-sensor.h"
+#include "dev/gyr-sensor.h"
 
 PROCESS(sensor_collection, "Sensors collection");
 AUTOSTART_PROCESSES(&sensor_collection);
@@ -21,7 +23,7 @@ static void process_light()
 {
   int light_val = light_sensor.value(0);
   float light = ((float)light_val) / LIGHT_SENSOR_VALUE_SCALE;
-  printf("light_sensor: %f lux\n", light);
+  printf("light: %f lux\n", light);
 }
 
 
@@ -49,7 +51,7 @@ static void process_acc()
     xyz[1] = acc_sensor.value(ACC_MAG_SENSOR_Y);
     xyz[2] = acc_sensor.value(ACC_MAG_SENSOR_Z);
 
-    printf("accelerometer: x %d y %d z %d\n", xyz[0], xyz[1], xyz[2]);
+    printf("accel: %d %d %d xyz mg\n", xyz[0], xyz[1], xyz[2]);
   }
 }
 
@@ -65,7 +67,7 @@ static void process_mag()
   xyz[1] = mag_sensor.value(ACC_MAG_SENSOR_Y);
   xyz[2] = mag_sensor.value(ACC_MAG_SENSOR_Z);
 
-  printf("magnetometer: x %d y %d z %d\n", xyz[0], xyz[1], xyz[2]);
+  printf("magne: %d %d %d xyz mgauss\n", xyz[0], xyz[1], xyz[2]);
 }
 
 /*
@@ -81,9 +83,31 @@ static void process_pressure()
 {
   int pressure;
   pressure = pressure_sensor.value(0);
-  printf("pressure: %f mbar\n", (float)pressure / PRESSURE_SENSOR_VALUE_SCALE);
+  printf("press: %f mbar\n", (float)pressure / PRESSURE_SENSOR_VALUE_SCALE);
 }
 
+/*
+ * Gyroscope
+ */
+static void config_gyr()
+{
+    gyr_sensor.configure(GYR_SENSOR_DATARATE, L3G4200D_100HZ);
+    gyr_sensor.configure(GYR_SENSOR_SCALE, L3G4200D_250DPS);
+    SENSORS_ACTIVATE(gyr_sensor);
+}
+
+static void process_gyr()
+{
+  int xyz[3];
+  static unsigned count = 0;
+  if ((++count % 100) == 0) {
+    // print every 1000 values
+    xyz[0] = gyr_sensor.value(GYR_SENSOR_X);
+    xyz[1] = gyr_sensor.value(GYR_SENSOR_Y);
+    xyz[2] = gyr_sensor.value(GYR_SENSOR_Z);
+    printf("gyros: %d %d %d xyz m°/s\n", xyz[0], xyz[1], xyz[2]);
+  }
+}
 
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(sensor_collection, ev, data)
@@ -95,6 +119,7 @@ PROCESS_THREAD(sensor_collection, ev, data)
   config_acc();
   config_mag();
   config_pressure();
+  config_gyr();
 
   etimer_set(&timer, CLOCK_SECOND);
 
@@ -109,6 +134,8 @@ PROCESS_THREAD(sensor_collection, ev, data)
       process_acc();
     } else if (ev == sensors_event && data == &mag_sensor) {
       process_mag();
+    } else if (ev == sensors_event && data == &gyr_sensor) {
+      process_gyr();
     }
   }
 
