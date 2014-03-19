@@ -41,12 +41,11 @@ static int configure(int type, int c)
 {
   switch (type) {
     case SENSORS_HW_INIT:
-      lps331ap_powerdown();
+      configure(SENSORS_ACTIVE, 0);
       configure(PRESSURE_SENSOR_DATARATE, LPS331AP_P_1HZ_T_1HZ);
       break;
     case SENSORS_ACTIVE:
-      conf.active = c;
-      if (c)
+      if ((conf.active = c))
         pressure_start();
       else
         pressure_stop();

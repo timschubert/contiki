@@ -2,6 +2,8 @@
 #include "lib/sensors.h"
 #include "dev/gyr-sensor.h"
 
+#include "lib/debug.h"
+
 PROCESS(gyr_update, "gyr_update");
 
 const struct sensors_sensor gyr_sensor;
@@ -52,21 +54,27 @@ static int status(int type)
 
 static void gyr_start()
 {
+  process_start(&gyr_update, NULL);
   l3g4200d_set_drdy_int(measure_isr, NULL);
   l3g4200d_gyr_config(conf.datarate, conf.scale, 1);
+
+  // bootstrap IRQ
+  l3g4200d_read_rot_speed(conf.xyz);
+
 }
 
 static void gyr_stop()
 {
-  l3g4200d_powerdown();
   l3g4200d_set_drdy_int(NULL, NULL);
+  l3g4200d_powerdown();
+
+  process_exit(&gyr_update);
 }
 
 static int configure(int type, int c)
 {
   switch (type) {
     case SENSORS_HW_INIT:
-      process_start(&gyr_update, NULL);
       configure(SENSORS_ACTIVE, 0);
       configure(GYR_SENSOR_DATARATE, L3G4200D_100HZ);
       configure(GYR_SENSOR_SCALE, L3G4200D_250DPS);
@@ -116,8 +124,20 @@ static void measure_isr(void *arg)
 PROCESS_THREAD(gyr_update, ev, data)
 {
   PROCESS_BEGIN();
+  // Sometimes irq is not handled?  and process gets stuck because a value
+  // does not get read so no new interrupts happen
+  static struct etimer watchdog;
+  etimer_set(&watchdog, CLOCK_SECOND);
+  etimer_stop(&watchdog);
+
   while (1) {
-    PROCESS_WAIT_EVENT_UNTIL(l3g4200d_read_drdy());
+    PROCESS_WAIT_EVENT_UNTIL(l3g4200d_read_drdy() ||
+        PROCESS_EVENT_TIMER == ev);
+    etimer_restart(&watchdog);  // reset watchdog
+
+    if (PROCESS_EVENT_TIMER == ev)
+      log_warning("gyro-sensor watchdog\n");
+
     l3g4200d_read_rot_speed(conf.xyz);
     sensors_changed(&gyr_sensor);
   }

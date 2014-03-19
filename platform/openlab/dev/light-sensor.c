@@ -28,19 +28,30 @@ static int status(int type)
 
 /*---------------------------------------------------------------------------*/
 
+static void light_start()
+{
+  isl29020_prepare(conf.light, conf.resolution, conf.range);
+  isl29020_sample_continuous();
+}
+static void light_stop()
+{
+  isl29020_powerdown();
+}
+
 static int configure(int type, int c)
 {
   switch (type) {
     case SENSORS_HW_INIT:
-      // default values to 0 are OK
-      isl29020_prepare(conf.light, conf.resolution, conf.range);
+      configure(SENSORS_ACTIVE, 0);
+      configure(LIGHT_SENSOR_SOURCE, ISL29020_LIGHT__AMBIENT);
+      configure(LIGHT_SENSOR_RESOLUTION, ISL29020_RESOLUTION__16bit);
+      configure(LIGHT_SENSOR_RANGE, ISL29020_RANGE__1000lux);
       break;
     case SENSORS_ACTIVE:
-      conf.active = c;
-      if (conf.active)
-        isl29020_sample_continuous();
+      if ((conf.active = c))
+        light_start();
       else
-        isl29020_powerdown();
+        light_stop();
       break;
     case SENSORS_READY:
       return conf.active;  // return value
@@ -49,15 +60,12 @@ static int configure(int type, int c)
     // Configuration
     case LIGHT_SENSOR_SOURCE:
       conf.light = c;
-      isl29020_prepare(conf.light, conf.resolution, conf.range);
       break;
     case LIGHT_SENSOR_RESOLUTION:
       conf.resolution = c;
-      isl29020_prepare(conf.light, conf.resolution, conf.range);
       break;
     case LIGHT_SENSOR_RANGE:
       conf.range = c;
-      isl29020_prepare(conf.light, conf.resolution, conf.range);
       break;
 
     default:
