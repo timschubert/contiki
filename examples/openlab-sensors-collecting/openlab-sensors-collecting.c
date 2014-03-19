@@ -6,6 +6,8 @@
 #include "dev/pressure-sensor.h"
 #include "dev/gyr-sensor.h"
 
+#include "dev/leds.h"
+
 PROCESS(sensor_collection, "Sensors collection");
 AUTOSTART_PROCESSES(&sensor_collection);
 
@@ -46,7 +48,7 @@ static void process_acc()
   int xyz[3];
   static unsigned count = 0;
   if ((++count % 1000) == 0) {
-    // print every 1000 values
+    // print every ~1sec
     xyz[0] = acc_sensor.value(ACC_MAG_SENSOR_X);
     xyz[1] = acc_sensor.value(ACC_MAG_SENSOR_Y);
     xyz[2] = acc_sensor.value(ACC_MAG_SENSOR_Z);
@@ -57,17 +59,24 @@ static void process_acc()
 
 static void config_mag()
 {
+  mag_sensor.configure(ACC_MAG_SENSOR_DATARATE, LSM303DLHC_MAG_RATE_220HZ);
+  mag_sensor.configure(ACC_MAG_SENSOR_SCALE, LSM303DLHC_MAG_SCALE_1_3GAUSS);
+  mag_sensor.configure(ACC_MAG_SENSOR_MODE, LSM303DLHC_MAG_MODE_CONTINUOUS);
   SENSORS_ACTIVATE(mag_sensor);
 }
 
 static void process_mag()
 {
   int xyz[3];
-  xyz[0] = mag_sensor.value(ACC_MAG_SENSOR_X);
-  xyz[1] = mag_sensor.value(ACC_MAG_SENSOR_Y);
-  xyz[2] = mag_sensor.value(ACC_MAG_SENSOR_Z);
+  static unsigned count = 0;
+  if ((++count % 200) == 0) {
+    // print every ~1sec
+    xyz[0] = mag_sensor.value(ACC_MAG_SENSOR_X);
+    xyz[1] = mag_sensor.value(ACC_MAG_SENSOR_Y);
+    xyz[2] = mag_sensor.value(ACC_MAG_SENSOR_Z);
 
-  printf("magne: %d %d %d xyz mgauss\n", xyz[0], xyz[1], xyz[2]);
+    printf("magne: %d %d %d xyz mgauss\n", xyz[0], xyz[1], xyz[2]);
+  }
 }
 
 /*
@@ -91,17 +100,17 @@ static void process_pressure()
  */
 static void config_gyr()
 {
-    gyr_sensor.configure(GYR_SENSOR_DATARATE, L3G4200D_100HZ);
-    gyr_sensor.configure(GYR_SENSOR_SCALE, L3G4200D_250DPS);
-    SENSORS_ACTIVATE(gyr_sensor);
+  gyr_sensor.configure(GYR_SENSOR_DATARATE, L3G4200D_800HZ);
+  gyr_sensor.configure(GYR_SENSOR_SCALE, L3G4200D_250DPS);
+  SENSORS_ACTIVATE(gyr_sensor);
 }
 
 static void process_gyr()
 {
   int xyz[3];
   static unsigned count = 0;
-  if ((++count % 100) == 0) {
-    // print every 1000 values
+  if ((++count % 800) == 0) {
+    // print every ~1secs
     xyz[0] = gyr_sensor.value(GYR_SENSOR_X);
     xyz[1] = gyr_sensor.value(GYR_SENSOR_Y);
     xyz[2] = gyr_sensor.value(GYR_SENSOR_Z);
@@ -116,10 +125,10 @@ PROCESS_THREAD(sensor_collection, ev, data)
   static struct etimer timer;
 
   config_light();
-  config_acc();
   config_mag();
   config_pressure();
   config_gyr();
+  config_acc();
 
   etimer_set(&timer, CLOCK_SECOND);
 

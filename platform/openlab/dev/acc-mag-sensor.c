@@ -150,6 +150,7 @@ static int acc_configure(int type, int c)
 }
 
 /*---------------------------------------------------------------------------*/
+static int mag_configure(int type, int c);
 
 static void mag_start()
 {
