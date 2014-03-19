@@ -91,9 +91,10 @@ static int mag_status(int type)
 
 static void acc_start()
 {
+  process_start(&acc_mag_update, NULL);
   lsm303dlhc_acc_config(conf.acc.datarate, conf.acc.scale, conf.acc.update);
   lsm303dlhc_acc_set_drdy_int1(measure_isr, NULL);
-  lsm303dlhc_read_acc(conf.acc.xyz);
+  lsm303dlhc_read_acc(conf.acc.xyz);  // start IRQs
 }
 
 static void acc_stop()
@@ -105,22 +106,22 @@ static int acc_configure(int type, int c)
 {
   switch (type) {
     case SENSORS_HW_INIT:
-      process_start(&acc_mag_update, NULL);
-
-      lsm303dlhc_powerdown();
       // default config
+      acc_configure(SENSORS_ACTIVE, 0);
       acc_configure(ACC_MAG_SENSOR_DATARATE, LSM303DLHC_ACC_RATE_100HZ);
       acc_configure(ACC_MAG_SENSOR_SCALE, LSM303DLHC_ACC_SCALE_2G);
       acc_configure(ACC_MAG_SENSOR_MODE, LSM303DLHC_ACC_UPDATE_ON_READ);
       break;
     case SENSORS_ACTIVE:
-      conf.acc.active = c;
-      if (c) {
+      if ((conf.acc.active = c))
         acc_start();
-      } else {
+      else
         acc_stop();
-        if (!conf.acc.active && !conf.mag.active)
-          lsm303dlhc_powerdown();  // stop if no more sensors activated
+
+      // stop if no more sensors activated
+      if (!conf.acc.active && !conf.mag.active) {
+        lsm303dlhc_powerdown();
+        process_exit(&acc_mag_update);
       }
       break;
     case SENSORS_READY:
@@ -152,14 +153,16 @@ static int acc_configure(int type, int c)
 
 static void mag_start()
 {
+  process_start(&acc_mag_update, NULL);
   lsm303dlhc_mag_config(conf.mag.datarate, conf.mag.scale, conf.mag.update,
       LSM303DLHC_TEMP_MODE_OFF);
   lsm303dlhc_mag_set_drdy_int(measure_isr, &conf.mag.new_val);
+  lsm303dlhc_read_mag(conf.mag.xyz);  // start IRQs
 }
 
 static void mag_stop()
 {
-  conf.mag.update = LSM303DLHC_MAG_MODE_OFF;
+  mag_configure(ACC_MAG_SENSOR_MODE, LSM303DLHC_MAG_MODE_OFF);
   lsm303dlhc_mag_config(conf.mag.datarate, conf.mag.scale, conf.mag.update,
       LSM303DLHC_TEMP_MODE_OFF);
   lsm303dlhc_mag_set_drdy_int(NULL, NULL);
@@ -169,21 +172,21 @@ static int mag_configure(int type, int c)
 {
   switch (type) {
     case SENSORS_HW_INIT:
-      process_start(&acc_mag_update, NULL);
-
-      lsm303dlhc_powerdown();
+      mag_configure(SENSORS_ACTIVE, 0);
       mag_configure(ACC_MAG_SENSOR_DATARATE, LSM303DLHC_MAG_RATE_0_75HZ);
       mag_configure(ACC_MAG_SENSOR_SCALE, LSM303DLHC_MAG_SCALE_1_3GAUSS);
       mag_configure(ACC_MAG_SENSOR_MODE, LSM303DLHC_MAG_MODE_CONTINUOUS);
       break;
     case SENSORS_ACTIVE:
-      conf.mag.active = c;
-      if (c) {
+      if ((conf.mag.active = c))
         mag_start();
-      } else {
+      else
         mag_stop();
-        if (!conf.acc.active && !conf.mag.active)
-          lsm303dlhc_powerdown();  // stop if no more sensors activated
+
+      // stop if no more sensors activated
+      if (!conf.acc.active && !conf.mag.active) {
+        lsm303dlhc_powerdown();
+        process_exit(&acc_mag_update);
       }
       break;
     case SENSORS_READY:
@@ -242,7 +245,6 @@ PROCESS_THREAD(acc_mag_update, ev, data)
   etimer_stop(&acc_watchdog);
 
   while (1) {
-
     PROCESS_WAIT_EVENT_UNTIL(
         (lsm303dlhc_acc_get_drdy_int1_pin_value()) ||  // Accelerometer
         (conf.mag.new_val) ||  // Magnetometer
