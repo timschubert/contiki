@@ -4,7 +4,7 @@ endif
 
 CONTIKI_SOURCEFILES += sensors.c
 
-CONTIKI_PROJECT = openlab-sensors-collecting
+CONTIKI_PROJECT = iotlab-sensors-collecting
 all: $(CONTIKI_PROJECT)
 
 CONTIKI = ../..
