@@ -2,8 +2,6 @@
 #include "lib/sensors.h"
 #include "dev/gyr-sensor.h"
 
-#include "lib/debug.h"
-
 PROCESS(gyr_update, "gyr_update");
 
 const struct sensors_sensor gyr_sensor;
@@ -111,7 +109,7 @@ static int configure(int type, int c)
 
 static void measure_isr(void *arg)
 {
-  process_post(&gyr_update, PROCESS_EVENT_CONTINUE, NULL);
+  process_poll(&gyr_update);
 }
 
 /*
@@ -124,19 +122,8 @@ static void measure_isr(void *arg)
 PROCESS_THREAD(gyr_update, ev, data)
 {
   PROCESS_BEGIN();
-  // Sometimes irq is not handled?  and process gets stuck because a value
-  // does not get read so no new interrupts happen
-  static struct etimer watchdog;
-  etimer_set(&watchdog, CLOCK_SECOND);
-  etimer_stop(&watchdog);
-
   while (1) {
-    PROCESS_WAIT_EVENT_UNTIL(l3g4200d_read_drdy() ||
-        PROCESS_EVENT_TIMER == ev);
-    etimer_restart(&watchdog);  // reset watchdog
-
-    if (PROCESS_EVENT_TIMER == ev)
-      log_warning("gyro-sensor watchdog\n");
+    PROCESS_WAIT_EVENT_UNTIL(l3g4200d_read_drdy());
 
     l3g4200d_read_rot_speed(conf.xyz);
     sensors_changed(&gyr_sensor);

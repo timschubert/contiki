@@ -2,8 +2,6 @@
 #include "lib/sensors.h"
 #include "dev/acc-mag-sensor.h"
 
-#include "lib/debug.h"
-
 PROCESS(acc_mag_update, "acc_mag_update");
 
 const struct sensors_sensor acc_sensor;
@@ -217,14 +215,13 @@ static int mag_configure(int type, int c)
 }
 
 /*---------------------------------------------------------------------------*/
-
 static void measure_isr(void *arg)
 {
   if (arg)
     *(int *)arg = 1;
   // For accelerometer
   // tried with lsm303dlhc_read_acc_async but it messed up i2c chip
-  process_post(&acc_mag_update, PROCESS_EVENT_CONTINUE, NULL);
+  process_poll(&acc_mag_update);
 }
 
 /*
@@ -235,26 +232,11 @@ static void measure_isr(void *arg)
 PROCESS_THREAD(acc_mag_update, ev, data)
 {
   PROCESS_BEGIN();
-
-  // Sometimes accelerometer gets stuck because a value does not get read
-  // so no new interrupts happen
-  //
-  // We add a watchdog to send an event to the process to force recheck status
-  // variables
-  static struct etimer acc_watchdog;
-  etimer_set(&acc_watchdog, 2 * CLOCK_SECOND); // 2 * ACC sensor min rate
-  etimer_stop(&acc_watchdog);
-
   while (1) {
     PROCESS_WAIT_EVENT_UNTIL(
-        (lsm303dlhc_acc_get_drdy_int1_pin_value()) ||  // Accelerometer
-        (conf.mag.new_val) ||  // Magnetometer
-        (ev == PROCESS_EVENT_TIMER)
+        lsm303dlhc_acc_get_drdy_int1_pin_value() ||  // Accelerometer
+        conf.mag.new_val                             // Magnetometer
         );
-
-    if (ev == PROCESS_EVENT_TIMER)
-      log_warning("acc-sensor watchdog\n");
-    etimer_restart(&acc_watchdog);  // reset watchdog
 
     // pin value is quite always non zero, so I don't use it
     // (mag_new_val = lsm303dlhc_mag_get_drdy_pin_value())
