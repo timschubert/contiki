@@ -8,12 +8,15 @@
 
 #include "dev/leds.h"
 
+/*
+ * Print the value of each available sensors once every second.
+ */
+
+
 PROCESS(sensor_collection, "Sensors collection");
 AUTOSTART_PROCESSES(&sensor_collection);
 
-/*
- * Light sensor
- */
+/* Light sensor */
 static void config_light()
 {
   light_sensor.configure(LIGHT_SENSOR_SOURCE, ISL29020_LIGHT__AMBIENT);
@@ -28,60 +31,7 @@ static void process_light()
   printf("light: %f lux\n", light);
 }
 
-
-/*
- * Accelerometer / magnetometer
- */
-static void config_acc()
-{
-  acc_sensor.configure(ACC_MAG_SENSOR_DATARATE,
-      LSM303DLHC_ACC_RATE_1344HZ_N_5376HZ_LP);
-  acc_sensor.configure(ACC_MAG_SENSOR_SCALE,
-      LSM303DLHC_ACC_SCALE_2G);
-  acc_sensor.configure(ACC_MAG_SENSOR_MODE,
-      LSM303DLHC_ACC_UPDATE_ON_READ);
-  SENSORS_ACTIVATE(acc_sensor);
-}
-
-static void process_acc()
-{
-  int xyz[3];
-  static unsigned count = 0;
-  if ((++count % 1000) == 0) {
-    // print every ~1sec
-    xyz[0] = acc_sensor.value(ACC_MAG_SENSOR_X);
-    xyz[1] = acc_sensor.value(ACC_MAG_SENSOR_Y);
-    xyz[2] = acc_sensor.value(ACC_MAG_SENSOR_Z);
-
-    printf("accel: %d %d %d xyz mg\n", xyz[0], xyz[1], xyz[2]);
-  }
-}
-
-static void config_mag()
-{
-  mag_sensor.configure(ACC_MAG_SENSOR_DATARATE, LSM303DLHC_MAG_RATE_220HZ);
-  mag_sensor.configure(ACC_MAG_SENSOR_SCALE, LSM303DLHC_MAG_SCALE_1_3GAUSS);
-  mag_sensor.configure(ACC_MAG_SENSOR_MODE, LSM303DLHC_MAG_MODE_CONTINUOUS);
-  SENSORS_ACTIVATE(mag_sensor);
-}
-
-static void process_mag()
-{
-  int xyz[3];
-  static unsigned count = 0;
-  if ((++count % 200) == 0) {
-    // print every ~1sec
-    xyz[0] = mag_sensor.value(ACC_MAG_SENSOR_X);
-    xyz[1] = mag_sensor.value(ACC_MAG_SENSOR_Y);
-    xyz[2] = mag_sensor.value(ACC_MAG_SENSOR_Z);
-
-    printf("magne: %d %d %d xyz mgauss\n", xyz[0], xyz[1], xyz[2]);
-  }
-}
-
-/*
- * Pressure
- */
+/* Pressure */
 static void config_pressure()
 {
   pressure_sensor.configure(PRESSURE_SENSOR_DATARATE, LPS331AP_P_12_5HZ_T_1HZ);
@@ -95,12 +45,63 @@ static void process_pressure()
   printf("press: %f mbar\n", (float)pressure / PRESSURE_SENSOR_VALUE_SCALE);
 }
 
-/*
- * Gyroscope
- */
+
+/* Accelerometer / magnetometer */
+static unsigned acc_freq = 0;
+static void config_acc()
+{
+  acc_sensor.configure(ACC_MAG_SENSOR_DATARATE,
+      LSM303DLHC_ACC_RATE_1344HZ_N_5376HZ_LP);
+  acc_freq = 1344;
+  acc_sensor.configure(ACC_MAG_SENSOR_SCALE,
+      LSM303DLHC_ACC_SCALE_2G);
+  acc_sensor.configure(ACC_MAG_SENSOR_MODE,
+      LSM303DLHC_ACC_UPDATE_ON_READ);
+  SENSORS_ACTIVATE(acc_sensor);
+}
+
+static void process_acc()
+{
+  int xyz[3];
+  static unsigned count = 0;
+  if ((++count % acc_freq) == 0) {
+    xyz[0] = acc_sensor.value(ACC_MAG_SENSOR_X);
+    xyz[1] = acc_sensor.value(ACC_MAG_SENSOR_Y);
+    xyz[2] = acc_sensor.value(ACC_MAG_SENSOR_Z);
+
+    printf("accel: %d %d %d xyz mg\n", xyz[0], xyz[1], xyz[2]);
+  }
+}
+
+static unsigned mag_freq = 0;
+static void config_mag()
+{
+  mag_sensor.configure(ACC_MAG_SENSOR_DATARATE, LSM303DLHC_MAG_RATE_220HZ);
+  mag_freq = 220;
+  mag_sensor.configure(ACC_MAG_SENSOR_SCALE, LSM303DLHC_MAG_SCALE_1_3GAUSS);
+  mag_sensor.configure(ACC_MAG_SENSOR_MODE, LSM303DLHC_MAG_MODE_CONTINUOUS);
+  SENSORS_ACTIVATE(mag_sensor);
+}
+
+static void process_mag()
+{
+  int xyz[3];
+  static unsigned count = 0;
+  if ((++count % mag_freq) == 0) {
+    xyz[0] = mag_sensor.value(ACC_MAG_SENSOR_X);
+    xyz[1] = mag_sensor.value(ACC_MAG_SENSOR_Y);
+    xyz[2] = mag_sensor.value(ACC_MAG_SENSOR_Z);
+
+    printf("magne: %d %d %d xyz mgauss\n", xyz[0], xyz[1], xyz[2]);
+  }
+}
+
+/* Gyroscope */
+static unsigned gyr_freq = 0;
 static void config_gyr()
 {
   gyr_sensor.configure(GYR_SENSOR_DATARATE, L3G4200D_800HZ);
+  gyr_freq = 800;
   gyr_sensor.configure(GYR_SENSOR_SCALE, L3G4200D_250DPS);
   SENSORS_ACTIVATE(gyr_sensor);
 }
@@ -109,8 +110,7 @@ static void process_gyr()
 {
   int xyz[3];
   static unsigned count = 0;
-  if ((++count % 800) == 0) {
-    // print every ~1secs
+  if ((++count % gyr_freq) == 0) {
     xyz[0] = gyr_sensor.value(GYR_SENSOR_X);
     xyz[1] = gyr_sensor.value(GYR_SENSOR_Y);
     xyz[2] = gyr_sensor.value(GYR_SENSOR_Z);
@@ -125,10 +125,11 @@ PROCESS_THREAD(sensor_collection, ev, data)
   static struct etimer timer;
 
   config_light();
-  config_mag();
   config_pressure();
-  config_gyr();
+
   config_acc();
+  config_mag();
+  config_gyr();
 
   etimer_set(&timer, CLOCK_SECOND);
 
