@@ -16,6 +16,7 @@ static struct {
     int sensitivity;
     lsm303dlhc_acc_update_t update;
 
+    int new_val;
     int16_t xyz[3];
   } acc;
   struct {
@@ -91,7 +92,7 @@ static void acc_start()
 {
   process_start(&acc_mag_update, NULL);
   lsm303dlhc_acc_config(conf.acc.datarate, conf.acc.scale, conf.acc.update);
-  lsm303dlhc_acc_set_drdy_int1(measure_isr, NULL);
+  lsm303dlhc_acc_set_drdy_int1(measure_isr, &conf.acc.new_val);
   lsm303dlhc_read_acc(conf.acc.xyz);  // start IRQs
 }
 
@@ -233,20 +234,18 @@ PROCESS_THREAD(acc_mag_update, ev, data)
 {
   PROCESS_BEGIN();
   while (1) {
-    PROCESS_WAIT_EVENT_UNTIL(
-        lsm303dlhc_acc_get_drdy_int1_pin_value() ||  // Accelerometer
-        conf.mag.new_val                             // Magnetometer
-        );
+    PROCESS_WAIT_EVENT_UNTIL(conf.acc.new_val || conf.mag.new_val);
 
     // pin value is quite always non zero, so I don't use it
-    // (mag_new_val = lsm303dlhc_mag_get_drdy_pin_value())
+    // lsm303dlhc_mag_get_drdy_pin_value())
     if (conf.mag.new_val) {
       conf.mag.new_val = 0;
       lsm303dlhc_read_mag(conf.mag.xyz);
       sensors_changed(&mag_sensor);
     }
 
-    if (lsm303dlhc_acc_get_drdy_int1_pin_value()) {
+    if (conf.acc.new_val) {
+      conf.acc.new_val = 0;
       while (lsm303dlhc_acc_get_drdy_int1_pin_value())
         lsm303dlhc_read_acc(conf.acc.xyz);
       sensors_changed(&acc_sensor);
