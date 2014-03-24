@@ -53,10 +53,8 @@ static void config_acc()
   acc_sensor.configure(ACC_MAG_SENSOR_DATARATE,
       LSM303DLHC_ACC_RATE_1344HZ_N_5376HZ_LP);
   acc_freq = 1344;
-  acc_sensor.configure(ACC_MAG_SENSOR_SCALE,
-      LSM303DLHC_ACC_SCALE_2G);
-  acc_sensor.configure(ACC_MAG_SENSOR_MODE,
-      LSM303DLHC_ACC_UPDATE_ON_READ);
+  acc_sensor.configure(ACC_MAG_SENSOR_SCALE, LSM303DLHC_ACC_SCALE_2G);
+  acc_sensor.configure(ACC_MAG_SENSOR_MODE, LSM303DLHC_ACC_UPDATE_ON_READ);
   SENSORS_ACTIVATE(acc_sensor);
 }
 

@@ -16,7 +16,6 @@ enum {
   ACC_MAG_SENSOR_DATARATE = 0,
   ACC_MAG_SENSOR_SCALE = 1,
   ACC_MAG_SENSOR_MODE = 2,
-
 };
 
 extern const struct sensors_sensor acc_sensor;
