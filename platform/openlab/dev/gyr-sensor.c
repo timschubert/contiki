@@ -52,6 +52,9 @@ static int status(int type)
 
 static void gyr_start()
 {
+  // update sensitivity when updating hardware config
+  conf.sensitivity = gyr_scale_sens[conf.scale >> 4];
+
   process_start(&gyr_update, NULL);
   l3g4200d_set_drdy_int(measure_isr, NULL);
   l3g4200d_gyr_config(conf.datarate, conf.scale, 1);
@@ -96,7 +99,6 @@ static int configure(int type, int c)
       break;
     case GYR_SENSOR_SCALE:
       conf.scale = c;
-      conf.sensitivity = gyr_scale_sens[conf.scale >> 4];
       break;
 
     default:

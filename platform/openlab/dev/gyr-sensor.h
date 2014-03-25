@@ -1,5 +1,5 @@
-#ifndef GYR_SENSOR_H
-#define GYR_SENSOR_H
+#ifndef GYR_SENSOR_H_
+#define GYR_SENSOR_H_
 
 #include "lib/sensors.h"
 #include "l3g4200d.h"
@@ -19,4 +19,4 @@ enum {
 
 extern const struct sensors_sensor gyr_sensor;
 
-#endif /* GYR_SENSOR_H */
+#endif /* GYR_SENSOR_H_ */

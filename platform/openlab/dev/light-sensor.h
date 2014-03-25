@@ -1,5 +1,5 @@
-#ifndef LIGHT_SENSOR_H
-#define LIGHT_SENSOR_H
+#ifndef LIGHT_SENSOR_H_
+#define LIGHT_SENSOR_H_
 
 #include "lib/sensors.h"
 #include "isl29020.h"
