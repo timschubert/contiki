@@ -1,5 +1,5 @@
-#ifndef PRESSURE_SENSOR_H
-#define PRESSURE_SENSOR_H
+#ifndef PRESSURE_SENSOR_H_
+#define PRESSURE_SENSOR_H_
 
 #include "lib/sensors.h"
 #include "lps331ap.h"

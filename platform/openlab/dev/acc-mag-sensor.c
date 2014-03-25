@@ -1,4 +1,4 @@
-#include "contiki.h"
+include "contiki.h"
 #include "lib/sensors.h"
 #include "dev/acc-mag-sensor.h"
 
@@ -90,6 +90,9 @@ static int mag_status(int type)
 
 static void acc_start()
 {
+  // update sensitivity when updating hardware config
+  conf.acc.sensitivity = acc_scale_sens[conf.acc.scale >> 4];
+
   process_start(&acc_mag_update, NULL);
   lsm303dlhc_acc_config(conf.acc.datarate, conf.acc.scale, conf.acc.update);
   lsm303dlhc_acc_set_drdy_int1(measure_isr, &conf.acc.new_val);
@@ -135,7 +138,6 @@ static int acc_configure(int type, int c)
       break;
     case ACC_MAG_SENSOR_SCALE:
       conf.acc.scale = c;
-      conf.acc.sensitivity = acc_scale_sens[conf.acc.scale >> 4];
       break;
     case ACC_MAG_SENSOR_MODE:
       // xyz values integrity not ensured with UPDATE_CONTINUOUS
@@ -153,6 +155,9 @@ static int mag_configure(int type, int c);
 
 static void mag_start()
 {
+  // update sensitivity when updating hardware config
+  conf.mag.sensitivity = mag_scale_sens[conf.mag.scale >> 6];
+
   process_start(&acc_mag_update, NULL);
   lsm303dlhc_mag_config(conf.mag.datarate, conf.mag.scale, conf.mag.update,
       LSM303DLHC_TEMP_MODE_OFF);
@@ -201,7 +206,6 @@ static int mag_configure(int type, int c)
       break;
     case ACC_MAG_SENSOR_SCALE:
       conf.mag.scale = c;
-      conf.mag.sensitivity = mag_scale_sens[conf.mag.scale >> 6];
       break;
     case ACC_MAG_SENSOR_MODE:
       // xyz values integrity not ensured with UPDATE_CONTINUOUS
@@ -260,5 +264,5 @@ PROCESS_THREAD(acc_mag_update, ev, data)
 SENSORS_SENSOR(acc_sensor, "Accelerometer", acc_value, acc_configure,
     acc_status);
 
-SENSORS_SENSOR(mag_sensor, "Magnetometer", mag_value,
-    mag_configure, mag_status);
+SENSORS_SENSOR(mag_sensor, "Magnetometer", mag_value, mag_configure,
+    mag_status);

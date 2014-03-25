@@ -1,5 +1,5 @@
-#ifndef ACC_MAG_SENSOR_H
-#define ACC_MAG_SENSOR_H
+#ifndef ACC_MAG_SENSOR_H_
+#define ACC_MAG_SENSOR_H_
 
 #include "lib/sensors.h"
 #include "lsm303dlhc.h"
@@ -21,4 +21,4 @@ enum {
 extern const struct sensors_sensor acc_sensor;
 extern const struct sensors_sensor mag_sensor;
 
-#endif /* ACC_MAG_SENSOR_H */
+#endif /* ACC_MAG_SENSOR_H_ */
