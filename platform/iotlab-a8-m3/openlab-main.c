@@ -40,9 +40,7 @@
 #include "dev/serial-line.h"
 #include "dev/watchdog.h"
 
-#include "dev/light-sensor.h"
 #include "dev/acc-mag-sensor.h"
-#include "dev/pressure-sensor.h"
 #include "dev/gyr-sensor.h"
 
 #include "contiki-net.h"

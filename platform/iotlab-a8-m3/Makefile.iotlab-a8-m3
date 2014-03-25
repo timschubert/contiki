@@ -112,7 +112,6 @@ OPENLAB_SRC += 					\
 	phy_rf2xx/phy_rf2xx.c			\
 	\
 	lsm303dlhc/lsm303dlhc.c			\
-	lps331ap/lps331ap.c			\
 	l3g4200d/l3g4200d.c
 
 ##
