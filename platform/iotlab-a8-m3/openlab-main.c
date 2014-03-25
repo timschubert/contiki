@@ -19,11 +19,11 @@
 
 /**
  * \file openlab-main.c
- *         Configuration for HiKoB OpenLab FitEco M3
+ *         Configuration for HiKoB OpenLab FitEco A8
  *
  * \author
  *         Antoine Fraboulet <antoine.fraboulet.at.hikob.com>
- *
+ *         Gaëtan Harter <gaetan.harter.at.inria.fr>
  */
 
 #include <string.h>
@@ -62,13 +62,13 @@ void xputc(char c);
 
 /*-----------------------------------------------------------------------------------*/
 /*
- * Openlab FitEco M3 platform, sensors definition
+ * Openlab FitEco A8 platform, sensors definition
  *
  */
 
 /** Sensors **/
 const struct sensors_sensor *sensors[] = {
-    &light_sensor, &acc_sensor, &mag_sensor, &pressure_sensor, &gyr_sensor, 0
+    &acc_sensor, &mag_sensor, &gyr_sensor, 0
 };
 
 unsigned char sensors_flags[(sizeof(sensors) / sizeof(struct sensors_sensor *))];
@@ -87,7 +87,7 @@ void set_rime_addr()
     rimeaddr_node_addr.u8[2] = 0x45;
 
     /* Platform identifier */
-    rimeaddr_node_addr.u8[3] = 0x01;
+    rimeaddr_node_addr.u8[3] = 0x02;
 
     /* Generate 4 remaining bytes using uid of processor */
     int i;
@@ -163,11 +163,6 @@ int main()
     process_init();
     process_start(&etimer_process, NULL);
     ctimer_init();
-
-    /*
-     * Sensors
-     */
-    process_start(&sensors_process, NULL);
 
     /*
      * Network

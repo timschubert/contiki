@@ -1,9 +1,11 @@
 #include "contiki.h"
 #include <stdio.h>
 
+#if IOTLAB_M3
 #include "dev/light-sensor.h"
-#include "dev/acc-mag-sensor.h"
 #include "dev/pressure-sensor.h"
+#endif
+#include "dev/acc-mag-sensor.h"
 #include "dev/gyr-sensor.h"
 
 #include "dev/leds.h"
@@ -15,6 +17,8 @@
 
 PROCESS(sensor_collection, "Sensors collection");
 AUTOSTART_PROCESSES(&sensor_collection);
+
+#ifdef IOTLAB_M3
 
 /* Light sensor */
 static void config_light()
@@ -45,6 +49,8 @@ static void process_pressure()
   printf("press: %f mbar\n", (float)pressure / PRESSURE_SENSOR_VALUE_SCALE);
 }
 
+
+#endif
 
 /* Accelerometer / magnetometer */
 static unsigned acc_freq = 0;
@@ -122,8 +128,10 @@ PROCESS_THREAD(sensor_collection, ev, data)
   PROCESS_BEGIN();
   static struct etimer timer;
 
+#if IOTLAB_M3
   config_light();
   config_pressure();
+#endif
 
   config_acc();
   config_mag();
@@ -134,8 +142,10 @@ PROCESS_THREAD(sensor_collection, ev, data)
   while(1) {
     PROCESS_WAIT_EVENT();
     if (ev == PROCESS_EVENT_TIMER) {
+#if IOTLAB_M3
       process_light();
       process_pressure();
+#endif
 
       etimer_restart(&timer);
     } else if (ev == sensors_event && data == &acc_sensor) {

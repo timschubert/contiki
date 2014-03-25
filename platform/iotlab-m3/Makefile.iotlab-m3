@@ -19,12 +19,30 @@
 #
 
 OPENLAB = $(CONTIKI)/platform/openlab
-OPENLAB_GIT = $(OPENLAB)/git
 OPENLAB_REL = ../openlab
-OPENLAB_GIT_REL = $(OPENLAB_REL)/git
+ifneq ($(wildcard $(CONTIKI)/../openlab/),)
+	# Use directly openlab if available (from iot-lab repository)
+	OPENLAB_GIT = $(CONTIKI)/../openlab
+	OPENLAB_GIT_REL = ../../../openlab
+
+else
+	ifneq ($(wildcard $(OPENLAB)/git),)
+		# use symbolic link 'git -> openlab directory'
+		OPENLAB_GIT = $(OPENLAB)/git
+		OPENLAB_GIT_REL = $(OPENLAB_REL)/git
+	else
+
+$(warning $(OPENLAB)/git should be a symbolic link to the 'openlab' repository)
+$(warning     cd contiki/platform/openlab)
+$(warning  	  ln -s path_to_openlab_repository git)
+$(error Could not find openlab repository)
+	endif
+endif
+
+
 
 DEBUG            = 1
-CFLAGS          += -DFITECO_M3 -DKEEP_UART=1 -DENABLE_DEBUG=1
+CFLAGS          += -DIOTLAB_M3 -DKEEP_UART=1 -DENABLE_DEBUG=1
 LINKERSCRIPT     = $(OPENLAB_GIT)/platform/scripts/stm32f103rey6.ld
 
 OOCD_TARGET      = stm32f1x
