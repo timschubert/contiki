@@ -19,12 +19,29 @@
 #
 
 OPENLAB = $(CONTIKI)/platform/openlab
-OPENLAB_GIT = $(OPENLAB)/git
 OPENLAB_REL = ../openlab
-OPENLAB_GIT_REL = $(OPENLAB_REL)/git
+ifneq ($(wildcard $(CONTIKI)/../openlab/),)
+	# Use directly openlab if available (from iot-lab repository)
+	OPENLAB_GIT = $(CONTIKI)/../openlab
+	OPENLAB_GIT_REL = ../../../openlab
+
+else
+	ifneq ($(wildcard $(OPENLAB)/git),)
+		# use symbolic link 'git -> openlab directory'
+		OPENLAB_GIT = $(OPENLAB)/git
+		OPENLAB_GIT_REL = $(OPENLAB_REL)/git
+	else
+
+$(warning $(OPENLAB)/git should be a symbolic link to the 'openlab' repository)
+$(warning     cd contiki/platform/openlab)
+$(warning  	  ln -s path_to_openlab_repository git)
+$(error Could not find openlab repository)
+	endif
+endif
+
 
 DEBUG            = 1
-CFLAGS          += -DFITECO_A8 -DKEEP_UART=1 -DENABLE_DEBUG=1 -DRELEASE=0
+CFLAGS          += -DIOTLAB_A8_M3 -DKEEP_UART=1 -DENABLE_DEBUG=1 -DRELEASE=0
 LINKERSCRIPT     = $(OPENLAB_GIT)/platform/scripts/stm32f103rey6.ld
 
 OOCD_TARGET      = stm32f1x
@@ -32,7 +49,7 @@ OOCD_ITF         = $(OPENLAB_GIT)/platform/scripts/fiteco-a8.cfg
 
 include $(OPENLAB)/Makefile.include
 
-## 
+##
 ## Openlab sources
 ##
 
@@ -45,6 +62,7 @@ OPENLAB_INCLUDE_PATH += \
 
 OPENLAB_TARGET_DIRS  += . 			\
 	$(OPENLAB_REL)				\
+	$(OPENLAB_REL)/dev				\
 	$(OPENLAB_GIT_REL)/drivers		\
 	$(OPENLAB_GIT_REL)/lib	 		\
 	$(OPENLAB_GIT_REL)/net	 		\
@@ -110,13 +128,16 @@ OPENLAB_CONTIKI_WRAPPERS +=			\
 	openlab-port.c				\
 	rtimer-arch.c				\
 	leds-arch.c				\
+	\
+	acc-mag-sensor.c   \
+	gyr-sensor.c
 
 ifndef CONTIKI_TARGET_MAIN
 CONTIKI_TARGET_MAIN += openlab-main.c
 endif
 
 ##
-## Contiki apps and drivers 
+## Contiki apps and drivers
 ##
 
 CONTIKI_SRC += 					\
@@ -134,13 +155,13 @@ CONTIKI_TARGET_SOURCEFILES +=  			\
 	$(OPENLAB_SRC)		 		\
 	$(OPENLAB_CONTIKI_WRAPPERS)		\
 	$(CONTIKI_SRC)                          \
-	$(CONTIKI_TARGET_MAIN) 
+	$(CONTIKI_TARGET_MAIN)
 
-CONTIKI_SOURCEFILES += $(CONTIKI_TARGET_SOURCEFILES) 
+CONTIKI_SOURCEFILES += $(CONTIKI_TARGET_SOURCEFILES)
 
 ##
 ## We need to redefine the default compilation target so
-## that the build process is not confused 
+## that the build process is not confused
 ##
 
 OPENLAB_PLATFORM_SUBDIR=${dir $(OPENLAB_SRC)}

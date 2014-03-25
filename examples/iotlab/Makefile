@@ -1,5 +1,5 @@
 ifndef TARGET
-TARGET=openlab-fiteco-m3
+TARGET=iotlab-m3
 endif
 
 CONTIKI_SOURCEFILES += sensors.c

@@ -19,11 +19,12 @@
 
 /**
  * \file openlab-main.c
- *         Configuration for HiKoB OpenLab FitEco A8
+ *         Configuration for HiKoB OpenLab FitEco M3
  *
  * \author
  *         Antoine Fraboulet <antoine.fraboulet.at.hikob.com>
- *         
+ *         Gaëtan Harter <gaetan.harter.at.inria.fr>
+ *
  */
 
 #include <string.h>
@@ -39,6 +40,12 @@
 #include "lib/sensors.h"
 #include "dev/serial-line.h"
 #include "dev/watchdog.h"
+
+#include "dev/light-sensor.h"
+#include "dev/acc-mag-sensor.h"
+#include "dev/pressure-sensor.h"
+#include "dev/gyr-sensor.h"
+
 #include "contiki-net.h"
 
 #ifndef SLIP_ARCH_CONF_ENABLE
@@ -56,13 +63,13 @@ void xputc(char c);
 
 /*-----------------------------------------------------------------------------------*/
 /*
- * Openlab FitEco A8 platform, sensors definition
+ * Openlab FitEco M3 platform, sensors definition
  *
  */
 
 /** Sensors **/
 const struct sensors_sensor *sensors[] = {
-    0
+    &light_sensor, &acc_sensor, &mag_sensor, &pressure_sensor, &gyr_sensor, 0
 };
 
 unsigned char sensors_flags[(sizeof(sensors) / sizeof(struct sensors_sensor *))];
@@ -81,7 +88,7 @@ void set_rime_addr()
     rimeaddr_node_addr.u8[2] = 0x45;
 
     /* Platform identifier */
-    rimeaddr_node_addr.u8[3] = 0x02;
+    rimeaddr_node_addr.u8[3] = 0x01;
 
     /* Generate 4 remaining bytes using uid of processor */
     int i;
@@ -119,7 +126,7 @@ print_processes(struct process * const processes[])
 {
 #if !PROCESS_CONF_NO_PROCESS_NAMES
     printf(" Starting");
-    while(*processes != NULL) 
+    while(*processes != NULL)
     {
 	printf(" '%s'", (*processes)->name);
 	processes++;
@@ -137,9 +144,9 @@ int main()
 {
     static uint32_t idle_count = 0;
 
-    /* 
+    /*
      * OpenLab Platform init
-     * 
+     *
      */
 
     platform_init();
@@ -149,7 +156,7 @@ int main()
 
 
     /*
-     * Contiki core 
+     * Contiki core
      *
      */
 
@@ -158,8 +165,13 @@ int main()
     process_start(&etimer_process, NULL);
     ctimer_init();
 
-    /* 
-     * Network 
+    /*
+     * Sensors
+     */
+    process_start(&sensors_process, NULL);
+
+    /*
+     * Network
      *
      */
 
@@ -213,10 +225,10 @@ int main()
     autostart_start(autostart_processes);
     watchdog_start();
 
-    while(1) 
+    while(1)
     {
 	int r;
-	do 
+	do
 	{
 	    watchdog_periodic();
 	    r = process_run();
