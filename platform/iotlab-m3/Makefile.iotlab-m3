@@ -46,7 +46,7 @@ CFLAGS          += -DIOTLAB_M3 -DKEEP_UART=1 -DENABLE_DEBUG=1
 LINKERSCRIPT     = $(OPENLAB_GIT)/platform/scripts/stm32f103rey6.ld
 
 OOCD_TARGET      = stm32f1x
-OOCD_ITF         = $(OPENLAB_GIT)/platform/scripts/fiteco-m3.cfg
+OOCD_ITF         = $(OPENLAB_GIT)/platform/scripts/iotlab-m3.cfg
 
 include $(OPENLAB)/Makefile.include
 
@@ -100,10 +100,10 @@ OPENLAB_SRC += 					\
 	random/random.c				\
 	softtimer/soft_timer_delay.c		\
 	\
-	fiteco-m3/fiteco-m3.c			\
-	fiteco-m3/fiteco-m3_drivers.c		\
-	fiteco-m3/fiteco-m3_lib.c		\
-	fiteco-m3/fiteco-m3_periph.c		\
+	iotlab-m3/iotlab-m3.c			\
+	iotlab-m3/iotlab-m3_drivers.c		\
+	iotlab-m3/iotlab-m3_lib.c		\
+	iotlab-m3/iotlab-m3_periph.c		\
 	\
 	printf/printf.c				\
 	printf/printf_float.c			\

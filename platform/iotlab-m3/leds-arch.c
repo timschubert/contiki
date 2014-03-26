@@ -19,14 +19,14 @@
 
 /**
  * \file
- *         leds-arch.c for OpenLab FitEco M3 platform
+ *         leds-arch.c for IoT-LAB M3
  * \author
  *         Clement Burin Des Roziers <clement.burin-des-roziers.at.hikob.com>
  *         Antoine Fraboulet <antoine.fraboulet.at.hikob.com>
  */
 
 #include "platform.h"
-#include "platform/fiteco-m3/fiteco-m3.h"
+#include "platform/iotlab-m3/iotlab-m3.h"
 
 #include "leds.h"
 

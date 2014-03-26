@@ -45,7 +45,7 @@ CFLAGS          += -DIOTLAB_A8_M3 -DKEEP_UART=1 -DENABLE_DEBUG=1 -DRELEASE=0
 LINKERSCRIPT     = $(OPENLAB_GIT)/platform/scripts/stm32f103rey6.ld
 
 OOCD_TARGET      = stm32f1x
-OOCD_ITF         = $(OPENLAB_GIT)/platform/scripts/fiteco-a8.cfg
+OOCD_ITF         = $(OPENLAB_GIT)/platform/scripts/iotlab-a8-m3.cfg
 
 include $(OPENLAB)/Makefile.include
 
@@ -99,10 +99,10 @@ OPENLAB_SRC += 					\
 	random/random.c				\
 	softtimer/soft_timer_delay.c		\
 	\
-	fiteco-a8/fiteco-a8.c			\
-	fiteco-a8/fiteco-a8_drivers.c		\
-	fiteco-a8/fiteco-a8_lib.c		\
-	fiteco-a8/fiteco-a8_periph.c		\
+	iotlab-a8-m3/iotlab-a8-m3.c			\
+	iotlab-a8-m3/iotlab-a8-m3_drivers.c		\
+	iotlab-a8-m3/iotlab-a8-m3_lib.c		\
+	iotlab-a8-m3/iotlab-a8-m3_periph.c		\
 	\
 	printf/printf.c				\
 	printf/printf_float.c			\
