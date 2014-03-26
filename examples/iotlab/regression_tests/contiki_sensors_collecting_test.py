@@ -45,6 +45,7 @@ class ContikiIoTLabTest(AutomatedIoTLABTests):  # pylint:disable=I0011,R0904
 
         node = self.nodes_aggregator.values()[0]
         node.line_handler.append(self._contiki_sensors_collecting)
+        self.nodes_cli('--update', [node.node_id], '../sensors-collecting.elf')
 
         self.finished.wait(20)
         self.assertTrue(self.finished.is_set())  # timeout or test_ok
