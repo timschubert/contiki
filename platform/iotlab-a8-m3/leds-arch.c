@@ -19,14 +19,14 @@
 
 /**
  * \file
- *         leds-arch.c for OpenLab FitEco A8 platform
+ *         leds-arch.c for IoT-LAB A8-M3
  * \author
- *         Clement Burin Des Roziers <clement.burin-des-roziers.at.hikob.com> 
+ *         Clement Burin Des Roziers <clement.burin-des-roziers.at.hikob.com>
  *         Antoine Fraboulet <antoine.fraboulet.at.hikob.com>
  */
 
 #include "platform.h"
-#include "platform/fiteco-a8/fiteco-a8.h"
+#include "platform/iotlab-a8-m3/iotlab-a8-m3.h"
 
 #include "leds.h"
 
@@ -53,7 +53,7 @@ void platform_leds_setup(void)
 }
 
 /*
- * Contiki support 
+ * Contiki support
  *
  */
 
@@ -67,7 +67,7 @@ unsigned char leds_arch_get(void)
     int l0 = gpio_pin_read(LED_0_PORT, LED_0_PIN);
     int l1 = gpio_pin_read(LED_1_PORT, LED_1_PIN);
     int l2 = gpio_pin_read(LED_2_PORT, LED_2_PIN);
-    
+
     return (l0 ? LED_0 : 0) | (l1 ? LED_1 : 0) | (l2 ? LED_2 : 0);
 }
 

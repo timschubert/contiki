@@ -19,11 +19,11 @@
 
 /**
  * \file
- *         Configuration for HiKoB OpenLab FitEco M3
+ *         Configuration for IoT-LAB M3
  *
  * \author
  *         Antoine Fraboulet <antoine.fraboulet.at.hikob.com>
- *         
+ *
  */
 
 #ifndef __CONTIKI_CONF_H__

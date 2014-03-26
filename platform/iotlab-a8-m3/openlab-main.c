@@ -19,7 +19,7 @@
 
 /**
  * \file openlab-main.c
- *         Configuration for HiKoB OpenLab FitEco A8
+ *         Configuration for IoT-LAB A8-M3
  *
  * \author
  *         Antoine Fraboulet <antoine.fraboulet.at.hikob.com>
@@ -60,7 +60,7 @@ void xputc(char c);
 
 /*-----------------------------------------------------------------------------------*/
 /*
- * Openlab FitEco A8 platform, sensors definition
+ * IoT-LAB A8-M3 platform, sensors definition
  *
  */
 

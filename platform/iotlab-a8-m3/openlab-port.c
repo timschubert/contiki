@@ -19,16 +19,16 @@
 
 /**
  * \file openlab-port.c
- *         Contiki add-ons for HiKoB OpenLab FitEco A8
+ *         Contiki add-ons for IoT-LAB A8-M3
  *
  * \author
  *         Antoine Fraboulet <antoine.fraboulet.at.hikob.com>
- *         
+ *
  */
 
 #include <stdint.h>
 
-#include "fiteco-a8/fiteco-a8.h"
+#include "iotlab-a8-m3/iotlab-a8-m3.h"
 #include "softtimer/soft_timer_.h"
 #include "event.h"
 
@@ -45,14 +45,14 @@ void xputc(char c)
     uart_transfer(uart_print, (const uint8_t *) &c, 1);
 }
 
-int 
+int
 puts(char *str)
 {
     printf((char*)str);
     return 0;
 }
 
-void 
+void
 abort(void)
 {
     log_error("abort() called");
@@ -67,7 +67,7 @@ void event_debug() { }
 void event_init() { }
 /*-----------------------------------------------------------------------------------*/
 /*
- * Empty wrappers for advanced options of Openlab soft_timer library 
+ * Empty wrappers for advanced options of Openlab soft_timer library
  */
 void soft_timer_debug() { }
 
