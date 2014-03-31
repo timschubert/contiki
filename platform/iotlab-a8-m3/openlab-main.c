@@ -163,6 +163,11 @@ int main()
     ctimer_init();
 
     /*
+     * Sensors
+     */
+    process_start(&sensors_process, NULL);
+
+    /*
      * Network
      *
      */
