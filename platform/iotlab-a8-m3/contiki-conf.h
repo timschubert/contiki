@@ -41,7 +41,7 @@
 #define SLIP_ARCH_CONF_UART uart_print
 
 #ifndef SLIP_ARCH_CONF_BAUDRATE
-#define SLIP_ARCH_CONF_BAUDRATE 115200
+#define SLIP_ARCH_CONF_BAUDRATE 500000
 #endif
 
 /* Openlab common definitions */

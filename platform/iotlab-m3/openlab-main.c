@@ -150,10 +150,6 @@ int main()
      */
 
     platform_init();
-    // OpenLab default serial speed is 500kBps
-    // uncomment the following line to change to 115200Bps
-    // uart_enable(uart_print, 115200);
-
 
     /*
      * Contiki core

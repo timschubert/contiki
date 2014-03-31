@@ -41,7 +41,12 @@
 #define SLIP_ARCH_CONF_UART uart_print
 
 #ifndef SLIP_ARCH_CONF_BAUDRATE
-#define SLIP_ARCH_CONF_BAUDRATE 115200
+#define SLIP_ARCH_CONF_BAUDRATE 500000
+#endif
+
+#if SLIP_ARCH_CONF_BAUDRATE != 500000
+#warning Only 500000 baudrate works on iotlab testbed.
+#warning This warning can be ignored if you are working on a standalone iotlab-m3 board.
 #endif
 
 /* Openlab common definitions */
