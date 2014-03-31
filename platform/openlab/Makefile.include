@@ -41,6 +41,10 @@ CFLAGS   += -mcpu=cortex-m3 -mthumb -mthumb-interwork -mfix-cortex-m3-ldrd -msof
 CFLAGS   += -mno-unaligned-access
 CFLAGS   += -ffunction-sections -fdata-sections -Wl,--gc-sections
 
+# escape characters conflicts with SLIP
+CFLAGS   += -DNO_DEBUG_COLOR
+
+
 LDFLAGS  += -nostartfiles
 LDFLAGS  += -nodefaultlibs
 LDFLAGS  += -T${LINKERSCRIPT}
