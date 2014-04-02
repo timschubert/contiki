@@ -361,7 +361,7 @@ rf2xx_wr_on(void)
         if (rf2xx_state == RF_IDLE)
         {
             flag = 1;
-            rf2xx_state == RF_BUSY;
+            rf2xx_state = RF_BUSY;
         }
     }
     platform_exit_critical();
@@ -564,7 +564,6 @@ static void idle(void)
 static void listen(void)
 {
     uint8_t reg;
-    rtimer_clock_t time;
 
     // Read IRQ to clear it
     rf2xx_reg_read(RF2XX_DEVICE, RF2XX_REG__IRQ_STATUS);
