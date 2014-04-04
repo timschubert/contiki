@@ -1,4 +1,6 @@
 tests: compile_tests
+all: tests
+
 
 compile_tests: compile_tests_iotlab-m3 compile_tests_iotlab-a8-m3
 compile_tests_%:

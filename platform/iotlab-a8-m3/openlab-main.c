@@ -43,6 +43,9 @@
 #include "dev/acc-mag-sensor.h"
 #include "dev/gyr-sensor.h"
 
+// fake button sensor
+#include "dev/button-sensor.h"
+
 #include "contiki-net.h"
 
 #ifndef SLIP_ARCH_CONF_ENABLE
@@ -66,7 +69,9 @@ void xputc(char c);
 
 /** Sensors **/
 const struct sensors_sensor *sensors[] = {
-    &acc_sensor, &mag_sensor, &gyr_sensor, 0
+    &acc_sensor, &mag_sensor, &gyr_sensor,
+    &button_sensor,  // fake button sensor
+    0
 };
 
 unsigned char sensors_flags[(sizeof(sensors) / sizeof(struct sensors_sensor *))];

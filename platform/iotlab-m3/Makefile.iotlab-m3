@@ -134,7 +134,8 @@ OPENLAB_CONTIKI_WRAPPERS +=			\
 	light-sensor.c     \
 	acc-mag-sensor.c   \
 	pressure-sensor.c  \
-	gyr-sensor.c
+	gyr-sensor.c       \
+	fake-button-sensor.c
 
 ifndef CONTIKI_TARGET_MAIN
 CONTIKI_TARGET_MAIN += openlab-main.c
