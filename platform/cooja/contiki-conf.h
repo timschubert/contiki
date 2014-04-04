@@ -49,7 +49,7 @@
 
 #if WITH_UIP
 #if WITH_UIP6
-#error WITH_UIP && WITH_IP6: Bad configuration
+#error WITH_UIP && WITH_UIP6: Bad configuration
 #endif /* WITH_UIP6 */
 #endif /* WITH_UIP */
 

@@ -23,11 +23,13 @@
  *
  * \author
  *         Antoine Fraboulet <antoine.fraboulet.at.hikob.com>
- *         
+ *         Gaëtan Harter <gaetan.harter.at.inria.fr>
+ *
  */
 
-#ifndef __OPENLAB_CONTIKI_CONF_H__
-#define __OPENLAB_CONTIKI_CONF_H__
+#ifndef OPENLAB_CONTIKI_CONF_H_
+#define OPENLAB_CONTIKI_CONF_H_
+
 
 #include <stdint.h>
 
@@ -147,4 +149,4 @@ typedef unsigned int uip_stats_t;
 #include PROJECT_CONF_H
 #endif /* PROJECT_CONF_H */
 
-#endif /* __OPENLAB_CONTIKI_CONF_H__ */
+#endif /* OPENLAB_CONTIKI_CONF_H_ */

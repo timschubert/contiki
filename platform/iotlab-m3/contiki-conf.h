@@ -23,11 +23,12 @@
  *
  * \author
  *         Antoine Fraboulet <antoine.fraboulet.at.hikob.com>
+ *         Gaëtan Harter <gaetan.harter.at.inria.fr>
  *
  */
 
-#ifndef __CONTIKI_CONF_H__
-#define __CONTIKI_CONF_H__
+#ifndef CONTIKI_CONF_H_
+#define CONTIKI_CONF_H_
 
 /* specific defines */
 
@@ -53,4 +54,4 @@
 
 #include "../openlab/contiki-openlab-conf.h"
 
-#endif /* __CONTIKI_CONF_H__ */
+#endif /* CONTIKI_CONF_H_ */
