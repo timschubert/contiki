@@ -32,14 +32,21 @@ CFLAGS   += -DPLATFORM_OS=CONTIKI
 
 CFLAGS   += -Os
 CFLAGS   += -Wall
-CFLAGS   += -Wimplicit -Wcast-align -Wpointer-arith
-CFLAGS   += -Wredundant-decls -Wshadow -Wcast-qual -Wcast-align
+CFLAGS   += -Wimplicit -Wpointer-arith
+CFLAGS   += -Wshadow -Wcast-qual
 
 CFLAGS   += -DGCC_ARMCM3 -DENABLE_DEBUG=${DEBUG}
 CFLAGS   += -gdwarf-2 -fno-builtin -fsingle-precision-constant
 CFLAGS   += -mcpu=cortex-m3 -mthumb -mthumb-interwork -mfix-cortex-m3-ldrd -msoft-float
 CFLAGS   += -mno-unaligned-access
 CFLAGS   += -ffunction-sections -fdata-sections -Wl,--gc-sections
+
+# Disable problematic warnings
+# Incompatible with the 'generic' way of managing radio layers I think
+# CFLAGS   += -Wredundant-decls
+# Invalid "casts"
+# CFLAGS   += -Wcast-align
+CFLAGS   += -fno-strict-aliasing
 
 # escape characters conflicts with SLIP
 CFLAGS   += -DNO_DEBUG_COLOR
