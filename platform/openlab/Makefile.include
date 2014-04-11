@@ -105,7 +105,7 @@ OOCD      = openocd
 	-c "reset run" \
 	-c "shutdown"
 
-%.upload: %.u;
+%.upload: %.flash;
 
 ##
 ## make debug will start a GDB SRP socket on port 3333
