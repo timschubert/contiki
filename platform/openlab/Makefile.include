@@ -71,6 +71,14 @@ LDFLAGS  += -T${LINKERSCRIPT}
 LDFLAGS  += -mcpu=cortex-m3 -mthumb -mthumb-interwork
 LDFLAGS  += -ffunction-sections -fdata-sections -Wl,--gc-sections
 
+ifeq ($(UIP_CONF_IPV6),1)
+  CFLAGS += -DWITH_UIP6=1
+endif
+ifdef WITH_UIP
+  CFLAGS += -DWITH_UIP=1
+endif
+
+
 PORT        = 123
 GDB_PORT    = 3${PORT}
 TELNET_PORT = 4${PORT}

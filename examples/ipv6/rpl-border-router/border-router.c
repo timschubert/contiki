@@ -142,6 +142,7 @@ ipaddr_add(const uip_ipaddr_t *addr)
   }
 }
 /*---------------------------------------------------------------------------*/
+
 static
 PT_THREAD(generate_routes(struct httpd_state *s))
 {

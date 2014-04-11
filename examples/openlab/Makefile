@@ -4,7 +4,8 @@ endif
 
 all: node
 
-CFLAGS+= -DPROJECT_CONF_H=\"project-conf.h\"
+CFLAGS+= -DPROJECT_CONF_H=\"project-conf.h\" -DWITH_UIP6
+
 
 CONTIKI = ../..
 include $(CONTIKI)/Makefile.include
