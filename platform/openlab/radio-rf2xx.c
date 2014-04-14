@@ -24,6 +24,7 @@
  * \author
  *         Antoine Fraboulet <antoine.fraboulet.at.hikob.com>
  *         Damien Hedde <damien.hedde.at.hikob.com>
+ *         Gaëtan Harter <gaetan.harter.at.inria.fr>
  */
 
 #include <stdlib.h>
@@ -455,7 +456,7 @@ PROCESS_THREAD(rf2xx_process, ev, data)
         {
             // get data
             packetbuf_clear();
-            len = read(packetbuf_dataptr(), PACKETBUF_SIZE - PACKETBUF_HDR_SIZE);
+            len = read(packetbuf_dataptr(), PACKETBUF_SIZE);
 
             restart();
 
