@@ -5,7 +5,7 @@ Supported platforms:
 - iotlab-a8-m3
 
 Requirements:
-- gcc-toolchain for arm cortex m3
+- gcc-toolchain: https://launchpad.net/gcc-arm-embedded
 - openlab (already checked-out if you used iot-lab)
 
 Basic setup:
