@@ -38,6 +38,11 @@
 #include "lib/sensors.h"
 #include "dev/serial-line.h"
 #include "dev/watchdog.h"
+
+#include "dev/acc-mag-sensor.h"
+#include "dev/pressure-sensor.h"
+#include "dev/gyr-sensor.h"
+
 #include "contiki-net.h"
 #include "slip.h"
 
@@ -65,6 +70,10 @@ extern const struct sensors_sensor button_sensor;
 
 /** Sensors **/
 const struct sensors_sensor *sensors[] = {
+    &acc_sensor,
+    &mag_sensor,
+    &pressure_sensor,
+    &gyr_sensor,
     &button_sensor,
     0
 };

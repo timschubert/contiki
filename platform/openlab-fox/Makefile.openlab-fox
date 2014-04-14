@@ -113,7 +113,6 @@ OPENLAB_CONTIKI_WRAPPERS +=			\
 	leds-arch.c				\
 	button-sensor.c				\
 	\
-	light-sensor.c				\
 	pressure-sensor.c			\
 	acc-mag-sensor.c			\
 	gyr-sensor.c
