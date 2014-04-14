@@ -34,7 +34,6 @@
 #define LOG_LEVEL LOG_LEVEL_WARNING
 #include "debug.h"
 #include "periph/rf2xx.h"
-#include "periph/rf2xx.h"
 
 #include "contiki.h"
 #include "contiki-net.h"
@@ -49,7 +48,7 @@ extern rf2xx_t RF2XX_DEVICE;
 #ifndef RF2XX_CHANNEL
 #define RF2XX_CHANNEL   11
 #endif
-#ifndef RX2XX_TX_POWER
+#ifndef RF2XX_TX_POWER
 #define RF2XX_TX_POWER  PHY_POWER_0dBm
 #endif
 
@@ -96,7 +95,7 @@ static int rf2xx_wr_pending_packet(void);
 static int
 rf2xx_wr_init(void)
 {
-    log_info("rf2xx_wr_init (channel %u)", RF2XX_CHANNEL);
+    log_info("radio-rf2xx: rf2xx_wr_init (channel %u)", RF2XX_CHANNEL);
 
     rf2xx_on = 0;
     cca_pending = 0;
@@ -116,11 +115,11 @@ rf2xx_wr_init(void)
 static int
 rf2xx_wr_prepare(const void *payload, unsigned short payload_len)
 {
-    log_debug("rf2xx_wr_prepare %d",payload_len);
+    log_debug("radio-rf2xx: rf2xx_wr_prepare %d",payload_len);
 
     if (payload_len > RF2XX_MAX_PAYLOAD)
     {
-        log_error("payload is too big");
+        log_error("radio-rf2xx: payload is too big");
         tx_len = 0;
         return 1;
     }
@@ -140,11 +139,12 @@ rf2xx_wr_transmit(unsigned short transmit_len)
     int ret, flag;
     uint8_t reg;
     rtimer_clock_t time;
-    log_info("rf2xx_wr_transmit %d", transmit_len);
+    log_info("radio-rf2xx: rf2xx_wr_transmit %d", transmit_len);
 
     if (tx_len != transmit_len)
     {
-        log_error("Length is has changed (was %u now %u)", tx_len, transmit_len);
+        log_error("radio-rf2xx: Length is has changed (was %u now %u)",
+                tx_len, transmit_len);
         return RADIO_TX_ERR;
     }
 
@@ -202,7 +202,7 @@ rf2xx_wr_transmit(unsigned short transmit_len)
         // Check for block
         if (RTIMER_CLOCK_LT(time, RTIMER_NOW()))
         {
-            log_error("Failed to enter tx");
+            log_error("radio-rf2xx: Failed to enter tx");
             restart();
             return RADIO_TX_ERR;
         }
@@ -241,7 +241,7 @@ rf2xx_wr_transmit(unsigned short transmit_len)
 static int
 rf2xx_wr_send(const void *payload, unsigned short payload_len)
 {
-    log_debug("rf2xx_wr_send %d", payload_len);
+    log_debug("radio-rf2xx: rf2xx_wr_send %d", payload_len);
     if (rf2xx_wr_prepare(payload, payload_len))
     {
         return RADIO_TX_ERR;
@@ -256,7 +256,7 @@ static int
 rf2xx_wr_read(void *buf, unsigned short buf_len)
 {
     int len;
-    log_info("rf2xx_wr_read %d", buf_len);
+    log_info("radio-rf2xx: rf2xx_wr_read %d", buf_len);
 
     // Is there a packet pending
     platform_enter_critical();
@@ -283,7 +283,7 @@ static int
 rf2xx_wr_channel_clear(void)
 {
     int clear = 1;
-    log_debug("rf2xx_wr_channel_clear");
+    log_debug("radio-rf2xx: rf2xx_wr_channel_clear");
 
     // critical section is necessary
     // to avoid spi access conflicts
@@ -352,7 +352,7 @@ static int
 rf2xx_wr_on(void)
 {
     int flag = 0;
-    log_debug("rf2xx_wr_on");
+    log_debug("radio-rf2xx: rf2xx_wr_on");
 
     platform_enter_critical();
     if (!rf2xx_on)
@@ -380,7 +380,7 @@ static int
 rf2xx_wr_off(void)
 {
     int flag = 0;
-    log_debug("rf2xx_wr_off");
+    log_debug("radio-rf2xx: rf2xx_wr_off");
 
     platform_enter_critical();
     if (rf2xx_on)
@@ -615,7 +615,7 @@ static int read(uint8_t *buf, uint8_t buf_len)
     if (!(rf2xx_reg_read(RF2XX_DEVICE, RF2XX_REG__PHY_RSSI)
             & RF2XX_PHY_RSSI_MASK__RX_CRC_VALID))
     {
-        log_warning("Received packet with bad crc");
+        log_warning("radio-rf2xx: Received packet with bad crc");
         return 0;
     }
 
@@ -625,12 +625,12 @@ static int read(uint8_t *buf, uint8_t buf_len)
 
     // Get payload length
     len = rf2xx_fifo_read_first(RF2XX_DEVICE) - 2;
-    log_info("Received packet of length: %u", len);
+    log_info("radio-rf2xx: Received packet of length: %u", len);
 
     // Check valid length (not zero and enough space to store it)
     if (len > buf_len)
     {
-        log_warning("Received packet is too big (%u)", len);
+        log_warning("radio-rf2xx: Received packet is too big (%u)", len);
         // Error length, end transfer
         rf2xx_fifo_read_remaining(RF2XX_DEVICE, buf, 0);
         return 0;
@@ -660,7 +660,7 @@ static void irq_handler(handler_arg_t arg)
         case RF_RX:
             break;
         default:
-            log_warning("unexpected irq while state %d", state);
+            log_warning("radio-rf2xx: unexpected irq while state %d", state);
             // may eventually happen when transitioning
             // from listen to idle for example
             return;
