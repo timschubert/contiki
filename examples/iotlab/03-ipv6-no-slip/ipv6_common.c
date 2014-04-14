@@ -14,10 +14,11 @@ print_local_addresses(void)
   for(i = 0; i < UIP_DS6_ADDR_NB; i++) {
     state = uip_ds6_if.addr_list[i].state;
     if(uip_ds6_if.addr_list[i].isused) {
-      PRINTF("  ");
+      PRINTF("Address:  ");
       PRINT6ADDR(&uip_ds6_if.addr_list[i].ipaddr);
       /*
-      // hack to make address "final"  ?why? not required ?
+      // hack to make address "final"
+      // ?why? not required ?
       if(state == ADDR_TENTATIVE) {
         uip_ds6_if.addr_list[i].state = ADDR_PREFERRED;
       }
@@ -39,7 +40,7 @@ void print_routes(void)
   PRINTF("Routes:\n");
   for(r = uip_ds6_route_head(); r != NULL; r = uip_ds6_route_next(r)) {
 
-    PRINTF("  ");
+    PRINTF("Route:  ");
     PRINT6ADDR(&r->ipaddr);
 
     PRINTF("/%u (via ", r->length);
@@ -56,7 +57,7 @@ void print_routes(void)
 void print_default_route(void)
 {
   PRINTF("Default Route:\n");
-  PRINTF("  ");
+  PRINTF("Default_route:  ");
   PRINT6ADDR(uip_ds6_defrt_choose());
   PRINTF("\n");
 }
@@ -71,7 +72,7 @@ void print_neighbors(void)
       nbr != NULL;
       nbr = nbr_table_next(ds6_neighbors, nbr)) {
 
-    PRINTF("  ");
+    PRINTF("Neighbor  ");
     PRINT6ADDR(&nbr->ipaddr);
 
     switch (nbr->state) {
