@@ -1,7 +1,3 @@
-ifndef TARGET
-TARGET=iotlab-m3
-endif
-
 all: rpl-dag-root
 
 UIP_CONF_IPV6 = 1

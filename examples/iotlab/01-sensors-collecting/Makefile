@@ -1,4 +1,3 @@
-
 CONTIKI_PROJECT = sensors-collecting
 CONTIKI_SOURCEFILES += sensors.c
 
