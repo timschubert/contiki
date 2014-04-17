@@ -100,7 +100,8 @@ void set_rime_addr()
     int i;
     for (i = 0; i < 4; i++)
     {
-        rimeaddr_node_addr.u8[i+4] = uid->uid8[i+6];
+        // use bytes 8-11 to ensure uniqueness (tested empirically)
+        rimeaddr_node_addr.u8[i+4] = uid->uid8[i+8];
     }
 
     log_debug("Uid: %02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
