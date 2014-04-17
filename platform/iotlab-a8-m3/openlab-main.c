@@ -157,7 +157,10 @@ int main()
 
     platform_init();
     /* TODO Flush first packet because invalid char art inserted by the uart */
-    uip_len = 0;
+    // send a packet to flush previous invalid data
+    // packet is starting with '\r' to be treated as debug by tunslip6
+    uip_buf[0] = '\r';
+    uip_len = 1;
     slip_send();
     /* TODO Flush first packet because invalid char art inserted by the uart */
 
