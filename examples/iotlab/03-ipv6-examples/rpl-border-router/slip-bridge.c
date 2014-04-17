@@ -47,6 +47,8 @@
 
 #define UIP_IP_BUF        ((struct uip_ip_hdr *)&uip_buf[UIP_LLH_LEN])
 
+#define PRINT_PKTS 0
+
 #define DEBUG DEBUG_PRINT
 #include "net/uip-debug.h"
 
@@ -54,16 +56,17 @@
 #define U32(ptr) ((uint32_t *)(ptr))
 #define U64(ptr) ((uint64_t *)(ptr))
 
+#if PRINT_PKTS
 static void ipv6_print(uint8_t *buf, uint16_t len)
 {
     if (len < 40)
         return;
     uint8_t version = (buf[0] >> 4) & 0x0f;
-    uint8_t traffclass = ((buf[0] << 4) & 0xf0) | ((buf[1] >> 4) & 0x0f);
-    uint32_t flowlabel = U32(&buf[0])[0] & 0xfffffu;
-    uint16_t payloadlen = U16(&buf[4]);
-    uint8_t  nextheader = buf[6];
-    uint16_t hoplim = buf[7];
+    // uint8_t traffclass = ((buf[0] << 4) & 0xf0) | ((buf[1] >> 4) & 0x0f);
+    // uint32_t flowlabel = U32(&buf[0])[0] & 0xfffffu;
+    // uint16_t payloadlen = U16(&buf[4])[0];
+    // uint8_t  nextheader = buf[6];
+    // uint16_t hoplim = buf[7];
     uint16_t *src = U16(&buf[8]);
     uint16_t *dst = U16(&buf[24]);
     PRINTF("IPv%u from ", version);
@@ -72,6 +75,7 @@ static void ipv6_print(uint8_t *buf, uint16_t len)
     PRINT6ADDR((uip_ipaddr_t *) dst);
     PRINTF("\n");
 }
+#endif
 
 void set_prefix_64(uip_ipaddr_t *);
 
@@ -81,13 +85,16 @@ static void
 slip_input_callback(void)
 {
   PRINTF("SIN: %u\n", uip_len);
-  //ipv6_print(uip_buf, uip_len);
-  /*int i;
+#if PRINT_PKTS
+  ipv6_print(uip_buf, uip_len);
+  int i;
   for (i = 0; i < uip_len; i++)
   {
         PRINTF(" %02x", uip_buf[i]);
   }
-  PRINTF("\n");*/
+  PRINTF("\n");
+#endif
+
   if((char)uip_buf[0] == '!') {
     PRINTF("Got configuration message of type %c\n", uip_buf[1]);
     uip_len = 0;
