@@ -267,7 +267,8 @@ serial_to_tun(FILE *inslip, int outfd)
           }
         }
 	if(write(outfd, uip.inbuf, inbufptr) != inbufptr) {
-	  err(1, "serial_to_tun: write");
+	  //err(1, "serial_to_tun: write");
+	  warn("serial_to_tun: write");
 	}
       }
       inbufptr = 0;

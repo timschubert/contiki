@@ -146,6 +146,10 @@ static void char_rx(handler_arg_t arg, uint8_t c)
     serial_line_input_byte(c);
 }
 /*---------------------------------------------------------------------------*/
+
+/* HACK Flush first packet because invalid char art inserted by the uart */
+#include "dev/slip.h"
+/* HACK Flush first packet because invalid char art inserted by the uart */
 int main()
 {
     static uint32_t idle_count = 0;
@@ -156,6 +160,12 @@ int main()
      */
 
     platform_init();
+
+    /* TODO Flush first packet because invalid char art inserted by the uart */
+    uip_len = 0;
+    slip_send();
+    /* TODO Flush first packet because invalid char art inserted by the uart */
+
 
     /*
      * Contiki core
