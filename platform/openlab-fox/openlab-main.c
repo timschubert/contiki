@@ -171,9 +171,8 @@ int main()
     /*
      * Sensors
      *
-     * registered sensors: button
+     * registered sensors: button, lsm303dlhc, l3g4200, lps331
      *
-     * TODO: add lsm303dlhc + l3g4200 + lps331
      */
 
     process_start(&sensors_process, NULL);
