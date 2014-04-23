@@ -6,6 +6,8 @@ all: er-example-server er-example-client
 # configure CoAP implementation (3|7|12|13) (er-coap-07 also supports CoAP draft 08)
 WITH_COAP=13
 
+# border-router port
+PORT ?= 0
 
 # for some platforms
 UIP_CONF_IPV6=1
@@ -86,7 +88,7 @@ $(CONTIKI)/tools/tunslip6:	$(CONTIKI)/tools/tunslip6.c
 	(cd $(CONTIKI)/tools && $(MAKE) tunslip6)
 
 connect-router:	$(CONTIKI)/tools/tunslip6
-	sudo $(CONTIKI)/tools/tunslip6 aaaa::1/64
+	sudo $(CONTIKI)/tools/tunslip6 aaaa::1/64 -L -s /dev/ttyUSB$(PORT)
 
 connect-router-cooja:	$(CONTIKI)/tools/tunslip6
 	sudo $(CONTIKI)/tools/tunslip6 -a 127.0.0.1 aaaa::1/64
