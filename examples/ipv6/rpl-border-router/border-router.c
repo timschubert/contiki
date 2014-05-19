@@ -146,7 +146,6 @@ ipaddr_add(const uip_ipaddr_t *addr)
 static
 PT_THREAD(generate_routes(struct httpd_state *s))
 {
-  static int i;
   static uip_ds6_route_t *r;
   static uip_ds6_nbr_t *nbr;
 #if BUF_USES_STACK
