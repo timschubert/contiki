@@ -336,6 +336,8 @@ PROCESS_THREAD(border_router_process, ev, data)
 
   PROCESS_BEGIN();
 
+  print_local_addresses();
+
 /* While waiting for the prefix to be sent through the SLIP connection, the future
  * border router can join an existing DAG as a parent or child, or acquire a default 
  * router that will later take precedence over the SLIP fallback interface.
