@@ -55,6 +55,9 @@
 #ifndef SLIP_ARCH_CONF_ENABLE
 #define SLIP_ARCH_CONF_ENABLE 0
 #endif
+#if SLIP_ARCH_CONF_ENABLE
+#include "dev/slip.h"
+#endif
 
 int putchar(int c);
 void xputc(char c);
