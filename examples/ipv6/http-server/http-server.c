@@ -6,9 +6,6 @@
 #include "net/rpl/rpl.h"
 
 #include "net/netstack.h"
-#include "dev/button-sensor.h"
-#include "dev/slip.h"
-#include "dev/leds.h"
 
 #include <stdio.h>
 #include <stdlib.h>
