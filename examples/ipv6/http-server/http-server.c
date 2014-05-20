@@ -29,13 +29,16 @@
 static const char *TOP = "<html><head><title>ContikiRPL</title></head><body>\n";
 static const char *SCRIPT = "<script>\
 onload=function(){\
+	p=location.host.replace(/::.*/,'::').substr(1);\
 	a=document.getElementsByTagName('a');\
-	for(i=0;i<a.length;i++)\
-		a[i].href='http://['+a[i].innerHTML+'];'\
+	for(i=0;i<a.length;i++) {\
+		txt=a[i].innerHTML.replace(/^FE80::/,p);\
+		a[i].href='http://['+txt+']';\
+	}\
 }\
 </script>\n";
 static const char *BOTTOM = "</body></html>\n";
-static char buf[256];
+static char buf[512];
 static int blen;
 #define ADD(...) do {                                                   \
     blen += snprintf(&buf[blen], sizeof(buf) - blen, __VA_ARGS__);      \
@@ -47,6 +50,7 @@ ipaddr_add(const uip_ipaddr_t *addr)
 {
   uint16_t a;
   int i, f;
+  ADD("<a>");
   for(i = 0, f = 0; i < sizeof(uip_ipaddr_t); i += 2) {
     a = (addr->u8[i] << 8) + addr->u8[i + 1];
     if(a == 0 && f >= 0) {
@@ -60,6 +64,7 @@ ipaddr_add(const uip_ipaddr_t *addr)
       ADD("%x", a);
     }
   }
+  ADD("</a>");
 }
 /*---------------------------------------------------------------------------*/
 
@@ -109,6 +114,7 @@ PT_THREAD(generate_routes(struct httpd_state *s))
   }
   ADD("</pre>Preferred Parent<pre>");
   SEND_STRING(&s->sout, buf);
+  blen = 0;
 {
   rpl_dag_t *dag;
   /* suppose we have only one instance */
@@ -123,9 +129,7 @@ PT_THREAD(generate_routes(struct httpd_state *s))
 
   for(r = uip_ds6_route_head(); r != NULL; r = uip_ds6_route_next(r)) {
 
-    ADD("<a>");
     ipaddr_add(&r->ipaddr);
-    ADD("</a>");
     ADD("/%u (via ", r->length);
     ipaddr_add(uip_ds6_route_nexthop(r));
     if(1 || (r->state.lifetime < 600)) {
