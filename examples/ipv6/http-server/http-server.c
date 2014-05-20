@@ -109,6 +109,16 @@ PT_THREAD(generate_routes(struct httpd_state *s))
         blen = 0;
       }
   }
+  ADD("</pre>Preferred Parent<pre>");
+  SEND_STRING(&s->sout, buf);
+{
+  rpl_dag_t *dag;
+  /* suppose we have only one instance */
+  dag = rpl_get_any_dag();
+  if(dag->preferred_parent != NULL) {
+    ipaddr_add(rpl_get_parent_ipaddr(dag->preferred_parent));
+  }
+}
   ADD("</pre>Routes<pre>");
   SEND_STRING(&s->sout, buf);
   blen = 0;
