@@ -12,6 +12,7 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "net/uip-debug.h"
 
 /* Use simple webserver with only one page for minimum footprint.
  * Multiple connections can result in interleaved tcp segments since
