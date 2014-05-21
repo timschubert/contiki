@@ -46,7 +46,7 @@ static int blen;
 
 /*---------------------------------------------------------------------------*/
 static void
-ipaddr_add(const uip_ipaddr_t *addr)
+add_ipaddr(const uip_ipaddr_t *addr)
 {
   uint16_t a;
   int i, f;
@@ -92,7 +92,7 @@ PT_THREAD(generate_page(struct httpd_state *s))
 
 #if WEBSERVER_CONF_NEIGHBOR_STATUS
 {uint8_t j=blen+25;
-      ipaddr_add(&nbr->ipaddr);
+      add_ipaddr(&nbr->ipaddr);
       while (blen < j) ADD(" ");
       switch (nbr->state) {
       case NBR_INCOMPLETE: ADD(" INCOMPLETE");break;
@@ -103,7 +103,7 @@ PT_THREAD(generate_page(struct httpd_state *s))
       }
 }
 #else
-      ipaddr_add(&nbr->ipaddr);
+      add_ipaddr(&nbr->ipaddr);
 #endif
 
       ADD("\n");
@@ -120,7 +120,7 @@ PT_THREAD(generate_page(struct httpd_state *s))
   /* suppose we have only one instance */
   dag = rpl_get_any_dag();
   if(dag->preferred_parent != NULL) {
-    ipaddr_add(rpl_get_parent_ipaddr(dag->preferred_parent));
+    add_ipaddr(rpl_get_parent_ipaddr(dag->preferred_parent));
   }
 }
   ADD("</pre>Routes<pre>");
@@ -129,9 +129,9 @@ PT_THREAD(generate_page(struct httpd_state *s))
 
   for(r = uip_ds6_route_head(); r != NULL; r = uip_ds6_route_next(r)) {
 
-    ipaddr_add(&r->ipaddr);
+    add_ipaddr(&r->ipaddr);
     ADD("/%u (via ", r->length);
-    ipaddr_add(uip_ds6_route_nexthop(r));
+    add_ipaddr(uip_ds6_route_nexthop(r));
     if(1 || (r->state.lifetime < 600)) {
       ADD(") %lus\n", r->state.lifetime);
     } else {
