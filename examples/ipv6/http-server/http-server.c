@@ -69,7 +69,7 @@ ipaddr_add(const uip_ipaddr_t *addr)
 /*---------------------------------------------------------------------------*/
 
 static
-PT_THREAD(generate_routes(struct httpd_state *s))
+PT_THREAD(generate_page(struct httpd_state *s))
 {
   static uip_ds6_route_t *r;
   static uip_ds6_nbr_t *nbr;
@@ -162,7 +162,7 @@ httpd_simple_script_t
 httpd_simple_get_script(const char *name)
 {
 
-  return generate_routes;
+  return generate_page;
 }
 
 /*---------------------------------------------------------------------------*/
