@@ -133,7 +133,7 @@ PT_THREAD(generate_page(struct httpd_state *s))
     ADD("/%u (via ", r->length);
     add_ipaddr(uip_ds6_route_nexthop(r));
     if(1 || (r->state.lifetime < 600)) {
-      ADD(") %lus\n", r->state.lifetime);
+      ADD(") %us\n", (unsigned int)r->state.lifetime);
     } else {
       ADD(")\n");
     }
