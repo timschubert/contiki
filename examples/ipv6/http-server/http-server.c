@@ -84,7 +84,7 @@ PT_THREAD(generate_page(struct httpd_state *s))
   blen = 0;
   SEND_STRING(&s->sout, SCRIPT);
   blen = 0;
-  ADD("Neighbors<pre>");
+  ADD("Neighbors<pre>\n");
 
   for(nbr = nbr_table_head(ds6_neighbors);
       nbr != NULL;
@@ -112,7 +112,7 @@ PT_THREAD(generate_page(struct httpd_state *s))
         blen = 0;
       }
   }
-  ADD("</pre>Preferred Parent<pre>");
+  ADD("</pre>\nPreferred Parent<pre>\n");
   SEND_STRING(&s->sout, buf);
   blen = 0;
 {
@@ -123,7 +123,7 @@ PT_THREAD(generate_page(struct httpd_state *s))
     add_ipaddr(rpl_get_parent_ipaddr(dag->preferred_parent));
   }
 }
-  ADD("</pre>Routes<pre>");
+  ADD("</pre>\nRoutes<pre>\n");
   SEND_STRING(&s->sout, buf);
   blen = 0;
 
@@ -140,7 +140,7 @@ PT_THREAD(generate_page(struct httpd_state *s))
     SEND_STRING(&s->sout, buf);
     blen = 0;
   }
-  ADD("</pre>");
+  ADD("</pre>\n");
 
 #if WEBSERVER_CONF_FILESTATS
   static uint16_t numtimes;
