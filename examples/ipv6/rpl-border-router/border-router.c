@@ -164,7 +164,7 @@ PT_THREAD(generate_routes(struct httpd_state *s))
 #else
   blen = 0;
 #endif
-  ADD("Neighbors<pre>");
+  ADD("Neighbors<pre>\n");
 
   for(nbr = nbr_table_head(ds6_neighbors);
       nbr != NULL;
@@ -213,7 +213,7 @@ PT_THREAD(generate_routes(struct httpd_state *s))
       }
 #endif
   }
-  ADD("</pre>Routes<pre>");
+  ADD("</pre>\nRoutes<pre>\n");
   SEND_STRING(&s->sout, buf);
 #if BUF_USES_STACK
   bufptr = buf; bufend = bufptr + sizeof(buf);
