@@ -122,6 +122,14 @@ PT_THREAD(generate_page(struct httpd_state *s))
   if(dag->preferred_parent != NULL) {
     add_ipaddr(rpl_get_parent_ipaddr(dag->preferred_parent));
   }
+  ADD("\n");
+}
+{
+  ADD("</pre>\nDefault Route<pre>\n");
+  SEND_STRING(&s->sout, buf);
+  blen = 0;
+  add_ipaddr(uip_ds6_defrt_choose());
+  ADD("\n");
 }
   ADD("</pre>\nRoutes<pre>\n");
   SEND_STRING(&s->sout, buf);
