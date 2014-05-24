@@ -819,12 +819,12 @@ exit(1);
   case 230400:
     b_rate = B230400;
     break;
-  case 500000:
-    b_rate = B500000;
-    break;
 #ifndef __APPLE__
   case 460800:
     b_rate = B460800;
+    break;
+  case 500000:
+    b_rate = B500000;
     break;
   case 921600:
     b_rate = B921600;
