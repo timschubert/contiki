@@ -32,7 +32,7 @@
 
 #include "platform.h"
 #define NO_DEBUG_HEADER
-#define LOG_LEVEL LOG_LEVEL_WARNING
+#define LOG_LEVEL LOG_LEVEL_ERROR
 #include "debug.h"
 #include "periph/rf2xx.h"
 
