@@ -107,6 +107,7 @@ OPENLAB_CONTIKI_WRAPPERS +=			\
 	watchdog.c				\
 	radio-rf2xx.c				\
 	slip-arch.c				\
+	uart1.c					\
 	\
 	openlab-port.c				\
 	rtimer-arch.c				\

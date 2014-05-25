@@ -27,4 +27,6 @@
  */
 
 #define BAUD2UBR(baud) baud
-
+typedef int (*uart_input_handler_t)(unsigned char);
+void uart1_set_input(uart_input_handler_t input);
+inline uart_input_handler_t uart1_get_input_handler();

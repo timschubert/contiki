@@ -125,6 +125,7 @@ OPENLAB_CONTIKI_WRAPPERS +=			\
 	clock-systick.c				\
 	watchdog.c				\
 	radio-rf2xx.c				\
+	uart1.c					\
 	slip-arch.c				\
 	\
 	openlab-port.c		\

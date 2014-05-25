@@ -39,6 +39,7 @@
 #include "contiki.h"
 #include "lib/sensors.h"
 #include "dev/serial-line.h"
+#include "dev/uart1.h"
 #include "dev/watchdog.h"
 
 
@@ -147,7 +148,7 @@ print_processes(struct process * const processes[])
 /*---------------------------------------------------------------------------*/
 static void char_rx(handler_arg_t arg, uint8_t c)
 {
-    serial_line_input_byte(c);
+    uart1_get_input_handler()(c);
 }
 /*---------------------------------------------------------------------------*/
 int main()
