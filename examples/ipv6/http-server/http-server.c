@@ -83,6 +83,11 @@ PT_THREAD(generate_page(struct httpd_state *s))
   static clock_time_t numticks;
   numticks = clock_time();
 #endif
+  static uip_ipaddr_t *preferred_parent_ip;
+  { /* assume we have only one instance */
+  rpl_dag_t *dag = rpl_get_any_dag();
+  preferred_parent_ip = rpl_get_parent_ipaddr(dag->preferred_parent);
+  }
 
   PSOCK_BEGIN(&s->sout);
 
@@ -94,9 +99,10 @@ PT_THREAD(generate_page(struct httpd_state *s))
       nbr != NULL;
       nbr = nbr_table_next(ds6_neighbors, nbr)) {
 
+      add_ipaddr(&nbr->ipaddr);
+
 #if WEBSERVER_CONF_NEIGHBOR_STATUS
 {uint8_t j=blen+25;
-      add_ipaddr(&nbr->ipaddr);
       while (blen < j) ADD(" ");
       switch (nbr->state) {
       case NBR_INCOMPLETE: ADD(" INCOMPLETE");break;
@@ -106,28 +112,16 @@ PT_THREAD(generate_page(struct httpd_state *s))
       case NBR_PROBE: ADD(" NBR_PROBE");break;
       }
 }
-#else
-      add_ipaddr(&nbr->ipaddr);
 #endif
 
+      if (uip_ipaddr_cmp(&nbr->ipaddr, preferred_parent_ip))
+        ADD(" PREFERRED");
       ADD("\n");
       if(blen > sizeof(buf) - 45) {
         SEND_STRING(&s->sout, buf);
         blen = 0;
       }
   }
-  ADD("</pre>\nPreferred Parent<pre>\n");
-  SEND_STRING(&s->sout, buf);
-  blen = 0;
-{
-  rpl_dag_t *dag;
-  /* suppose we have only one instance */
-  dag = rpl_get_any_dag();
-  if(dag->preferred_parent != NULL) {
-    add_ipaddr(rpl_get_parent_ipaddr(dag->preferred_parent));
-  }
-  ADD("\n");
-}
 {
   ADD("</pre>\nDefault Route<pre>\n");
   SEND_STRING(&s->sout, buf);
