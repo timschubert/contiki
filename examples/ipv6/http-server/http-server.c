@@ -14,7 +14,7 @@
 
 #include "net/uip-debug.h"
 
-/* Use simple webserver with only one page for minimum footprint.
+/* Use simple webserver with only two pages for minimum footprint.
  * Multiple connections can result in interleaved tcp segments since
  * a single static buffer is used for all segments.
  */
@@ -27,16 +27,7 @@
 #define WEBSERVER_CONF_NEIGHBOR_STATUS 0
 
 static const char *TOP = "<html><head><title>ContikiRPL</title></head><body>\n";
-static const char *SCRIPT = "<script>\
-onload=function(){\
-	p=location.host.replace(/::.*/,'::').substr(1);\
-	a=document.getElementsByTagName('a');\
-	for(i=0;i<a.length;i++) {\
-		txt=a[i].innerHTML.replace(/^FE80::/,p);\
-		a[i].href='http://['+txt+']';\
-	}\
-}\
-</script>\n";
+static const char *SCRIPT = "<script src=\"script.js\"></script>\n";
 static const char *BOTTOM = "</body></html>\n";
 static char buf[512];
 static int blen;
@@ -67,7 +58,22 @@ add_ipaddr(const uip_ipaddr_t *addr)
   ADD("</a>");
 }
 /*---------------------------------------------------------------------------*/
-
+static
+PT_THREAD(generate_script(struct httpd_state *s))
+{
+  PSOCK_BEGIN(&s->sout);
+  SEND_STRING(&s->sout, "\
+  onload=function() {\
+	p=location.host.replace(/::.*/,'::').substr(1);\
+	a=document.getElementsByTagName('a');\
+	for(i=0;i<a.length;i++) {\
+		txt=a[i].innerHTML.replace(/^FE80::/,p);\
+		a[i].href='http://['+txt+']';\
+	}\
+  }");
+  PSOCK_END(&s->sout);
+}
+/*---------------------------------------------------------------------------*/
 static
 PT_THREAD(generate_page(struct httpd_state *s))
 {
@@ -81,9 +87,7 @@ PT_THREAD(generate_page(struct httpd_state *s))
   PSOCK_BEGIN(&s->sout);
 
   SEND_STRING(&s->sout, TOP);
-  blen = 0;
   SEND_STRING(&s->sout, SCRIPT);
-  blen = 0;
   ADD("Neighbors<pre>\n");
 
   for(nbr = nbr_table_head(ds6_neighbors);
@@ -169,8 +173,10 @@ PT_THREAD(generate_page(struct httpd_state *s))
 httpd_simple_script_t
 httpd_simple_get_script(const char *name)
 {
-
-  return generate_page;
+  if (!strcmp("script.js", name))
+    return generate_script;
+  else
+    return generate_page;
 }
 
 /*---------------------------------------------------------------------------*/
