@@ -23,6 +23,7 @@ AUTOSTART_PROCESSES(&node_process);
 /*---------------------------------------------------------------------------*/
 extern void command_parser_init();
 extern void process_command(char*);
+extern void http_server_init();
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(node_process, ev, data)
 {
@@ -30,6 +31,7 @@ PROCESS_THREAD(node_process, ev, data)
 
   command_parser_init();
   gpio_button_init();
+  http_server_init();
 
   while(1) {
     PROCESS_YIELD();
