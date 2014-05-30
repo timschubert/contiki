@@ -15,6 +15,8 @@
 /*---------------------------------------------------------------------------*/
 extern void gpio_button_simulate_action();
 extern void print_local_addresses();
+extern void console_echo_init();
+extern int  console_echo_toggle_echo();
 /*---------------------------------------------------------------------------*/
 int parse_ipv6_addr(char *text, uip_ipaddr_t *addr)
 {
@@ -66,12 +68,20 @@ void set_destination(char *dest)
   state.dest_addr_set = 1;
 }
 /*---------------------------------------------------------------------------*/
+static
+void toggle_console_echo()
+{
+  int echo = console_echo_toggle_echo();
+  printf("console_echo=%s\n", echo ? "on" : "off");
+}
+/*---------------------------------------------------------------------------*/
 static char *HELP_TEXT = "\n\
 available commands:\n\
 	p: print button state\n\
 	d: set destination address (argument: ipv6 address)\n\
 	s: send button state to destination\n\
 	l: print local ipv6 addresses\n\
+	e: toggle console echo\n\
 	!: simulate button action\n\
 \n\
 	h: this help\n\
@@ -88,6 +98,9 @@ void process_command(char *command)
 	break;
   case 'd':
 	set_destination(command+1);
+	break;
+  case 'e':
+	toggle_console_echo();
 	break;
   case 'l':
 	print_local_addresses();
@@ -107,17 +120,9 @@ void process_command(char *command)
   printf("> ");
 }
 /*---------------------------------------------------------------------------*/
-static
-int input_bytes_handler(unsigned char c)
-{
-  printf("%c", c);
-  return serial_line_input_byte(c); // default contiki behaviour: line-buffer
-}
-/*---------------------------------------------------------------------------*/
 void command_parser_init()
 {
-  uart1_set_input(input_bytes_handler);
-  serial_line_init();
+  console_echo_init();
   printf("Welcome to Big Red Button !\n type 'h' for help\n\n> ");
 }
 /*---------------------------------------------------------------------------*/
