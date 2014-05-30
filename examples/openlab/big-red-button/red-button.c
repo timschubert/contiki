@@ -18,7 +18,7 @@
 struct red_button_state state;
 
 /*---------------------------------------------------------------------------*/
-PROCESS(node_process, "node process");
+PROCESS(node_process, "Red Button");
 AUTOSTART_PROCESSES(&node_process);
 /*---------------------------------------------------------------------------*/
 extern void command_parser_init();
