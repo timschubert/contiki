@@ -18,7 +18,7 @@ extern void print_local_addresses();
 extern void console_echo_init();
 extern int  console_echo_toggle_echo();
 /*---------------------------------------------------------------------------*/
-int parse_ipv6_addr(char *text, uip_ipaddr_t *addr)
+int parse_ipv6_addr(const char *text, uip_ipaddr_t *addr)
 {
   unsigned int a[8];
   int ret = sscanf(text, "%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x",
