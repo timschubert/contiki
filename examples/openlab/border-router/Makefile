@@ -1,7 +1,3 @@
-ifndef TARGET
-TARGET=openlab-fox
-endif
-
 all: border-router
 
 CFLAGS+= -DPROJECT_CONF_H=\"project-conf.h\" -DWITH_UIP6
