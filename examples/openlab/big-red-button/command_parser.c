@@ -14,6 +14,7 @@
 
 /*---------------------------------------------------------------------------*/
 extern void gpio_button_simulate_action();
+extern void print_local_addresses();
 /*---------------------------------------------------------------------------*/
 int parse_ipv6_addr(char *text, uip_ipaddr_t *addr)
 {
@@ -24,7 +25,7 @@ int parse_ipv6_addr(char *text, uip_ipaddr_t *addr)
 	uip_ip6addr(addr, a[0],a[1],a[2], a[3],a[4],a[5],a[6],a[7]);
 	return 0;
   }
-  return ret;
+  return ret ? ret : -1;
 }
 /*---------------------------------------------------------------------------*/
 static
@@ -70,6 +71,7 @@ available commands:\n\
 	p: print button state\n\
 	d: set destination address (argument: ipv6 address)\n\
 	s: send button state to destination\n\
+	l: print local ipv6 addresses\n\
 	!: simulate button action\n\
 \n\
 	h: this help\n\
@@ -87,12 +89,17 @@ void process_command(char *command)
   case 'd':
 	set_destination(command+1);
 	break;
+  case 'l':
+	print_local_addresses();
+	break;
   case '!':
 	gpio_button_simulate_action();
 	break;
   case 'h':
   case '?':
 	printf("%s\n", HELP_TEXT);
+	break;
+  case '\0':
 	break;
   default:
 	printf("unknown command: %c\n", command[0]);
