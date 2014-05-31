@@ -191,7 +191,7 @@ static struct httpd_query_map queries_map[] = {
   { "network", generate_network_status },
   { "set_destination?", generate_set_destination },
   { "script.js", generate_script },
-  { 0 }
+  {}
 };
 /*---------------------------------------------------------------------------*/
 static void validator(const char* params, struct httpd_state *s)
