@@ -9,11 +9,11 @@
 
 #include "state.h"
 #include "web_service.h"
+#include "uip_util.h"
 #include "uiplib.h"
 
 /*---------------------------------------------------------------------------*/
 extern void gpio_button_simulate_action();
-extern void print_local_addresses();
 extern void console_echo_init();
 extern int  console_echo_toggle_echo();
 /*---------------------------------------------------------------------------*/
@@ -88,7 +88,7 @@ void process_command(char *command)
 	toggle_console_echo();
 	break;
   case 'l':
-	print_local_addresses();
+	uip_util_print_local_addresses();
 	break;
   case '!':
 	gpio_button_simulate_action();
