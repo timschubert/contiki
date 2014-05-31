@@ -20,7 +20,7 @@ PROCESS(psock_client_process, "protosocket client");
 void web_service_send_data(uip_ipaddr_t *dest_addr, const char *message)
 {
   glob.dest_addr = *dest_addr;
-  glob.port = 80;
+  glob.port = 8000;
   strncpy(glob.buffer, message, sizeof(glob.buffer));
   glob.buffer[sizeof(glob.buffer)-1] = 0;
   process_start(&psock_client_process, NULL);
