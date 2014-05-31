@@ -10,25 +10,13 @@
 
 #include "state.h"
 #include "web_service.h"
-
+#include "uiplib.h"
 
 /*---------------------------------------------------------------------------*/
 extern void gpio_button_simulate_action();
 extern void print_local_addresses();
 extern void console_echo_init();
 extern int  console_echo_toggle_echo();
-/*---------------------------------------------------------------------------*/
-int parse_ipv6_addr(const char *text, uip_ipaddr_t *addr)
-{
-  unsigned int a[8];
-  int ret = sscanf(text, "%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x",
-             &a[0],&a[1],&a[2],&a[3],&a[4],&a[5],&a[6],&a[7]);
-  if (ret == 8) {
-	uip_ip6addr(addr, a[0],a[1],a[2], a[3],a[4],a[5],a[6],a[7]);
-	return 0;
-  }
-  return ret ? ret : -1;
-}
 /*---------------------------------------------------------------------------*/
 static
 char* get_button_state_str()
@@ -56,9 +44,8 @@ void send_button_state()
 static
 void set_destination(char *dest)
 {
-  int ret = 0;
-  if (dest[0] != ' ' || (ret = parse_ipv6_addr(dest+1, &state.dest_addr))) {
-	printf("invalid address, specify all 8 blocks (%d read).\n", ret);
+  if (!uiplib_ipaddrconv(dest+1, &state.dest_addr)) {
+	printf("invalid address\n");
 	return;
   }
   printf("destination_address=");

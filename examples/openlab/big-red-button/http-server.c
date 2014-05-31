@@ -6,6 +6,7 @@
 #include "net/rpl/rpl.h"
 
 #include "net/netstack.h"
+#include "uiplib.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,8 +16,6 @@
 #include "httpd-simple.h"
 #include "state.h"
 
-/*---------------------------------------------------------------------------*/
-extern int parse_ipv6_addr(const char *text, uip_ipaddr_t *addr);
 /*---------------------------------------------------------------------------*/
 static const char *TOP = "<html><head><title>ContikiRPL</title></head><body>\n";
 static const char *SCRIPT = "<script src=\"script.js\"></script>\n";
@@ -197,7 +196,7 @@ static struct httpd_query_map queries_map[] = {
 static void validator(const char* params, struct httpd_state *s)
 {
   if (s->generator == generate_set_destination) {
-	if (parse_ipv6_addr(params, &state.dest_addr))
+	if (!uiplib_ipaddrconv(params, &state.dest_addr))
 		s->response_header = httpd_response_400;
   }
 }
