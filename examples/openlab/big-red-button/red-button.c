@@ -23,6 +23,7 @@ AUTOSTART_PROCESSES(&node_process);
 /*---------------------------------------------------------------------------*/
 extern void command_parser_init();
 extern void process_command(char*);
+extern void send_button_state();
 extern void http_server_init();
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(node_process, ev, data)
@@ -41,7 +42,8 @@ PROCESS_THREAD(node_process, ev, data)
     else
     if (ev == gpio_button_changed_event) {
       state.button_state = ! state.button_state;
-      printf("button: %s\n", state.button_state ? "on" : "off");
+      if (state.dest_addr_set)
+        send_button_state();
     }
   }
 

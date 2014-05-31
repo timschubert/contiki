@@ -44,7 +44,6 @@ void print_button_state()
   printf("%s\n", get_button_state_str());
 }
 /*---------------------------------------------------------------------------*/
-static
 void send_button_state()
 {
   if (!state.dest_addr_set) {
