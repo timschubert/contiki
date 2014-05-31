@@ -3,7 +3,6 @@
 #include "dev/uart1.h"
 #include "net/uip.h"
 #include <stdio.h>
-#include <string.h>
 
 #define DEBUG DEBUG_PRINT
 #include "net/uip-debug.h"

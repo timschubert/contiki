@@ -33,7 +33,7 @@ Setup the demo
 - start a basic server on port 80 your pc
   ``$ sudo nc -6 -l 80``
 - configure the big-red-button destination address to that of your PC
-  ``$ curl -v 'http://babe01/set_destination?baba:0:0:0:224:d7ff:fe56:6c64'``
+  ``$ curl -v 'http://babe01/set_destination?baba::224:d7ff:fe56:6c64'``
 - hit the big red button !
 - check the output of nc on your PC and see the message
 
