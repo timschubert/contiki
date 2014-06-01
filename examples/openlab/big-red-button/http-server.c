@@ -6,15 +6,13 @@
 #include "net/rpl/rpl.h"
 
 #include "net/netstack.h"
-#include "uiplib.h"
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 
 #include "httpd-simple.h"
 #include "state.h"
+#include "uip_util.h"
 
 /*---------------------------------------------------------------------------*/
 static const char *TOP = "<html><head><title>ContikiRPL</title></head><body>\n";
@@ -25,35 +23,9 @@ static int blen;
 #define ADD(...) do {                                                   \
     blen += snprintf(&buf[blen], sizeof(buf) - blen, __VA_ARGS__);      \
   } while(0)
-#define flush(x) { SEND_STRING(x, buf); blen = 0; }
-/*---------------------------------------------------------------------------*/
-static void
-add_ipaddr_(const uip_ipaddr_t *addr, int link)
-{
-  uint16_t a;
-  int i, f;
-  if (link) ADD("<a>");
-  for(i = 0, f = 0; i < sizeof(uip_ipaddr_t); i += 2) {
-    a = (addr->u8[i] << 8) + addr->u8[i + 1];
-    if(a == 0 && f >= 0) {
-      if(f++ == 0) ADD("::");
-    } else {
-      if(f > 0) {
-        f = -1;
-      } else if(i > 0) {
-        ADD(":");
-      }
-      ADD("%x", a);
-    }
-  }
-  if (link) ADD("</a>");
-}
-/*---------------------------------------------------------------------------*/
-static inline void
-add_ipaddr(const uip_ipaddr_t *addr)
-{
-  add_ipaddr_(addr, 1);
-}
+#define FLUSH(x) { SEND_STRING(x, buf); blen = 0; }
+#define ADD_ADDR(addr) { blen += uip_util_addr2text(addr, buf+blen); }
+#define ADD_LINK(addr) { ADD("<a>"); ADD_ADDR(addr); ADD("</a>"); }
 /*---------------------------------------------------------------------------*/
 static
 PT_THREAD(generate_script(struct httpd_state *s))
@@ -80,10 +52,10 @@ PT_THREAD(generate_home_page(struct httpd_state *s))
   ADD("<pre>\n");
   ADD("button_state=%s\n", state.button_state ? "on" : "off");
   ADD("dest_address=");
-  if (state.dest_addr_set) add_ipaddr_(&state.dest_addr, 0);
+  if (state.dest_addr_set) ADD_ADDR(&state.dest_addr);
   ADD("\n");
   ADD("</pre>\n");
-  flush(&s->sout);
+  FLUSH(&s->sout);
   SEND_STRING(&s->sout, BOTTOM);
 
   PSOCK_END(&s->sout);
@@ -100,10 +72,10 @@ PT_THREAD(generate_set_destination(struct httpd_state *s))
   else {
     state.dest_addr_set = 1;
     ADD("dest_address=");
-    add_ipaddr(&state.dest_addr);
+    ADD_ADDR(&state.dest_addr);
     ADD("\n");
   }
-  flush(&s->sout);
+  FLUSH(&s->sout);
 
   PSOCK_END(&s->sout);
 }
@@ -130,10 +102,10 @@ PT_THREAD(generate_network_status(struct httpd_state *s))
       nbr != NULL;
       nbr = nbr_table_next(ds6_neighbors, nbr)) {
 
-      add_ipaddr(&nbr->ipaddr);
+      int tlen = blen + 50;
+      ADD_LINK(&nbr->ipaddr);
+      while (blen < tlen) ADD(" ");
 
-      uint8_t j=blen+25;
-      while (blen < j) ADD(" ");
       switch (nbr->state) {
       case NBR_INCOMPLETE: ADD(" INCOMPLETE");break;
       case NBR_REACHABLE: ADD(" REACHABLE");break;
@@ -145,37 +117,35 @@ PT_THREAD(generate_network_status(struct httpd_state *s))
       if (uip_ipaddr_cmp(&nbr->ipaddr, preferred_parent_ip))
         ADD(" PREFERRED");
       ADD("\n");
-      if(blen > sizeof(buf) - 45) {
-        flush(&s->sout);
-      }
+      FLUSH(&s->sout);
   }
   ADD("</pre>\n");
-  flush(&s->sout);
+  FLUSH(&s->sout);
 }
 /*---------------------------------------------------------------------------*/
 {
   ADD("Default Route<pre>\n");
-  add_ipaddr(uip_ds6_defrt_choose());
+  ADD_LINK(uip_ds6_defrt_choose());
   ADD("\n</pre>\n");
 
   ADD("Routes<pre>\n");
-  flush(&s->sout);
+  FLUSH(&s->sout);
 
   static uip_ds6_route_t *r;
   for(r = uip_ds6_route_head(); r != NULL; r = uip_ds6_route_next(r)) {
 
-    add_ipaddr(&r->ipaddr);
+    ADD_LINK(&r->ipaddr);
     ADD("/%u (via ", r->length);
-    add_ipaddr(uip_ds6_route_nexthop(r));
+    ADD_LINK(uip_ds6_route_nexthop(r));
     if(1 || (r->state.lifetime < 600)) {
       ADD(") %us\n", (unsigned int)r->state.lifetime);
     } else {
       ADD(")\n");
     }
-    flush(&s->sout);
+    FLUSH(&s->sout);
   }
   ADD("</pre>\n");
-  flush(&s->sout);
+  FLUSH(&s->sout);
 }
 /*---------------------------------------------------------------------------*/
   //PT_WAIT_THREAD(&s->outputpt, generate_neighbors(s));
@@ -196,7 +166,7 @@ static struct httpd_query_map queries_map[] = {
 static void validator(const char* params, struct httpd_state *s)
 {
   if (s->generator == generate_set_destination) {
-	if (!uiplib_ipaddrconv(params, &state.dest_addr))
+	if (!uip_util_text2addr(params, &state.dest_addr, NULL))
 		s->response_header = httpd_response_400;
   }
 }
