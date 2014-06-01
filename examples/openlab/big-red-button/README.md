@@ -45,6 +45,10 @@ Firmware Internals
 - border-router: a basic BR setup, slip-bridge only
 - red-button: gpio-based button driver, http server, http client, cli
 
+Notes:
+- set button-ipv6 to some hardcoded value to ease demo setup
+- implement configuration of destination port
+
 
 Building the Big Red Button device
 ----------------------------------
