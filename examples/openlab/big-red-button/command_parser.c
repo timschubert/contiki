@@ -10,7 +10,6 @@
 #include "state.h"
 #include "web_service.h"
 #include "uip_util.h"
-#include "uiplib.h"
 
 /*---------------------------------------------------------------------------*/
 extern void gpio_button_simulate_action();
@@ -43,7 +42,7 @@ void send_button_state()
 static
 void set_destination(char *dest)
 {
-  if (!uiplib_ipaddrconv(dest+1, &state.dest_addr)) {
+  if (!uip_util_text2addr(dest+1, &state.dest_addr, NULL)) {
 	printf("invalid address\n");
 	return;
   }
