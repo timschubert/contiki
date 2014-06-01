@@ -32,7 +32,7 @@ Setup the demo
 - configure a running network interface with a public ipv6 address
   ``$ sudo ifconfig wlan0 add baba::b00b:beef/128``
 - configure the Big Red Button destination address to that of the host
-  ``$ curl -gsv 'http://babe::<button-ipv6>/set_destination?baba::b00b:beef'``
+  ``$ curl -gs 'http://[babe::<button-ipv6>]/set_destination?baba::b00b:beef'``
 - start a basic notification server on port 8000
   ``$ while true; do nc -6 -l 8000 | grep button_state; done``
 - now, hit the big red button !
