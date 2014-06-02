@@ -14,7 +14,7 @@
 
 #include "net/uip-debug.h"
 
-/* Use simple webserver with only one page for minimum footprint.
+/* Use simple webserver with only two pages for minimum footprint.
  * Multiple connections can result in interleaved tcp segments since
  * a single static buffer is used for all segments.
  */
@@ -27,16 +27,7 @@
 #define WEBSERVER_CONF_NEIGHBOR_STATUS 0
 
 static const char *TOP = "<html><head><title>ContikiRPL</title></head><body>\n";
-static const char *SCRIPT = "<script>\
-onload=function(){\
-	p=location.host.replace(/::.*/,'::').substr(1);\
-	a=document.getElementsByTagName('a');\
-	for(i=0;i<a.length;i++) {\
-		txt=a[i].innerHTML.replace(/^FE80::/,p);\
-		a[i].href='http://['+txt+']';\
-	}\
-}\
-</script>\n";
+static const char *SCRIPT = "<script src=\"script.js\"></script>\n";
 static const char *BOTTOM = "</body></html>\n";
 static char buf[512];
 static int blen;
@@ -67,7 +58,22 @@ add_ipaddr(const uip_ipaddr_t *addr)
   ADD("</a>");
 }
 /*---------------------------------------------------------------------------*/
-
+static
+PT_THREAD(generate_script(struct httpd_state *s))
+{
+  PSOCK_BEGIN(&s->sout);
+  SEND_STRING(&s->sout, "\
+  onload=function() {\
+	p=location.host.replace(/::.*/,'::').substr(1);\
+	a=document.getElementsByTagName('a');\
+	for(i=0;i<a.length;i++) {\
+		txt=a[i].innerHTML.replace(/^FE80::/,p);\
+		a[i].href='http://['+txt+']';\
+	}\
+  }");
+  PSOCK_END(&s->sout);
+}
+/*---------------------------------------------------------------------------*/
 static
 PT_THREAD(generate_page(struct httpd_state *s))
 {
@@ -77,22 +83,26 @@ PT_THREAD(generate_page(struct httpd_state *s))
   static clock_time_t numticks;
   numticks = clock_time();
 #endif
+  static uip_ipaddr_t *preferred_parent_ip;
+  { /* assume we have only one instance */
+  rpl_dag_t *dag = rpl_get_any_dag();
+  preferred_parent_ip = rpl_get_parent_ipaddr(dag->preferred_parent);
+  }
 
   PSOCK_BEGIN(&s->sout);
 
   SEND_STRING(&s->sout, TOP);
-  blen = 0;
   SEND_STRING(&s->sout, SCRIPT);
-  blen = 0;
   ADD("Neighbors<pre>\n");
 
   for(nbr = nbr_table_head(ds6_neighbors);
       nbr != NULL;
       nbr = nbr_table_next(ds6_neighbors, nbr)) {
 
+      add_ipaddr(&nbr->ipaddr);
+
 #if WEBSERVER_CONF_NEIGHBOR_STATUS
 {uint8_t j=blen+25;
-      add_ipaddr(&nbr->ipaddr);
       while (blen < j) ADD(" ");
       switch (nbr->state) {
       case NBR_INCOMPLETE: ADD(" INCOMPLETE");break;
@@ -102,28 +112,16 @@ PT_THREAD(generate_page(struct httpd_state *s))
       case NBR_PROBE: ADD(" NBR_PROBE");break;
       }
 }
-#else
-      add_ipaddr(&nbr->ipaddr);
 #endif
 
+      if (uip_ipaddr_cmp(&nbr->ipaddr, preferred_parent_ip))
+        ADD(" PREFERRED");
       ADD("\n");
       if(blen > sizeof(buf) - 45) {
         SEND_STRING(&s->sout, buf);
         blen = 0;
       }
   }
-  ADD("</pre>\nPreferred Parent<pre>\n");
-  SEND_STRING(&s->sout, buf);
-  blen = 0;
-{
-  rpl_dag_t *dag;
-  /* suppose we have only one instance */
-  dag = rpl_get_any_dag();
-  if(dag->preferred_parent != NULL) {
-    add_ipaddr(rpl_get_parent_ipaddr(dag->preferred_parent));
-  }
-  ADD("\n");
-}
 {
   ADD("</pre>\nDefault Route<pre>\n");
   SEND_STRING(&s->sout, buf);
@@ -169,8 +167,10 @@ PT_THREAD(generate_page(struct httpd_state *s))
 httpd_simple_script_t
 httpd_simple_get_script(const char *name)
 {
-
-  return generate_page;
+  if (!strcmp("script.js", name))
+    return generate_script;
+  else
+    return generate_page;
 }
 
 /*---------------------------------------------------------------------------*/
