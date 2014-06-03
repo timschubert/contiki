@@ -48,6 +48,7 @@ Firmware Internals
 Notes:
 - set button-ipv6 to some hardcoded value to ease demo setup
 - implement configuration of destination port
+- if using spare iotlab-m3 node as BR, use ``tunslip6 -B 500000``
 
 
 Building the Big Red Button device
