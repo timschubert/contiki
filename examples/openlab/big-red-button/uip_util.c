@@ -9,13 +9,17 @@
 /*---------------------------------------------------------------------------*/
 int uip_util_text2addr(const char *src, uip_ipaddr_t *dest, int *port)
 {
-	if (!uiplib_ipaddrconv(src, dest)) return 0;
-	if (!(src = rindex(src, ']'))) return 1;
-	if (*(++src) != ':') return 0;
-	if (!atoi(src)) return 0;
-	if (port == NULL) return 1;
-	*port = atoi(src);
+	int p = 0;
+	if (!uiplib_ipaddrconv(src, dest)) goto error;
+	if (!(src = rindex(src, ']')))     goto success;
+	if (*(++src) == '\0')              goto success;
+	if (*(src++) != ':')               goto error;
+	if (!(p = atoi(src)))              goto error;
+    success:
+	if (port) *port = p;
 	return 1;
+    error:
+	return 0;
 }
 /*---------------------------------------------------------------------------*/
 int uip_util_addr2text(uip_ipaddr_t *addr, char *buf)
