@@ -68,7 +68,7 @@ def processaddr(sourceaddr):
                       print stripedaddr+" is new, near "+sourceaddr
                       NodeList.append(stripedaddr)
                   graph.add_node(pydot.Node(ip2node(stripedsourceaddr)))
-                  #graph.add_edge(pydot.Edge(ip2node(stripedsourceaddr),ip2node(re.sub(":",".",stripedaddr)),color="grey"))
+                  graph.add_edge(pydot.Edge(ip2node(stripedsourceaddr),ip2node(re.sub(":",".",stripedaddr)),color="grey"))
           elif "::" in addr :
               pair=[]
               pair=re.split("\/128 \(via |\) lus",addr)
@@ -79,7 +79,7 @@ def processaddr(sourceaddr):
                   graph.add_edge(pydot.Edge(ip2node(stripedsourceaddr),ip2node(re.sub(":",".",pair[0])),color="blue"))
               else :
                   print "New route to "+ pair[0]+" via "+ pair[1]
-                  #graph.add_edge(pydot.Edge(ip2node(re.sub(":",".",pair[1])),ip2node(re.sub(":", ".",pair[0])),color="red"))
+                  graph.add_edge(pydot.Edge(ip2node(re.sub(":",".",pair[1])),ip2node(re.sub(":", ".",pair[0])),color="red"))
       displaygraph()
   except (urllib2.URLError,socket.timeout): 
     print "node "+sourceaddr+" not responding"
@@ -87,6 +87,8 @@ def processaddr(sourceaddr):
         Retries[sourceaddr]=Retries[sourceaddr]+1
         if Retries[sourceaddr]==6 :
             print "  and will not be tried again"
+            graph.add_node(pydot.Node(ip2node(stripedsourceaddr),style="filled", fillcolor="red"))
+            
     else : 
         Retries[sourceaddr]=1
 
@@ -97,7 +99,8 @@ def processaddr(sourceaddr):
 
 
 
-BRaddr="323:4501:3483:343"
+#BRaddr="323:4501:3483:343"
+BRaddr="323:4501:2879:343"
 
 NodeList=[]
 VisitedList=[]
