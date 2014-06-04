@@ -23,7 +23,7 @@
  *
  * \author
  *         Damien Hedde <damien.hedde.at.hikob.com>
- *         Olivier Fambon <olivier.fambor.at.inria.fr>
+ *         Olivier Fambon <olivier.fambon.at.inria.fr>
  *
  */
 

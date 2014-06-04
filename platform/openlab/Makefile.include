@@ -51,12 +51,14 @@ CFLAGS   += -ffunction-sections -fdata-sections -Wl,--gc-sections
 # CFLAGS   += -Wcast-align
 # Cast const to non const
 # CFLAGS   += -Wcast-qual
-# Declaration shadows global one
-CFLAGS   += -Wshadow
 
-# CFLAGS   += -Wno-unused-but-set-variable
-# CFLAGS   += -Wno-unused-variable
-# CFLAGS   += -Wno-char-subscripts
+# Silent warnings for the moment. Clean them on contiki later.
+CFLAGS   += -Wno-shadow
+CFLAGS   += -Wno-unused-but-set-variable
+CFLAGS   += -Wno-unused-variable
+CFLAGS   += -Wno-char-subscripts
+CFLAGS   += -Wno-implicit-function-declaration
+CFLAGS   += -Wno-maybe-uninitialized
 CFLAGS   += -fno-strict-aliasing
 
 
