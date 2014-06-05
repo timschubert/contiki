@@ -91,9 +91,9 @@ PT_THREAD(set_destination(struct httpd_state *s))
     ADD(s, "Incorrect IPV6 address.\n");
     goto end;
   }
-  ADD(s, "dest_address=");
+  ADD(s, "dest_address=[");
   ADD_ADDR(s, &state.dest_addr);
-  ADD(s, "\n");
+  ADD(s, "]:%d\n", state.dest_port);
 
   end:
   FLUSH(s);
