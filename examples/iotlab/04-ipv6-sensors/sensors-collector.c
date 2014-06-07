@@ -20,20 +20,18 @@ PROCESS_NAME(border_router_process);
 #include "state.h"
 struct state state;
 /*---------------------------------------------------------------------------*/
-#define f_as_2d(f) (int)floor(f), (int)round((f-floor(f))*100)
-/*---------------------------------------------------------------------------*/
 char*
 get_sensors_json()
 {
   static char buf[512];
   sprintf(buf, "{\n\
-    \"light\": %d.%02d,\n\
-    \"pressure\": %d.%02d,\n\
+    \"light\": %0.2f,\n\
+    \"pressure\": %0.2f,\n\
     \"accelero\": { \"x\": %d, \"y\": %d, \"z\": %d },\n\
     \"magneto\": { \"x\": %d, \"y\": %d, \"z\": %d },\n\
     \"gyro\": { \"x\": %d, \"y\": %d, \"z\": %d }\n}",
-    f_as_2d(sensor.light),
-    f_as_2d(sensor.pressure),
+    sensor.light,
+    sensor.pressure,
     sensor.acc.x, sensor.acc.y, sensor.acc.z,
     sensor.mag.x, sensor.mag.y, sensor.mag.z,
     sensor.gyr.x, sensor.gyr.y, sensor.gyr.z

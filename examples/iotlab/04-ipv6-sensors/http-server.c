@@ -70,7 +70,7 @@ PT_THREAD(network_status(struct httpd_state *s))
     ADD_ADDR(s, uip_ds6_route_nexthop(r));
     ADD(s, "</a>");
     if(1 || (r->state.lifetime < 600)) {
-      ADD(s, ") %us\n", (unsigned int)r->state.lifetime);
+      ADD(s, ") %lus\n", r->state.lifetime);
     } else {
       ADD(s, ")\n");
     }
