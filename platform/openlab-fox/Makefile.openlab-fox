@@ -88,10 +88,6 @@ OPENLAB_SRC += 					\
 	agile-fox/agilefox_periph.c		\
 	agile-fox/agilefox_button.c		\
 	\
-	printf/printf.c				\
-	printf/printf_float.c			\
-	printf/prints.c				\
-	\
 	rf2xx/rf2xx.c				\
 	\
 	lsm303dlhc/lsm303dlhc.c			\

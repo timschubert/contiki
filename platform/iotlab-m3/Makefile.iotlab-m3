@@ -105,10 +105,6 @@ OPENLAB_SRC += 					\
 	iotlab-m3/iotlab-m3_lib.c		\
 	iotlab-m3/iotlab-m3_periph.c		\
 	\
-	printf/printf.c				\
-	printf/printf_float.c			\
-	printf/prints.c				\
-	\
 	rf2xx/rf2xx.c				\
 	\
 	lsm303dlhc/lsm303dlhc.c			\

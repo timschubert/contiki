@@ -104,10 +104,6 @@ OPENLAB_SRC += 					\
 	iotlab-a8-m3/iotlab-a8-m3_lib.c		\
 	iotlab-a8-m3/iotlab-a8-m3_periph.c		\
 	\
-	printf/printf.c				\
-	printf/printf_float.c			\
-	printf/prints.c				\
-	\
 	rf2xx/rf2xx.c				\
 	phy_rf2xx/phy_rf2xx.c			\
 	\
