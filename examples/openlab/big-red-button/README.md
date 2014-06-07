@@ -33,14 +33,23 @@ Run the demo
 ------------
 
 - start tunslip6 on relevant port for the border-router to use
-  ``$ sudo ./tunslip6 babe::1/64 -s /dev/ttyUSB3 &> /dev/null &``
+```
+    $ sudo ./tunslip6 babe::1/64 -s /dev/ttyUSB1 &
+```
 - configure the loopback network interface with a public ipv6 address
-  ``$ sudo ifconfig lo add baba::b00b:beef/128``
+```
+    $ sudo ifconfig lo add b00b::2/128
+```
 - configure the Big Red Button destination address to that of the host
-  ``$ curl -gs 'http://[babe::<button-ipv6>]/set_destination?baba::b00b:beef'``
+```
+    $ curl -gs 'http://[babe::<button-ipv6>]/set_destination?b00b::2'
+```
 - start a basic notification server on port 8000
-  ``$ while true; do nc -6 -l 8000 | grep button_state; done``
+```
+    $ while true; do nc -6 -l 8000 | grep button_state; done
+```
 - now, hit the big red button !
+
 - check the output of notification server to see the message
 
 
