@@ -32,7 +32,21 @@ Networking, Border Router
 -------------------------
 
 Nodes are globally reachable via IPv6 through a RPL border router node, which
-must be bridged to the external network using tunslip6.
+transfers RPL network IPv6 packets comming from or going to the external
+network over it's serial link.  This is known as SLIP, for Serial Line IP.
+
+The RPL border router must be bridged to the external network using tunslip6
+on the host side: tunslip6 bridges IPv6 packets comming from the border router
+over the serial link to the external network, and backwards too.  The pair
+border-router + tunslip6 in effect implement a brouter - or bridge-router.
+
+Finally, for all nodes to eventually be reachable and reach out to the
+central collector web-service, radio connectivity must exist between nodes,
+at least in clusters, and in chains to the border router node.
+
+
+Nodes behaviour
+---------------
 
 When flashed with the firmware, nodes adopt one of two roles:
 
@@ -44,13 +58,6 @@ during 5 seconds by sending 5 prefix requests, one per second.  When tunslip6
 is actually running on the other end of the serial link, the prefix response
 triggers the firmware to build a new RPL dag and the node, from there on, acts
 as a border-router, in addition to being a standard sensor node.
-
-For all nodes to eventually be reachable, and for them to reach out to the
-central collector web-service to post their data, radio connectivity must
-exist between nodes, and in chains to the border router node.
-
-On the host side, tunslip6 bridges IPv6 packets comming from the border router
-over the serial link to the external network.
 
 
 Limitations
@@ -68,6 +75,6 @@ Build Configuration
 The firmware can be tuned at compile-time using parameters specified
 in file ``project-conf.h``.  The default configuration is set to the following:
 radio channel 22 (default is 11), tx power at 3dBm (default is 0dBm), and uIP
-buffer size at 512 (default is ).  The uIP buffer size needs to be set big enough
-to hold http get requests responses and http post requests contents.
+buffer size at 512 (default is ).  The uIP buffer size needs to be set big
+enough to hold http get requests responses and http post requests contents.
 
