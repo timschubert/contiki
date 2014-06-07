@@ -53,16 +53,23 @@ Run the demo
 - check the output of notification server to see the message
 
 
-Firmware Internals
-------------------
+Notes
+-----
 
-- border-router: a basic BR setup, slip-bridge only
-- red-button: gpio-based button driver, http server, http client, cli
+- red-button: switch off the fox inside when demo done,
+  back on again when starting anew, and refill battery at times
+- border-router: use the firmware in ../border-router,
+  if not, make sure uip stacks match, i.e. channel=22, buffer-size=1k
+- if using spare iotlab-m3 node as BR, add tunslip6 option ``-B 500000``
 
-Notes:
-- set button-ipv6 to some hardcoded value to ease demo setup
+
+Todo:
+-----
+
 - implement configuration of destination port
-- if using spare iotlab-m3 node as BR, use ``tunslip6 -B 500000``
+- implement battery-check using fox-button and led-flash code
+- implement persistent destination address in micro-sd
+- implement hardcoded button link-local ipv6 to ease demo setup
 
 
 Building the Big Red Button device
