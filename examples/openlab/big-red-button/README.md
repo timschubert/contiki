@@ -27,6 +27,11 @@ Setup the demo
 - unplug the ftdi-dongle, place Fox back in Big Red Button
 - plug the ftdi-dongle onto the border-router Fox
 - flash the border-router firmware
+
+
+Run the demo
+------------
+
 - start tunslip6 on relevant port for the border-router to use
   ``$ sudo ./tunslip6 babe::1/64 -s /dev/ttyUSB3 &> /dev/null &``
 - configure a running network interface with a public ipv6 address
