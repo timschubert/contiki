@@ -111,6 +111,7 @@ PROCESS_THREAD(border_router_process, ev, data)
 
   /* Request prefix until it has been received */
   while(!prefix_set) {
+    leds_on(LEDS_RED);
     leds_on(LEDS_GREEN);
     PRINTF("Prefix request.\n");
     etimer_set(&et, CLOCK_SECOND);
