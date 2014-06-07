@@ -34,8 +34,8 @@ Run the demo
 
 - start tunslip6 on relevant port for the border-router to use
   ``$ sudo ./tunslip6 babe::1/64 -s /dev/ttyUSB3 &> /dev/null &``
-- configure a running network interface with a public ipv6 address
-  ``$ sudo ifconfig wlan0 add baba::b00b:beef/128``
+- configure the loopback network interface with a public ipv6 address
+  ``$ sudo ifconfig lo add baba::b00b:beef/128``
 - configure the Big Red Button destination address to that of the host
   ``$ curl -gs 'http://[babe::<button-ipv6>]/set_destination?baba::b00b:beef'``
 - start a basic notification server on port 8000
