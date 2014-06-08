@@ -11,8 +11,12 @@ See ``iot-lab/qualif/get_ipv6.sh``
 Notes:
 ------
 
-We do a #include "net/uip-debug.h" preceeded by a #define DEBUG 1
-in order to get PRINT6ADDR, and then use ``uip_ds6_set_addr_iid()``
+We do
+```C
+#define DEBUG 1
+#include "net/uip-debug.h"
+```
+to get ``PRINT6ADDR``, and then use ``uip_ds6_set_addr_iid()``
 to convert ``uip_lladdr`` to a proper ``uip_ipaddt_t``.  This is
 not exactly straightforward, but this is what border-routers do.
 
