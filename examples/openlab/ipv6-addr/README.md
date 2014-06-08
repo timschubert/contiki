@@ -22,7 +22,7 @@ byte-order is as expected, and finally taking a carefull look at
 file ``net/uip-ds6.c`` to see what lies in ``uip_ds6_set_addr_iid()``.
 
 The resulting code would look like:
-```(C code)
+```C
   uint8_t *l = uip_lladdr.addr;
   printf("%x%02x:%x%02x:%x%02x:%x%02x\n",
          l[0]^2,l[1],l[2],l[3],l[4],l[5],l[6],l[7]);
