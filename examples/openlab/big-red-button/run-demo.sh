@@ -6,6 +6,8 @@ set -e
 br_device_tty=/dev/ttyUSB1
 button_lladdr=323:4500:3236:3777 # fox36
 
+baud_rate=115200
+#baud_rate=500000
 
 assert() { eval "$1" &> /dev/null || { echo $2; exit 1; } }
 STEP() { printf "%-50s" "$1"; }
@@ -24,7 +26,6 @@ STEP "checking sudo right"
 sudo echo ok.
 
 STEP "starting tunslip6 serial/ipv6 bridge"
-baud_rate=$(stty -F $br_device_tty | grep baud | cut -d' ' -f2)
 wpan_prefix=babe::
 (cd ../../../tools
  sudo ./tunslip6 $wpan_prefix"1/64" -s $br_device_tty -B $baud_rate
