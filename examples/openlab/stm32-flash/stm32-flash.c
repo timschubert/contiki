@@ -1,4 +1,5 @@
 #include "contiki.h"
+#include "drivers/stm32f1xx/flash.h"
 
 PROCESS(stm32_flash, "stm32-flash");
 AUTOSTART_PROCESSES(&stm32_flash);
@@ -16,11 +17,27 @@ static void lookup_str(int start_addr, int end_addr, char *str, char *section)
   }
 }
 /*---------------------------------------------------------------------------*/
+#define check_err(expr, on_error) \
+  { int e=expr; if (e) { printf("%s: error=%d\n", #expr, e); on_error; } }
+/*---------------------------------------------------------------------------*/
+static void increment_value_at(uint32_t page)
+{
+  uint16_t value;
+
+  value = *(uint16_t*)page;
+  printf("incrementing on-chip flash value: addr=%08x, value=%d, ",
+         page, value);
+  value += 1;
+  check_err(flash_erase_memory_page(page), return);
+  check_err(flash_write_memory_half_word(page, value), return);
+  value = *(uint16_t*)page;
+  printf("updated=%d\n", value);
+}
+/*---------------------------------------------------------------------------*/
 PROCESS_THREAD(stm32_flash, ev, data)
 {
   static char data_buf[] = "iotlab stm32 contiki firmware flash";
   static char bss_buf[8];
-  static char *flash_addr;
   
   PROCESS_BEGIN();
 
@@ -33,7 +50,10 @@ PROCESS_THREAD(stm32_flash, ev, data)
   lookup_str(0x1FFFF000, 0x1FFFF800, data_buf, "system");
   lookup_str(0x1FFFF800, 0x1FFFF810, data_buf, "options");
   printf("completed looking for data_buf in flash.\n");
-  
+
+  increment_value_at(0x0807E000); // last page (one page = 2KB)
+  increment_value_at(0x0007E000); // last page (aliased address)
+
   PROCESS_END();
 }
 /*---------------------------------------------------------------------------*/
