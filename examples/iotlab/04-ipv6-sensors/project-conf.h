@@ -11,7 +11,7 @@
  */
 
 /* ipv6 stack conf */
-#define UIP_CONF_BUFFER_SIZE 512
+#define UIP_CONF_BUFFER_SIZE 1024
 
 /* border-router w/ slip bridge */
 #define UIP_FALLBACK_INTERFACE slip_interface
