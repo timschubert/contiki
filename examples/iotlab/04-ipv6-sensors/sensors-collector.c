@@ -53,7 +53,7 @@ PROCESS_THREAD(sensors_collector, ev, data)
 
   http_server_init();
 
-  etimer_set(&timer, CLOCK_SECOND * 2);
+  etimer_set(&timer, CLOCK_SECOND * 5);
   sensors_poller_init(&timer);
 
   while(1) {
