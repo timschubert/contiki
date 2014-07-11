@@ -102,6 +102,17 @@ PT_THREAD(set_destination(struct httpd_state *s))
 }
 /*---------------------------------------------------------------------------*/
 static
+PT_THREAD(stop_sending(struct httpd_state *s))
+{
+  PSOCK_BEGIN(&s->sout);
+  ADD(s, "stopped sending to dest_address=[");
+  ADD_ADDR(s, &state.dest_addr);
+  ADD(s, "]:%d\n", state.dest_port);
+  FLUSH(s);
+  PSOCK_END(&s->sout);
+}
+/*---------------------------------------------------------------------------*/
+static
 PT_THREAD(generate_script(struct httpd_state *s))
 {
   PSOCK_BEGIN(&s->sout);
@@ -122,6 +133,7 @@ static struct httpd_query_map queries_map[] = {
   { "network", network_status },
   { "data-in", handle_data_in },
   { "set_destination?", set_destination },
+  { "stop_sending", stop_sending },
   { "script.js", generate_script },
   {}
 };
@@ -137,6 +149,10 @@ static void validator(const char* params, struct httpd_state *s)
       state.dest_addr_set = 1;
       if (!state.dest_port) state.dest_port = 80;
     }
+  }
+  else
+  if (s->generator == stop_sending) {
+      state.dest_addr_set = 0;
   }
 }
 /*---------------------------------------------------------------------------*/
