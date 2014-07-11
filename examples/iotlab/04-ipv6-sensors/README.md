@@ -68,6 +68,9 @@ may interfere when received concurrently.  The POSTed data is limited to 1K,
 due to limits on both the http server post-request buffer and on the local
 storage buffer used to hold the last received data.
 
+The http client uses the generator psock interface and places data directly
+in the global uip buffer, which is sized to 1K in project-conf.h.  No check
+is performed on bounds.
 
 Build Configuration
 -------------------
@@ -75,6 +78,6 @@ Build Configuration
 The firmware can be tuned at compile-time using parameters specified
 in file ``project-conf.h``.  The default configuration is set to the following:
 radio channel 22 (default is 11), tx power at 3dBm (default is 0dBm), and uIP
-buffer size at 512 (default is ).  The uIP buffer size needs to be set big
+buffer size at 1K (default is 128B).  The uIP buffer size needs to be set big
 enough to hold http get requests responses and http post requests contents.
 
