@@ -7,35 +7,46 @@ static struct {
   char buffer[1024];
 } glob;
 /*---------------------------------------------------------------------------*/
-#define log_trace(...)
-#define log_error(...) // printf(__VA_ARGS__)
+#define log_trace(...) // printf(__VA_ARGS__)
+#define log_error(...) printf(__VA_ARGS__)
 /*---------------------------------------------------------------------------*/
 PROCESS(http_client_process, "http client");
 /*---------------------------------------------------------------------------*/
-#define format_str(...) (sprintf(format_str_buf, __VA_ARGS__), format_str_buf)
-static char format_str_buf[256];
+#define ADD(len, ...) (len += sprintf((char*)uip_appdata+len, __VA_ARGS__))
+/*---------------------------------------------------------------------------*/
+static unsigned short generator(void *arg)
+{
+  struct http_request *req = (struct http_request *)arg;
+  unsigned short len = 0;
+
+  log_trace("generating data...");
+  ADD(len, "POST %s HTTP/1.0\r\n", req->path);
+  ADD(len, "User-Agent: Contiki/2.7 protosocket client\r\n");
+  ADD(len, "Content-Type: text/plain\r\n");
+  ADD(len, "Content-Length: ");
+  ADD(len, "%d\r\n", strlen(req->data));
+  ADD(len, "\r\n");
+  ADD(len, "%s", req->data);
+  ADD(len, "\r\n");
+
+  log_trace("done generating data:\n%s\n(len=%d)\n",
+            (char*)uip_appdata, strlen(uip_appdata));
+  return len;
+}
 /*---------------------------------------------------------------------------*/
 static int
 handle_connection(struct psock *p, struct http_request *req)
 {
   PSOCK_BEGIN(p);
 
-  PSOCK_SEND_STR(p, format_str("POST %s HTTP/1.0\r\n", req->path));
-  PSOCK_SEND_STR(p, "User-Agent: Contiki/2.7 protosocket client\r\n");
-  PSOCK_SEND_STR(p, "Content-Type: text/plain\r\n");
-  PSOCK_SEND_STR(p, "Content-Length: ");
-  PSOCK_SEND_STR(p, format_str("%d\r\n", strlen(req->data)));
-  PSOCK_SEND_STR(p, "\r\n");
-  PSOCK_SEND_STR(p, req->data);
-  PSOCK_SEND_STR(p, "\r\n");
+  PSOCK_GENERATOR_SEND(p, generator, req);
 #if 0
   while(1) {
     PSOCK_READTO(p, '\n');
     printf("Got: %s", glob.buffer);
   }
-#else
-  PSOCK_CLOSE(p);
 #endif
+  PSOCK_CLOSE(p);
   PSOCK_END(p);
 }
 /*---------------------------------------------------------------------------*/
@@ -44,6 +55,10 @@ PROCESS_THREAD(http_client_process, ev, data)
   static struct http_request *req;
 
   PROCESS_BEGIN();
+  if (req) {
+    log_error("concurrent http-client access\n");
+    goto end;
+  }
   req = (struct http_request *)data;
 
   tcp_connect(&req->addr, UIP_HTONS(req->port), NULL);
@@ -60,6 +75,8 @@ PROCESS_THREAD(http_client_process, ev, data)
     } while(!(uip_closed() || uip_aborted() || uip_timedout()));
     log_trace("Connection closed.\n");
   }
+  req = NULL;
+  end: do ; while (0);
   PROCESS_END();
 }
 /*---------------------------------------------------------------------------*/
