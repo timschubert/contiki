@@ -50,7 +50,7 @@ extern rf2xx_t RF2XX_DEVICE;
 #define RF2XX_CHANNEL   11
 #endif
 #ifndef RF2XX_TX_POWER
-#define RF2XX_TX_POWER  PHY_POWER_0dBm
+#define RF2XX_TX_POWER  PHY_POWER_3dBm
 #endif
 
 #define RF2XX_MAX_PAYLOAD 125
@@ -475,9 +475,96 @@ PROCESS_THREAD(rf2xx_process, ev, data)
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
 
+static int convert_power(phy_power_t power)
+{
+    // Convert power value to register value
+    switch (power)
+    {
+        case PHY_POWER_m30dBm:
+        case PHY_POWER_m29dBm:
+        case PHY_POWER_m28dBm:
+        case PHY_POWER_m27dBm:
+        case PHY_POWER_m26dBm:
+        case PHY_POWER_m25dBm:
+        case PHY_POWER_m24dBm:
+        case PHY_POWER_m23dBm:
+        case PHY_POWER_m22dBm:
+        case PHY_POWER_m21dBm:
+        case PHY_POWER_m20dBm:
+        case PHY_POWER_m19dBm:
+        case PHY_POWER_m18dBm:
+        case PHY_POWER_m17dBm:
+            power = RF2XX_PHY_TX_PWR_TX_PWR_VALUE__m17dBm;
+            break;
+        case PHY_POWER_m16dBm:
+        case PHY_POWER_m15dBm:
+        case PHY_POWER_m14dBm:
+        case PHY_POWER_m13dBm:
+        case PHY_POWER_m12dBm:
+            power = RF2XX_PHY_TX_PWR_TX_PWR_VALUE__m12dBm;
+            break;
+        case PHY_POWER_m11dBm:
+        case PHY_POWER_m10dBm:
+            power = RF2XX_PHY_TX_PWR_TX_PWR_VALUE__m9dBm;
+            break;
+        case PHY_POWER_m9dBm:
+        case PHY_POWER_m8dBm:
+        case PHY_POWER_m7dBm:
+            power = RF2XX_PHY_TX_PWR_TX_PWR_VALUE__m7dBm;
+            break;
+        case PHY_POWER_m6dBm:
+        case PHY_POWER_m5dBm:
+            power = RF2XX_PHY_TX_PWR_TX_PWR_VALUE__m5dBm;
+            break;
+        case PHY_POWER_m4dBm:
+            power = RF2XX_PHY_TX_PWR_TX_PWR_VALUE__m4dBm;
+            break;
+        case PHY_POWER_m3dBm:
+            power = RF2XX_PHY_TX_PWR_TX_PWR_VALUE__m3dBm;
+            break;
+        case PHY_POWER_m2dBm:
+            power = RF2XX_PHY_TX_PWR_TX_PWR_VALUE__m2dBm;
+            break;
+        case PHY_POWER_m1dBm:
+            power = RF2XX_PHY_TX_PWR_TX_PWR_VALUE__m1dBm;
+            break;
+        case PHY_POWER_0dBm:
+            power = RF2XX_PHY_TX_PWR_TX_PWR_VALUE__0dBm;
+            break;
+        case PHY_POWER_0_7dBm:
+            power = RF2XX_PHY_TX_PWR_TX_PWR_VALUE__0_7dBm;
+            break;
+        case PHY_POWER_1dBm:
+        case PHY_POWER_1_3dBm:
+            power = RF2XX_PHY_TX_PWR_TX_PWR_VALUE__1_3dBm;
+            break;
+        case PHY_POWER_1_8dBm:
+        case PHY_POWER_2dBm:
+            power = RF2XX_PHY_TX_PWR_TX_PWR_VALUE__1_8dBm;
+            break;
+        case PHY_POWER_2_3dBm:
+            power = RF2XX_PHY_TX_PWR_TX_PWR_VALUE__2_3dBm;
+            break;
+        case PHY_POWER_2_8dBm:
+            power = RF2XX_PHY_TX_PWR_TX_PWR_VALUE__2_8dBm;
+            break;
+        case PHY_POWER_3dBm:
+        case PHY_POWER_4dBm:
+        case PHY_POWER_5dBm:
+            power = RF2XX_PHY_TX_PWR_TX_PWR_VALUE__3dBm;
+            break;
+        default:
+            power = RF2XX_PHY_TX_PWR_TX_PWR_VALUE__0dBm;
+            break;
+    }
+    return power;
+}
+
 static void reset(void)
 {
     uint8_t reg;
+    int rf_tx_power = convert_power(RF2XX_TX_POWER);
+
     // Stop any Asynchronous access
     rf2xx_fifo_access_cancel(RF2XX_DEVICE);
 
@@ -504,7 +591,7 @@ static void reset(void)
     // Set max TX power
     reg = RF2XX_PHY_TX_PWR_DEFAULT__PA_BUF_LT
             | RF2XX_PHY_TX_PWR_DEFAULT__PA_LT
-            | RF2XX_PHY_TX_PWR_TX_PWR_VALUE__3dBm;
+            | rf_tx_power;
     rf2xx_reg_write(RF2XX_DEVICE, RF2XX_REG__PHY_TX_PWR, reg);
 
     // Disable CLKM signal
