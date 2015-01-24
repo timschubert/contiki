@@ -80,6 +80,10 @@
 #ifndef RDC_CONF_HARDWARE_ACK
 #define RDC_CONF_HARDWARE_ACK        0
 #endif
+/* Radio automatically send ack */
+#ifndef RDC_CONF_HARDWARE_SEND_ACK
+#define RDC_CONF_HARDWARE_SEND_ACK   1
+#endif
 /* MCU can sleep during radio off */
 #ifndef RDC_CONF_MCU_SLEEP
 #define RDC_CONF_MCU_SLEEP           0
@@ -237,6 +241,9 @@ static volatile uint8_t contikimac_keep_radio_on = 0;
 
 static volatile unsigned char we_are_sending = 0;
 static volatile unsigned char radio_is_on = 0;
+#if !RDC_CONF_HARDWARE_SEND_ACK
+static volatile unsigned char we_are_acking = 0;
+#endif
 
 #define DEBUG 0
 #if DEBUG
@@ -336,7 +343,11 @@ powercycle_turn_radio_off(void)
   uint8_t was_on = radio_is_on;
 #endif /* CONTIKIMAC_CONF_COMPOWER */
   
+#if RDC_CONF_HARDWARE_SEND_ACK
   if(we_are_sending == 0 && we_are_receiving_burst == 0) {
+#else
+  if(we_are_sending == 0 && we_are_receiving_burst == 0 && we_are_acking == 0) {
+#endif
     off();
 #if CONTIKIMAC_CONF_COMPOWER
     if(was_on && !radio_is_on) {
@@ -349,7 +360,11 @@ powercycle_turn_radio_off(void)
 static void
 powercycle_turn_radio_on(void)
 {
+#if RDC_CONF_HARDWARE_SEND_ACK
   if(we_are_sending == 0 && we_are_receiving_burst == 0) {
+#else
+  if(we_are_sending == 0 && we_are_receiving_burst == 0 && we_are_acking == 0) {
+#endif
     on();
   }
 }
@@ -786,6 +801,7 @@ send_packet(mac_callback_t mac_callback, void *mac_callback_ptr,
         while(RTIMER_CLOCK_LT(RTIMER_NOW(), wt + AFTER_ACK_DETECTECT_WAIT_TIME)) { }
 
         len = NETSTACK_RADIO.read(ackbuf, ACK_LEN);
+        //PRINTF("%u %u vs %u", len, ackbuf[ACK_LEN - 1], seqno);
         if(len == ACK_LEN && seqno == ackbuf[ACK_LEN - 1]) {
           got_strobe_ack = 1;
           encounter_time = txtime;
@@ -930,13 +946,11 @@ input_packet(void)
   }
 
   /*  printf("cycle_start 0x%02x 0x%02x\n", cycle_start, cycle_start % CYCLE_TIME);*/
-
 #ifdef NETSTACK_DECRYPT
   NETSTACK_DECRYPT();
 #endif /* NETSTACK_DECRYPT */
 
   if(packetbuf_totlen() > 0 && NETSTACK_FRAMER.parse() >= 0) {
-
 #if WITH_CONTIKIMAC_HEADER
     struct hdr *chdr;
     chdr = packetbuf_dataptr();
@@ -956,7 +970,17 @@ input_packet(void)
                      &rimeaddr_null))) {
       /* This is a regular packet that is destined to us or to the
          broadcast address. */
-
+#if !RDC_CONF_HARDWARE_SEND_ACK
+        if (rimeaddr_cmp(packetbuf_addr(PACKETBUF_ADDR_RECEIVER), &rimeaddr_node_addr))
+        {
+          we_are_acking = 1;
+          /* need to send an ack */
+          static uint8_t ackbuf[ACK_LEN] = { 0 };
+          ackbuf[ACK_LEN - 1] = packetbuf_attr(PACKETBUF_ATTR_PACKET_ID);
+          NETSTACK_RADIO.send(ackbuf, ACK_LEN);
+          we_are_acking = 0;
+        }
+#endif
       /* If FRAME_PENDING is set, we are receiving a packets in a burst */
       we_are_receiving_burst = packetbuf_attr(PACKETBUF_ATTR_PENDING);
       if(we_are_receiving_burst) {
