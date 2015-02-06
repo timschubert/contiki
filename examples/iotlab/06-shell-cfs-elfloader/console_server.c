@@ -4,10 +4,18 @@
 #include <string.h>
 
 #include "cfs/cfs-coffee.h"
+#include "loader/elfloader.h"
 
 
 PROCESS(console_server, "Console_server");
 AUTOSTART_PROCESSES(&console_server);
+
+#define PRINT_PROCESSES(proc) do { \
+  int i; \
+  for (i = 0; (proc)[i] != NULL; ++i) \
+    printf("exec: starting process '%s'\n", (proc)[i]->name); \
+} while (0)
+
 
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(console_server, ev, data)
@@ -18,7 +26,10 @@ PROCESS_THREAD(console_server, ev, data)
   static struct cfs_dirent dirent;
   static struct cfs_dir dir;
   static uint32_t fdFile;
+  static char *filename;
   PROCESS_BEGIN();
+
+  elfloader_init();
 
   printf("Console server started !\n");
   while(1) {
@@ -51,12 +62,42 @@ PROCESS_THREAD(console_server, ev, data)
         if (fdFile < 0) printf("error opening the file %s\n", tmp);
         while ((n = cfs_read(fdFile, buf, 60)) > 0) {
           for (jj = 0 ; jj < n ; jj++) printf("%c", (char)buf[jj]);
-          /*fflush(stdout);*/
         }
         printf("\n");
         cfs_close(fdFile);
         if (n!=0)
           printf("Some error reading the file\n");
+
+      }
+      else if (strstr(data, "loadelf") == data) {
+        filename = strstr(data, " ");
+        filename++;
+        // Cleanup previous loads
+        if (elfloader_autostart_processes != NULL)
+          autostart_exit(elfloader_autostart_processes);
+        elfloader_autostart_processes = NULL;
+
+        // Load elf file
+        fdFile = cfs_open(filename, CFS_READ | CFS_WRITE);
+        received = elfloader_load(fdFile);
+        cfs_close(fdFile);
+        printf("Result of loading %lu\n", received);
+
+        // As the file has been modified and can't be reloaded, remove it
+        printf("Remove dirty firmware '%s'\n", filename);
+        cfs_remove(filename);
+
+        // execute the program
+        if (ELFLOADER_OK == received) {
+          if (elfloader_autostart_processes) {
+            PRINT_PROCESSES(elfloader_autostart_processes);
+            autostart_start(elfloader_autostart_processes);
+          }
+        }
+        else if (ELFLOADER_SYMBOL_NOT_FOUND == received) {
+          printf("Symbol not found: '%s'\n", elfloader_unknown);
+        }
+
       }
       else if (strstr(data, "rm") == data) {
         int n, jj;
@@ -81,7 +122,6 @@ PROCESS_THREAD(console_server, ev, data)
         int n = strlen(data);
         int r = decode(data, n, buf);
         received += r;
-        //printf("%s", (char*)d);
         cfs_write(fdFile, buf, r);
       }
       else  {
