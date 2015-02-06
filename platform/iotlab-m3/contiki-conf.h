@@ -53,6 +53,10 @@
 /* CFS defines */
 #define XMEM_ERASE_UNIT_SIZE (64*1024L)
 
+/* Elf loader defines */
+#define ELFLOADER_CONF_DATAMEMORY_SIZE 0x800
+#define ELFLOADER_CONF_TEXTMEMORY_SIZE 0x800
+
 /* Openlab common definitions */
 
 #include "../openlab/contiki-openlab-conf.h"
