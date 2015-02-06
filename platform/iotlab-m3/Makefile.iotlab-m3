@@ -146,6 +146,8 @@ CONTIKI_SRC += 					\
 	leds.c 					\
 	sensors.c				\
 	slip.c					\
+	xmem.c					\
+	cfs-coffee.c
 
 ##
 ## Full source setup
