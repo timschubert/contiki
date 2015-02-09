@@ -41,8 +41,8 @@ Command commands[] = {
     .exec = &oneArgumentCommand
   },
   {
-    .name = "loadelf",
-    .exec = &oneArgumentCommand
+    .name = "format",
+    .exec = &noArgumentCommand
   },
   {
     .name = "exit",
