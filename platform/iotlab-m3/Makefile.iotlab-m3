@@ -180,7 +180,8 @@ endef
 CUSTOM_RULE_C_TO_OBJECTDIR_O = "defined"
 $(OBJECTDIR)/%.o: %.c
 	@$(OPENLAB_OBJECTDIR)
-	$(CC) $(CFLAGS) $(OPENLAB_INCLUDE_PATH) -MMD -c $< -o $@
+	$(TRACE_CC)
+	$(Q)$(CC) $(CFLAGS) $(OPENLAB_INCLUDE_PATH) -MMD -c $< -o $@
 	@$(FINALIZE_DEPENDENCY)
 
 ##
