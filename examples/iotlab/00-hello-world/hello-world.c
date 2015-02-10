@@ -19,7 +19,7 @@ PROCESS_THREAD(serial_echo, ev, data)
     printf("> ");
     PROCESS_YIELD();
     if (ev == serial_line_event_message) {
-      printf("%s\n", (char*)data);
+      printf("Echo cmd: '%s'\n", (char*)data);
     }
   }
   PROCESS_END();
