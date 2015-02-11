@@ -20,31 +20,10 @@
 
 OPENLAB = $(CONTIKI)/platform/openlab
 OPENLAB_REL = ../openlab
-ifneq ($(wildcard $(CONTIKI)/../openlab/),)
-	# Use directly openlab if available (from iot-lab repository)
-	OPENLAB_GIT = $(CONTIKI)/../openlab
-	OPENLAB_GIT_REL = ../../../openlab
 
-else
-	ifneq ($(wildcard $(OPENLAB)/git),)
-		# use symbolic link 'git -> openlab directory'
-		OPENLAB_GIT = $(OPENLAB)/git
-		OPENLAB_GIT_REL = $(OPENLAB_REL)/git
-	else
-
-$(warning $(OPENLAB)/git should be a symbolic link to the 'openlab' repository)
-$(warning     cd contiki/platform/openlab)
-$(warning  	  ln -s path_to_openlab_repository git)
-$(error Could not find openlab repository)
-	endif
-endif
-
-ifdef ELF_LOADER
-ELFLOADER = symtab.c elfloader.c elfloader-arch.c
-endif
 
 DEBUG            = 1
-CFLAGS          += -DIOTLAB_M3 -DKEEP_UART=1 -DENABLE_DEBUG=1
+CFLAGS          += -DIOTLAB_M3 -DKEEP_UART=1
 LINKERSCRIPT     = $(OPENLAB_GIT)/platform/scripts/stm32f103rey6.ld
 
 OOCD_TARGET      = stm32f1x
@@ -52,163 +31,46 @@ OOCD_ITF         = $(OPENLAB_GIT)/platform/scripts/iotlab-m3.cfg
 
 CLEAN += symbols.c symbols.h
 
+#
+# Global 'openlab' platforms sources
+#
 include $(OPENLAB)/Makefile.include
 
+
 ##
+## Target specific sources
+##
+
 ## Openlab sources
-##
+# Platform config
+OPENLAB_SRC += iotlab-m3/iotlab-m3.c
+OPENLAB_SRC += iotlab-m3/iotlab-m3_drivers.c
+OPENLAB_SRC += iotlab-m3/iotlab-m3_lib.c
+OPENLAB_SRC += iotlab-m3/iotlab-m3_periph.c
 
-OPENLAB_INCLUDE_PATH += \
-	-I$(OPENLAB)				\
-	-I$(OPENLAB_GIT)	                \
-	-I$(OPENLAB_GIT)/drivers/cortex-m3	\
-	-I$(OPENLAB_GIT)/drivers/stm32		\
-	-I$(OPENLAB_GIT)/drivers/stm32f1xx
+# Drivers
+OPENLAB_SRC += lsm303dlhc/lsm303dlhc.c
+OPENLAB_SRC += lps331ap/lps331ap.c
+OPENLAB_SRC += l3g4200d/l3g4200d.c
+OPENLAB_SRC += isl29020/isl29020.c
+OPENLAB_SRC += n25xxx/n25xxx.c
 
-OPENLAB_TARGET_DIRS  += . 			\
-	$(OPENLAB_REL)				\
-	$(OPENLAB_REL)/dev				\
-	$(OPENLAB_GIT_REL)/drivers		\
-	$(OPENLAB_GIT_REL)/lib	 		\
-	$(OPENLAB_GIT_REL)/net	 		\
-	$(OPENLAB_GIT_REL)/periph 		\
-	$(OPENLAB_GIT_REL)/platform
-
-OPENLAB_SRC += 					\
-	\
-	cortex-m3/boot.c			\
-	cortex-m3/nvic.c			\
-	\
-	stm32/dma.c				\
-	stm32/i2c.c				\
-	stm32/spi.c				\
-	stm32/timer.c				\
-	stm32/uart.c				\
-	stm32/unique_id.c			\
-	stm32/usb.c				\
-	stm32/watchdog.c			\
-	\
-	stm32f1xx/adc.c				\
-	stm32f1xx/afio.c			\
-	stm32f1xx/boot.c			\
-	stm32f1xx/exti.c			\
-	stm32f1xx/flash.c			\
-	stm32f1xx/gpio.c			\
-	stm32f1xx/rcc.c				\
-	stm32f1xx/rcc_clock.c			\
-	stm32f1xx/rcc_sysclk.c			\
-	stm32f1xx/rtc.c				\
-	stm32f1xx/sdio.c			\
-	stm32f1xx/stm32f1xx.c			\
-	\
-	random/random.c				\
-	softtimer/soft_timer_delay.c		\
-	\
-	iotlab-m3/iotlab-m3.c			\
-	iotlab-m3/iotlab-m3_drivers.c		\
-	iotlab-m3/iotlab-m3_lib.c		\
-	iotlab-m3/iotlab-m3_periph.c		\
-	\
-	rf2xx/rf2xx.c				\
-	\
-	lsm303dlhc/lsm303dlhc.c			\
-	lps331ap/lps331ap.c			\
-	l3g4200d/l3g4200d.c			\
-	isl29020/isl29020.c			\
-	n25xxx/n25xxx.c
-
-##
-## Wrappers from Openlab to Contiki API
-##
-
-OPENLAB_CONTIKI_WRAPPERS +=			\
-	clock-systick.c				\
-	watchdog.c				\
-	radio-rf2xx.c				\
-	uart1.c					\
-	slip-arch.c				\
-	\
-	openlab-port.c		\
-	rtimer-arch.c			\
-	leds-arch.c				\
-	\
-	light-sensor.c     \
-	acc-mag-sensor.c   \
-	pressure-sensor.c  \
-	gyr-sensor.c       \
-	fake-button-sensor.c
-
-ifndef CONTIKI_TARGET_MAIN
-CONTIKI_TARGET_MAIN += openlab-main.c
+## Contiki sources
+# Wrappers from Openlab to Contiki API
+OPENLAB_CONTIKI_WRAPPERS += acc-mag-sensor.c
+OPENLAB_CONTIKI_WRAPPERS += fake-button-sensor.c
+OPENLAB_CONTIKI_WRAPPERS += gyr-sensor.c
+OPENLAB_CONTIKI_WRAPPERS += light-sensor.c
+OPENLAB_CONTIKI_WRAPPERS += pressure-sensor.c
+ifdef ELF_LOADER
+OPENLAB_CONTIKI_WRAPPERS += elfloader-arch.c
 endif
 
-##
-## Contiki apps and drivers
-##
-
-CONTIKI_SRC += 					\
-	leds.c 					\
-	sensors.c				\
-	slip.c					\
-	xmem.c					\
-	cfs-coffee.c
-
-##
-## Full source setup
-##
-
-CONTIKI_TARGET_DIRS += $(OPENLAB_TARGET_DIRS)
-
-CONTIKI_TARGET_SOURCEFILES +=  			\
-	$(OPENLAB_SRC)		 		\
-	$(OPENLAB_CONTIKI_WRAPPERS)		\
-	$(ELFLOADER)				\
-	$(CONTIKI_SRC)                          \
-	$(CONTIKI_TARGET_MAIN)
-
-CONTIKI_SOURCEFILES += $(CONTIKI_TARGET_SOURCEFILES)
-
-##
-## We need to redefine the default compilation target so
-## that the build process is not confused
-##
-
-OPENLAB_PLATFORM_SUBDIR=${dir $(OPENLAB_SRC)}
-
-define OPENLAB_OBJECTDIR
-for i in $(OPENLAB_PLATFORM_SUBDIR) ;   \
-do					\
-	mkdir -p $(OBJECTDIR)/$$i ; 	\
-done
-endef
-
-ifdef CORE
-.PHONY: symbols.c symbols.h
-symbols.c:
-	$(NM) $(CORE) | awk -f $(CONTIKI)/tools/mknmlist > symbols.c
-else
-symbols.c symbols.h:
-	cp ${CONTIKI}/tools/empty-symbols.c symbols.c
-	cp ${CONTIKI}/tools/empty-symbols.h symbols.h
+# Contiki apps and drivers
+CONTIKI_SRC += xmem.c
+CONTIKI_SRC += cfs-coffee.c
+ifdef ELF_LOADER
+CONTIKI_SRC += symtab.c elfloader.c
 endif
 
-CUSTOM_RULE_C_TO_OBJECTDIR_O = "defined"
-$(OBJECTDIR)/%.o: %.c
-	@$(OPENLAB_OBJECTDIR)
-	$(TRACE_CC)
-	$(Q)$(CC) $(CFLAGS) $(OPENLAB_INCLUDE_PATH) -MMD -c $< -o $@
-	@$(FINALIZE_DEPENDENCY)
-
-
-CUSTOM_RULE_C_TO_CE = "defined"
-%.ce: %.c
-	@# Requires '-DAUTOSTART_ENABLE' to be loaded
-	$(CC) $(CFLAGS) $(OPENLAB_INCLUDE_PATH) -DAUTOSTART_ENABLE -c $< -o $*.o
-	$(GCCPREFIX)-ld -r -T $(OPENLAB)/merge-segments.ld $*.o -o $@
-	$(STRIP) --strip-unneeded -g -x $@
-
-##
-##
-##
-
-
+include $(OPENLAB)/Makefile.include_tail

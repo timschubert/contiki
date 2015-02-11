@@ -21,7 +21,7 @@
  * \file
  *         rtimer-arch.c for OpenLab platforms
  * \author
- *         Clement Burin Des Roziers <clement.burin-des-roziers.at.hikob.com> 
+ *         Clement Burin Des Roziers <clement.burin-des-roziers.at.hikob.com>
  *         Antoine Fraboulet <antoine.fraboulet.at.hikob.com>
  */
 
@@ -35,10 +35,10 @@
 #include "sys/energest.h"
 #include "sys/rtimer.h"
 #include "rtimer-arch.h"
- 
+
 /*-----------------------------------------------------------------------------------*/
 
-void rtimer_arch_init(void) 
+void rtimer_arch_init(void)
 {
     log_debug("rtimer_arch_init() called");
 }
@@ -47,14 +47,14 @@ void rtimer_arch_init(void)
 
 rtimer_clock_t rtimer_arch_now(void)
 {
-    timer_time( RTIMER_TIMER );
+    return timer_time( RTIMER_TIMER );
 }
- 
+
 /*-----------------------------------------------------------------------------------*/
 
-void rtimer_cb( handler_arg_t arg, uint16_t value ) 
+void rtimer_cb( handler_arg_t arg, uint16_t value )
 {
-    (void) value; 
+    (void) value;
 
     ENERGEST_ON(ENERGEST_TYPE_IRQ);
     timer_set_channel_compare( RTIMER_TIMER, RTIMER_CHANNEL, 0, NULL, NULL );

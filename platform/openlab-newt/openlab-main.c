@@ -45,6 +45,11 @@
 #endif /*RIMEADDR_SIZE == 8*/
 
 /*---------------------------------------------------------------------------*/
+void uip_log(char *msg)
+{
+    log_printf("%s\n", msg);
+}
+/*---------------------------------------------------------------------------*/
 void set_rime_addr()
 {
     if (rimeaddr_node_addr.u8[0] != 0xBA)
@@ -135,16 +140,22 @@ int main()
 #endif /* UIP_CONF_IPV6 */
 
     /*
-     * Serial communication
-     *
+     * init serial line
      */
-
-#if SLIP_ARCH_CONF_ENABLE
-    // enable slip on CDC_ACM
-    //slip_arch_init(0);
-#else
     serial_line_init();
     uart_set_rx_handler(uart_print, char_rx, NULL);
+
+    /*
+     * eventually init slip device
+     * wich may override serial line
+     */
+#if SLIP_ARCH_CONF_ENABLE
+#ifndef UIP_CONF_LLH_LEN
+#error "LLH_LEN is not defined"
+#elif UIP_CONF_LLH_LEN != 0
+#error "LLH_LEN must be 0 to use slip interface"
+#endif
+    slip_arch_init(SLIP_ARCH_CONF_BAUDRATE);
 #endif
     
     /*

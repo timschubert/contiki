@@ -19,12 +19,11 @@
 #
 
 OPENLAB = $(CONTIKI)/platform/openlab
-OPENLAB_GIT = $(OPENLAB)/git
+OPENLAB_REL = ../openlab
+
 
 DEBUG            = 1
-CFLAGS          += -DDANGEROUS_NEWT -DKEEP_UART=1 -DENABLE_DEBUG=1 -DRELEASE=0
-PLATFORM_TYPE    = 0x08
-PLATFORM_VERSION = 0x01
+CFLAGS          += -DDANGEROUS_NEWT -DKEEP_UART=1 -DRELEASE=0
 LINKERSCRIPT     = $(OPENLAB_GIT)/platform/scripts/stm32f103rey6.ld
 
 OOCD_TARGET      = stm32f1x
@@ -32,132 +31,29 @@ OOCD_ITF         = $(OPENLAB_GIT)/platform/scripts/dangerousnewt.cfg
 
 include $(OPENLAB)/Makefile.include
 
-## 
 ## Openlab sources
-##
+# Platform config
+OPENLAB_SRC += dangerous-newt/dnewt.c
+OPENLAB_SRC += dangerous-newt/dnewt_drivers.c
+OPENLAB_SRC += dangerous-newt/dnewt_lib.c
+OPENLAB_SRC += dangerous-newt/dnewt_periph.c
 
-OPENLAB_INCLUDE_PATH += \
-	-I$(OPENLAB) 	                	\
-	-I$(OPENLAB_GIT)                	\
-	-I$(OPENLAB_GIT)/drivers/cortex-m3	\
-	-I$(OPENLAB_GIT)/drivers/stm32		\
-	-I$(OPENLAB_GIT)/drivers/stm32f1xx
+OPENLAB_SRC += printf/printf.c
+OPENLAB_SRC += printf/printf_float.c
+OPENLAB_SRC += printf/prints.c
 
-OPENLAB_TARGET_DIRS  += . 			\
-	$(OPENLAB)				\
-	$(OPENLAB_GIT)/drivers			\
-	$(OPENLAB_GIT)/lib 			\
-	$(OPENLAB_GIT)/net 			\
-	$(OPENLAB_GIT)/periph 			\
-	$(OPENLAB_GIT)/platform
+# Drivers
+OPENLAB_SRC += lsm303dlhc/lsm303dlhc.c
+OPENLAB_SRC += pca9685/pca9685.c
+OPENLAB_SRC += adg759/adg759.c
+OPENLAB_SRC += pga308/pga308.c
 
-OPENLAB_SRC += 					\
-	\
-	cortex-m3/boot.c			\
-	cortex-m3/nvic.c			\
-	\
-	stm32/dma.c				\
-	stm32/i2c.c				\
-	stm32/spi.c				\
-	stm32/timer.c				\
-	stm32/uart.c				\
-	stm32/unique_id.c			\
-	stm32/usb.c				\
-	stm32/watchdog.c			\
-	\
-	stm32f1xx/adc.c				\
-	stm32f1xx/afio.c			\
-	stm32f1xx/boot.c			\
-	stm32f1xx/exti.c			\
-	stm32f1xx/flash.c			\
-	stm32f1xx/gpio.c			\
-	stm32f1xx/rcc.c				\
-	stm32f1xx/rcc_clock.c			\
-	stm32f1xx/rcc_sysclk.c			\
-	stm32f1xx/rtc.c				\
-	stm32f1xx/sdio.c			\
-	stm32f1xx/stm32f1xx.c			\
-	\
-	random/random.c				\
-	softtimer/soft_timer_delay.c		\
-	\
-	dangerous-newt/dnewt.c			\
-	dangerous-newt/dnewt_drivers.c		\
-	dangerous-newt/dnewt_lib.c		\
-	dangerous-newt/dnewt_periph.c		\
-	dangerous-newt/dnewt_net.c		\
-	\
-	printf/printf.c				\
-	printf/printf_float.c			\
-	printf/prints.c				\
-	\
-	rf2xx/rf2xx.c				\
-	phy_rf2xx/phy_rf2xx.c			\
-	lsm303dlhc/lsm303dlhc.c			\
-	pca9685/pca9685.c			\
-	adg759/adg759.c				\
-	pga308/pga308.c				\
-
-##
-## Wrappers from Openlab to Contiki API
-##
-
-OPENLAB_CONTIKI_WRAPPERS +=			\
-	clock-systick.c				\
-	watchdog.c				\
-	radio-rf2xx.c				\
-	\
-	openlab-port.c				\
-	rtimer-arch.c				\
-	leds-arch.c				\
-
-ifndef CONTIKI_TARGET_MAIN
-CONTIKI_TARGET_MAIN += openlab-main.c
-endif
-
-##
-## Contiki apps and drivers 
-##
-
-CONTIKI_SRC += 					\
-	leds.c 					\
-
-##
-## Full source setup
-##
-
-CONTIKI_TARGET_DIRS += $(OPENLAB_TARGET_DIRS)
-
-CONTIKI_TARGET_SOURCEFILES +=  			\
-	$(OPENLAB_SRC)		 		\
-	$(OPENLAB_CONTIKI_WRAPPERS)		\
-	$(CONTIKI_SRC)                          \
-	$(CONTIKI_TARGET_MAIN) 
-
-CONTIKI_SOURCEFILES += $(CONTIKI_TARGET_SOURCEFILES) 
-
-##
-## We need to redefine the default compilation target so
-## that the build process is not confused 
-##
-
-OPENLAB_PLATFORM_SUBDIR=${dir $(OPENLAB_SRC)}
-
-define OPENLAB_OBJECTDIR
-for i in $(OPENLAB_PLATFORM_SUBDIR) ;   \
-do					\
-	mkdir -p $(OBJECTDIR)/$$i ; 	\
-done
-endef
-
-CUSTOM_RULE_C_TO_OBJECTDIR_O = "defined"
-$(OBJECTDIR)/%.o: %.c
-	@$(OPENLAB_OBJECTDIR)
-	$(CC) $(CFLAGS) $(OPENLAB_INCLUDE_PATH) -MMD -c $< -o $@
-	@$(FINALIZE_DEPENDENCY)
-
-##
-##
-##
+## Contiki Sources
+# Wrappers from Openlab to Contiki API
+# OPENLAB_CONTIKI_WRAPPERS +=
 
 
+# Contiki apps and drivers
+# CONTIKI_SRC +=
+
+include $(OPENLAB)/Makefile.include_tail

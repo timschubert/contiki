@@ -23,30 +23,36 @@
  *
  * \author
  *         Antoine Fraboulet <antoine.fraboulet.at.hikob.com>
- *         
+ *
  */
 
 #include <stdint.h>
 
-#include "debug.h"
+#include "dangerous-newt/dangerousnewt.h"
 #include "softtimer/soft_timer_.h"
+#include "event.h"
 
-#include "contiki.h"
-
+#include "debug.h"
 
 /*-----------------------------------------------------------------------------------*/
 /*
  * Function wrappers for Contiki
  *
  */
-int 
-puts(const char *str)
+
+void xputc(char c)
+{
+    uart_transfer(uart_print, (const uint8_t *) &c, 1);
+}
+
+int
+puts(char *str)
 {
     printf((char*)str);
     return 0;
 }
 
-void 
+void
 abort(void)
 {
     log_error("abort() called");
@@ -61,9 +67,10 @@ void event_debug() { }
 void event_init() { }
 /*-----------------------------------------------------------------------------------*/
 /*
- * Empty wrappers for advanced options of Openlab soft_timer library 
+ * Empty wrappers for advanced options of Openlab soft_timer library
  */
 void soft_timer_debug() { }
+
 void soft_timer_update(handler_arg_t arg, uint16_t count)
 {
     // Increment the update counter
@@ -72,10 +79,11 @@ void soft_timer_update(handler_arg_t arg, uint16_t count)
 
 /*-----------------------------------------------------------------------------------*/
 /*
- *
+ * Missing platform functions
  */
 void platform_prevent_low_power() { }
 void platform_release_low_power() { }
+void platform_net_setup(void) { }
 
 platform_reset_cause_t platform_reset_cause;
 

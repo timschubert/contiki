@@ -19,11 +19,11 @@
 
 /**
  * \file
- *         Configuration for HiKoB OpenLab Fox 
+ *         Configuration for HiKoB OpenLab Fox
  *
  * \author
  *         Antoine Fraboulet <antoine.fraboulet.at.hikob.com>
- *         
+ *
  */
 
 #ifndef __CONTIKI_CONF_H__
