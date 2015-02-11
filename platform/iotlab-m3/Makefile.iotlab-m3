@@ -39,7 +39,9 @@ $(error Could not find openlab repository)
 	endif
 endif
 
-
+ifdef ELF_LOADER
+ELFLOADER = symtab.c elfloader.c elfloader-arch.c
+endif
 
 DEBUG            = 1
 CFLAGS          += -DIOTLAB_M3 -DKEEP_UART=1 -DENABLE_DEBUG=1
@@ -47,6 +49,8 @@ LINKERSCRIPT     = $(OPENLAB_GIT)/platform/scripts/stm32f103rey6.ld
 
 OOCD_TARGET      = stm32f1x
 OOCD_ITF         = $(OPENLAB_GIT)/platform/scripts/iotlab-m3.cfg
+
+CLEAN += symbols.c symbols.h
 
 include $(OPENLAB)/Makefile.include
 
@@ -158,6 +162,7 @@ CONTIKI_TARGET_DIRS += $(OPENLAB_TARGET_DIRS)
 CONTIKI_TARGET_SOURCEFILES +=  			\
 	$(OPENLAB_SRC)		 		\
 	$(OPENLAB_CONTIKI_WRAPPERS)		\
+	$(ELFLOADER)				\
 	$(CONTIKI_SRC)                          \
 	$(CONTIKI_TARGET_MAIN)
 
@@ -177,12 +182,30 @@ do					\
 done
 endef
 
+ifdef CORE
+.PHONY: symbols.c symbols.h
+symbols.c:
+	$(NM) $(CORE) | awk -f $(CONTIKI)/tools/mknmlist > symbols.c
+else
+symbols.c symbols.h:
+	cp ${CONTIKI}/tools/empty-symbols.c symbols.c
+	cp ${CONTIKI}/tools/empty-symbols.h symbols.h
+endif
+
 CUSTOM_RULE_C_TO_OBJECTDIR_O = "defined"
 $(OBJECTDIR)/%.o: %.c
 	@$(OPENLAB_OBJECTDIR)
 	$(TRACE_CC)
 	$(Q)$(CC) $(CFLAGS) $(OPENLAB_INCLUDE_PATH) -MMD -c $< -o $@
 	@$(FINALIZE_DEPENDENCY)
+
+
+CUSTOM_RULE_C_TO_CE = "defined"
+%.ce: %.c
+	@# Requires '-DAUTOSTART_ENABLE' to be loaded
+	$(CC) $(CFLAGS) $(OPENLAB_INCLUDE_PATH) -DAUTOSTART_ENABLE -c $< -o $*.o
+	$(GCCPREFIX)-ld -r -T $(OPENLAB)/merge-segments.ld $*.o -o $@
+	$(STRIP) --strip-unneeded -g -x $@
 
 ##
 ##

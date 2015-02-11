@@ -4,6 +4,7 @@ CONTIKI_SOURCEFILES += console_server.c myencode.c
 ifndef TARGET
 TARGET=iotlab-m3
 endif
+ELF_LOADER=1
 
 CONSOLE_CLIENT_SRCS = client.c myencode.c
 
@@ -13,6 +14,10 @@ all: $(CONTIKI_PROJECT) client
 
 client: $(CONSOLE_CLIENT_SRCS)
 	gcc -std=gnu99 $(CONSOLE_CLIENT_SRCS) -o client -lpthread
+
+distclean: clean-client
+clean-client:
+	rm -f client
 
 CONTIKI = ../../..
 include $(CONTIKI)/Makefile.include

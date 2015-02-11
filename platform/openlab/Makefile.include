@@ -38,7 +38,10 @@ CFLAGS   += -DGCC_ARMCM3 -DENABLE_DEBUG=${DEBUG}
 CFLAGS   += -gdwarf-2 -fno-builtin -fsingle-precision-constant
 CFLAGS   += -mcpu=cortex-m3 -mthumb -mthumb-interwork -mfix-cortex-m3-ldrd -msoft-float
 CFLAGS   += -mno-unaligned-access
+
+ifndef ELF_LOADER
 CFLAGS   += -ffunction-sections -fdata-sections -Wl,--gc-sections
+endif
 
 
 #
@@ -71,7 +74,9 @@ LDFLAGS  += -nostartfiles
 LDFLAGS  += -nodefaultlibs
 LDFLAGS  += -T${LINKERSCRIPT}
 LDFLAGS  += -mcpu=cortex-m3 -mthumb -mthumb-interwork
+ifndef ELF_LOADER
 LDFLAGS  += -ffunction-sections -fdata-sections -Wl,--gc-sections
+endif
 
 ifeq ($(UIP_CONF_IPV6),1)
   CFLAGS += -DWITH_UIP6=1
@@ -87,6 +92,8 @@ TELNET_PORT = 4${OOCD_PORT}
 TCL_PORT    = 5${OOCD_PORT}
 
 OOCD      = openocd
+
+contiki-$(TARGET).a: $(OBJECTDIR)/symbols.o
 
 %.od: %.$(TARGET)
 	$(OBJDUMP) -S $< > $@

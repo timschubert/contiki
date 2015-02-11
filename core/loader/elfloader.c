@@ -179,7 +179,7 @@ find_local_symbol(int fd, const char *symbol,
 {
   struct elf32_sym s;
   unsigned int a;
-  char name[30];
+  char name[60];
   struct relevant_section *sect;
   
   for(a = symtab; a < symtab + symtabsize; a += sizeof(s)) {
@@ -221,7 +221,7 @@ relocate_section(int fd,
   int rel_size = 0;
   struct elf32_sym s;
   unsigned int a;
-  char name[30];
+  char name[60];
   char *addr;
   struct relevant_section *sect;
 

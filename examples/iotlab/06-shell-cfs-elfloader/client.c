@@ -33,6 +33,10 @@ Command commands[] = {
     .exec = &noArgumentCommand
   },
   {
+    .name = "loadelf",
+    .exec = &oneArgumentCommand
+  },
+  {
     .name = "cat",
     .exec = &oneArgumentCommand
   },
