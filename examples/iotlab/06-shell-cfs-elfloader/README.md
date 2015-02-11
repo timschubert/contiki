@@ -1,20 +1,14 @@
 CoffeFileSystem shell example with elfloader
 ============================================
 
-Running from your computer
---------------------------
-
-    # in one terminal
-    ssh -N -L 20000:m3-2:20000 site.iot-lab.info
-
-
-    # in another terminal
-    ./client
-
 Usage
 -----
 
     ./client
+    Usage: ./client <hostname> <port>
+
+
+    ./client m3-1 20000
     >
     >
     > help
@@ -71,7 +65,7 @@ Program 00-hello-world has been tested and is working.
 
 ### Load the progmam ###
 
-    ./client
+    ./client m3-1 20000
 
     # flash the firmware
 
@@ -95,7 +89,7 @@ Program 00-hello-world has been tested and is working.
 
 Now exit `client` a run a simple `netcat` to be allowed to pass all commands:
 
-    nc localhost 20000
+    nc m3-1 20000
     test getting echo from hello world
     Hello World !
     Echo cmd: 'test getting echo from hello world'
@@ -121,9 +115,3 @@ Warning
 
 Formatting the flash takes 3 minutes, nothing can be done in this time
 
-TODO
-----
-
- * Add example on how to load an elf file
-
- * client may be adapted to be run from the server by parsing a hostname

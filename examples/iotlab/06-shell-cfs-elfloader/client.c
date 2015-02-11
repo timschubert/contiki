@@ -12,6 +12,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <errno.h>
 
 #include "myencode.h"
 
@@ -110,7 +111,7 @@ int exitCommand (char* params[])
 void error(const char *msg)
 {
   perror(msg);
-  printf("\n");
+  fprintf(stderr, "\n");
   exit(1);
 }
 
@@ -170,41 +171,84 @@ void *reading_from_remote(void *x_void_ptr)
 }
 
 
-// options
-#define LOCAL_PORT "-p"
-static int localPort = 20000;
-
-
 static int isSeparator(char c) {
   return c == '\t' || c == '\n' || c == ' ';
 }
 
-int main(int argc, char* argv[])
+
+void parse_args(int argc, char* argv[], char **hostname, char **port)
 {
-  // reading options
-  for (int i = 1 ; i < argc ; ) {
-    if (!strcmp(argv[i], LOCAL_PORT) && i + 1 < argc) {
-      localPort = atoi(argv[++i]);
-      i++;
-    }
+  /*  client <hostname> <port> */
+  char *endptr;
+
+  if (3 != argc)
+    goto usage;
+
+  *hostname = argv[1];
+  *port = argv[2];
+
+  // Check integer
+  strtol(argv[2], &endptr, 10);
+  if ('\0' != *endptr) {
+    fprintf(stderr, "Invalid port '%s'\n", argv[2]);
+    goto usage;
+  }
+  return;
+
+usage:
+  fprintf(stderr, "Usage: %s <hostname> <port>\n", argv[0]);
+  exit(EINVAL);
+}
+
+
+int connect_server(char *hostname, char *port)
+{
+  int ret;
+  int fd = -1;
+  struct addrinfo *serverinfo, *p;
+  struct addrinfo hints = {0};
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM;
+
+
+  // Resolve hostname
+  if ((ret = getaddrinfo(hostname, port, &hints, &serverinfo))) {
+    fprintf(stderr, "getaddrinfo: %s", gai_strerror(ret));
+    error("Hostname resolution failed");
   }
 
-  // connecting to remote devicclose(sockfd);e or server
-  struct sockaddr_in serv_addr;
-  struct hostent *server;
+  // Loop through all results and connect to the first possible
+  for (p = serverinfo; p != NULL; p = p->ai_next) {
+    if (-1 == (fd = socket(p->ai_family, p->ai_socktype, p->ai_protocol))) {
+      perror("client: socket");
+      continue;
+    }
 
-  sockfd = socket(AF_INET, SOCK_STREAM, 0);
-  bzero((char *) &serv_addr, sizeof(serv_addr));
-  if (sockfd < 0)
-    error("ERROR opening socket");
-  serv_addr.sin_family = AF_INET;
-  server = gethostbyname("localhost");
-  bcopy((char *)server->h_addr,
-      (char *)&serv_addr.sin_addr.s_addr,
-      server->h_length);
-  serv_addr.sin_port = htons(localPort);
-  if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
-    error("ERROR connecting");
+    if (-1 == connect(fd, p->ai_addr, p->ai_addrlen)) {
+      close(fd);
+      perror("client: connect");
+      continue;
+    }
+
+    // Connected
+    return fd;
+  }
+
+  error("Connection failed");
+  return -1;
+}
+
+
+int main(int argc, char* argv[])
+{
+  char *hostname;
+  char *port;
+
+  parse_args(argc, argv, &hostname, &port);
+  fprintf(stderr, "Connecting to %s:%s\n", hostname, port);
+
+  sockfd = connect_server(hostname, port);
+
 
   printf(KNRM "> ");
   fflush(stdout);
