@@ -64,15 +64,12 @@ static uint16_t datamemory_aligned[ELFLOADER_DATAMEMORY_SIZE/2+1];
 static uint8_t* datamemory = (uint8_t *)datamemory_aligned;
 #endif /* ELFLOADER_CONF_TEXT_IN_ROM */
 
-/* halfword aligned
-VAR_AT_SEGMENT(static const uint16_t
-               textmemory[ELFLOADER_TEXTMEMORY_SIZE / 2], ".elf_text") = {0};
-static const uint16_t textmemory[ELFLOADER_TEXTMEMORY_SIZE] = {0};*/
+/* halfword aligned */
 #if ELFLOADER_CONF_TEXT_IN_ROM
-static const uint16_t textmemory[8096]  __attribute__((aligned(2048))) = {0};
+static const uint16_t textmemory[ELFLOADER_TEXTMEMORY_SIZE / 2]  __attribute__((aligned(2048))) = {0};
 static uint32_t basePtr = 0;
 #else /* ELFLOADER_CONF_TEXT_IN_ROM */
-//static uint16_t textmemory[ELFLOADER_TEXTMEMORY_SIZE];
+static uint16_t textmemory[ELFLOADER_TEXTMEMORY_SIZE / 2];
 #endif /* ELFLOADER_CONF_TEXT_IN_ROM */
 /*---------------------------------------------------------------------------*/
 void *
