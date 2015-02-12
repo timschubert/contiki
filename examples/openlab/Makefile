@@ -1,11 +1,10 @@
-ifndef TARGET
-TARGET=openlab-fox
-endif
+# Forward to subdirectories
 
-all: node
+# all subdirectories
+TARGETS = $(shell find . -maxdepth 1 -type d ! -name .)
+all:
 
-CFLAGS+= -DPROJECT_CONF_H=\"project-conf.h\" -DWITH_UIP6
-
-
-CONTIKI = ../..
-include $(CONTIKI)/Makefile.include
+%:
+	for i in $(TARGETS); do\
+		make -C $$i $@;\
+	done
