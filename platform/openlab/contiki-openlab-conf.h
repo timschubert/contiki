@@ -68,6 +68,9 @@ typedef int32_t  s32_t;
  * Networking configuration inpired by cooja/contiki-conf.h
  */
 
+#define RF2XX_DEVICE rf231
+#define SLIP_ARCH_CONF_UART uart_print
+
 #if WITH_UIP
 #if WITH_UIP6
 #error WITH_UIP && WITH_UIP6: Bad configuration

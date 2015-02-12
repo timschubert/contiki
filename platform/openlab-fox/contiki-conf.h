@@ -23,13 +23,14 @@
  *
  * \author
  *         Antoine Fraboulet <antoine.fraboulet.at.hikob.com>
+ *         Gaëtan Harter <gaetan.harter.at.inria.fr>
  *
  */
 
-#ifndef __CONTIKI_CONF_H__
-#define __CONTIKI_CONF_H__
+#ifndef CONTIKI_CONF_H_
+#define CONTIKI_CONF_H_
 
-/* Fox specific defines */
+/* specific defines */
 
 #define LEDS_GREEN       1
 #define LEDS_YELLOW      0
@@ -37,8 +38,6 @@
 #define LEDS_BLUE        0
 #define LEDS_CONF_ALL   (LEDS_GREEN | LEDS_YELLOW | LEDS_RED | LEDS_BLUE)
 
-#define RF2XX_DEVICE rf231
-#define SLIP_ARCH_CONF_UART uart_print
 
 #ifndef SLIP_ARCH_CONF_BAUDRATE
 #define SLIP_ARCH_CONF_BAUDRATE 115200
