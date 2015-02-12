@@ -218,7 +218,8 @@ OPENLAB_CONTIKI_WRAPPERS +=			\
 	\
 	openlab-port.c		\
 	rtimer-arch.c			\
-	leds-arch.c
+	leds-arch.c			\
+	platform-sensors.c
 
 
 CONTIKI_SRC += 					\

@@ -50,7 +50,7 @@ OPENLAB_SRC += pga308/pga308.c
 
 ## Contiki Sources
 # Wrappers from Openlab to Contiki API
-# OPENLAB_CONTIKI_WRAPPERS +=
+OPENLAB_CONTIKI_WRAPPERS += platform-addr.c
 
 
 # Contiki apps and drivers

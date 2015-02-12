@@ -49,6 +49,8 @@ OPENLAB_SRC += l3g4200d/l3g4200d.c
 
 ## Contiki Sources
 # Wrappers from Openlab to Contiki API
+OPENLAB_CONTIKI_WRAPPERS += platform-addr.c
+
 OPENLAB_CONTIKI_WRAPPERS += acc-mag-sensor.c
 OPENLAB_CONTIKI_WRAPPERS += button-sensor.c
 OPENLAB_CONTIKI_WRAPPERS += gyr-sensor.c

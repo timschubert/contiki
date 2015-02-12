@@ -30,8 +30,14 @@
 #ifndef OPENLAB_CONTIKI_CONF_H_
 #define OPENLAB_CONTIKI_CONF_H_
 
-
 #include <stdint.h>
+
+/* include the project config */
+/* PROJECT_CONF_H might be defined in the project Makefile */
+#ifdef PROJECT_CONF_H
+#include PROJECT_CONF_H
+#endif /* PROJECT_CONF_H */
+
 
 /* ---------------------------------------- */
 /*
@@ -68,6 +74,9 @@ typedef int32_t  s32_t;
  * Networking configuration inpired by cooja/contiki-conf.h
  */
 
+#ifndef SLIP_ARCH_CONF_ENABLE
+#define SLIP_ARCH_CONF_ENABLE 0
+#endif
 #define RF2XX_DEVICE rf231
 #define SLIP_ARCH_CONF_UART uart_print
 
@@ -210,11 +219,5 @@ typedef unsigned int uip_stats_t;
 #define WITH_ASCII                      1
 #define CCIF
 #define CLIF
-
-/* include the project config */
-/* PROJECT_CONF_H might be defined in the project Makefile */
-#ifdef PROJECT_CONF_H
-#include PROJECT_CONF_H
-#endif /* PROJECT_CONF_H */
 
 #endif /* OPENLAB_CONTIKI_CONF_H_ */
