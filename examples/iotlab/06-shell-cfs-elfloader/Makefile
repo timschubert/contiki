@@ -21,3 +21,8 @@ clean-client:
 
 CONTIKI = ../../..
 include $(CONTIKI)/Makefile.include
+
+ifeq (iotlab-a8-m3,$(TARGET))
+# No flash on iotlab-a8-m3
+$(error Unsuported target iotlab-a8-m3 for this firmware)
+endif

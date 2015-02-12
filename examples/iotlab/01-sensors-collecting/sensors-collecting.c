@@ -1,7 +1,7 @@
 #include "contiki.h"
 #include <stdio.h>
 
-#if IOTLAB_M3
+#ifdef IOTLAB_M3
 #include "dev/light-sensor.h"
 #include "dev/pressure-sensor.h"
 #endif
@@ -128,7 +128,7 @@ PROCESS_THREAD(sensor_collection, ev, data)
   PROCESS_BEGIN();
   static struct etimer timer;
 
-#if IOTLAB_M3
+#ifdef IOTLAB_M3
   config_light();
   config_pressure();
 #endif
@@ -142,7 +142,7 @@ PROCESS_THREAD(sensor_collection, ev, data)
   while(1) {
     PROCESS_WAIT_EVENT();
     if (ev == PROCESS_EVENT_TIMER) {
-#if IOTLAB_M3
+#ifdef IOTLAB_M3
       process_light();
       process_pressure();
 #endif

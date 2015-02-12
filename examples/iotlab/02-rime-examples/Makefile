@@ -6,7 +6,9 @@ RIME_FOLDER = ../../rime
 RIME_EXAMPLES += example-abc example-mesh example-collect example-trickle
 RIME_EXAMPLES += example-polite example-rucb example-runicast example-unicast
 RIME_EXAMPLES += example-neighbors
+ifeq (iotlab-m3,$(TARGET))
 RIME_EXAMPLES += example-rudolph0 example-rudolph1 example-rudolph2
+endif
 
 TARGET_EXAMPLES = $(addsuffix .$(TARGET), $(RIME_EXAMPLES))
 

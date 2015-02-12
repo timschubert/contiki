@@ -1,6 +1,6 @@
 #include "contiki.h"
 
-#if IOTLAB_M3
+#ifdef IOTLAB_M3
 #include "dev/light-sensor.h"
 #include "dev/pressure-sensor.h"
 #endif
@@ -104,7 +104,7 @@ static void process_gyr()
 static void
 configure_sensors()
 {
-#if IOTLAB_M3
+#ifdef IOTLAB_M3
   config_light();
   config_pressure();
 #endif
@@ -118,7 +118,7 @@ static void
 process_sensor_events(process_event_t ev, process_data_t data)
 {
   if (ev == PROCESS_EVENT_TIMER) {
-#if IOTLAB_M3
+#ifdef IOTLAB_M3
     process_light();
     process_pressure();
 #endif

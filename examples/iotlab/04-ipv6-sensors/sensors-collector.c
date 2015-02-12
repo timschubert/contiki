@@ -24,18 +24,22 @@ char*
 get_sensors_json()
 {
   static char buf[512];
-  sprintf(buf, "{\n\
-    \"light\": %0.2f,\n\
-    \"pressure\": %0.2f,\n\
-    \"accelero\": { \"x\": %d, \"y\": %d, \"z\": %d },\n\
-    \"magneto\": { \"x\": %d, \"y\": %d, \"z\": %d },\n\
-    \"gyro\": { \"x\": %d, \"y\": %d, \"z\": %d }\n}",
-    sensor.light,
-    sensor.pressure,
-    sensor.acc.x, sensor.acc.y, sensor.acc.z,
-    sensor.mag.x, sensor.mag.y, sensor.mag.z,
-    sensor.gyr.x, sensor.gyr.y, sensor.gyr.z
-  );
+  int idx = 0;
+  idx += sprintf(&buf[idx], "{\n");
+#ifdef IOTLAB_M3
+  idx += sprintf(&buf[idx], "  \"light\": %0.2f,\n", sensor.light);
+  idx += sprintf(&buf[idx], "  \"pressure\": %0.2f,\n", sensor.pressure);
+#endif // IOTLAB_M3
+  idx += sprintf(&buf[idx], "  \"accelero\": "
+          "{ \"x\": %d, \"y\": %d, \"z\": %d },\n",
+          sensor.acc.x, sensor.acc.y, sensor.acc.z);
+  idx += sprintf(&buf[idx], "  \"magneto\": "
+          "{ \"x\": %d, \"y\": %d, \"z\": %d },\n",
+          sensor.mag.x, sensor.mag.y, sensor.mag.z);
+  idx += sprintf(&buf[idx], "  \"gyro\": "
+          "{ \"x\": %d, \"y\": %d, \"z\": %d }\n",   // no comma
+          sensor.gyr.x, sensor.gyr.y, sensor.gyr.z);
+  idx += sprintf(&buf[idx], "}\n");
   return buf;
 }
 /*---------------------------------------------------------------------------*/
