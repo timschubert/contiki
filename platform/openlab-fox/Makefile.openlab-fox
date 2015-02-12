@@ -18,6 +18,9 @@
 # Copyright (C) 2011,2012,2013 HiKoB.
 #
 
+OPENLAB = $(CONTIKI)/platform/openlab
+OPENLAB_REL = ../openlab
+
 DEBUG            = 1
 CFLAGS          += -DAGILE_FOX -DKEEP_UART=1
 LINKERSCRIPT     = $(OPENLAB_GIT)/platform/scripts/stm32f103rey6.ld
