@@ -5,13 +5,13 @@ endif
 APPLIS = rpl-dag-root rpl-node-info rpl-border-router
 
 all: $(addprefix build-, $(APPLIS))
-clean: $(addprefix clean-,$(APPLIS))
+clean: distclean
+distclean: $(addprefix distclean-,$(APPLIS))
 
 build-%:
 	make -C $* TARGET=$(TARGET)
 
-clean-%:
-	make -C $* TARGET=$(TARGET) clean
-	rm -f $*/$*.$(TARGET)
+distclean-%:
+	make -C $* TARGET=$(TARGET) distclean
 
-.PHONY: all clean clean-% build-%
+.PHONY: all clean distclean clean-% build-%
