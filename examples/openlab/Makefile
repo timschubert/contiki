@@ -6,5 +6,5 @@ all:
 
 %:
 	for i in $(TARGETS); do\
-		make -C $$i $@;\
+		make -C $$i $@ || exit $$? ;\
 	done

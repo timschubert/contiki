@@ -1,5 +1,5 @@
 #include "contiki.h"
-#include "drivers/stm32f1xx/flash.h"
+#include "stm32f1xx/flash.h"
 
 PROCESS(stm32_flash, "stm32-flash");
 AUTOSTART_PROCESSES(&stm32_flash);
