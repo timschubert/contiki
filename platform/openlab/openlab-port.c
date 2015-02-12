@@ -19,7 +19,7 @@
 
 /**
  * \file openlab-port.c
- *         Contiki add-ons for HiKoB OpenLab Newt
+ *         Contiki add-ons for openlab platforms
  *
  * \author
  *         Antoine Fraboulet <antoine.fraboulet.at.hikob.com>
@@ -28,7 +28,7 @@
 
 #include <stdint.h>
 
-#include "dangerous-newt/dangerousnewt.h"
+#include "platform-headers.h"
 #include "softtimer/soft_timer_.h"
 #include "event.h"
 
@@ -65,7 +65,7 @@ abort(void)
  */
 void event_debug() { }
 void event_init() { }
-/*-----------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 /*
  * Empty wrappers for advanced options of Openlab soft_timer library
  */
