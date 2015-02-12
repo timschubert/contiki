@@ -74,7 +74,8 @@ write_chunk(struct rudolph2_conn *c, int offset, int flag,
 #endif /* CONTIKI_TARGET_NETSIM */
 
   if(flag == RUDOLPH2_FLAG_NEWFILE) {
-    printf("+++ rudolph2 new file incoming at %lu\n", clock_time());
+    printf("+++ rudolph2 new file incoming at %lu\n",
+            (unsigned long)clock_time());
     leds_on(LEDS_RED);
     fd = cfs_open("codeprop.out", CFS_WRITE);
   } else {

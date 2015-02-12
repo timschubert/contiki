@@ -3,11 +3,10 @@ TARGET=iotlab-m3
 endif
 
 RIME_FOLDER = ../../rime
-RIME_EXAMPLES = example-abc example-mesh example-collect example-trickle \
-				example-polite example-rucb example-runicast example-unicast \
-				example-neighbors
-# Need cfs coffe:
-#               example-rudolph0 example-rudolph1 example-rudolph2
+RIME_EXAMPLES += example-abc example-mesh example-collect example-trickle
+RIME_EXAMPLES += example-polite example-rucb example-runicast example-unicast
+RIME_EXAMPLES += example-neighbors
+RIME_EXAMPLES += example-rudolph0 example-rudolph1 example-rudolph2
 
 TARGET_EXAMPLES = $(addsuffix .$(TARGET), $(RIME_EXAMPLES))
 
@@ -15,14 +14,13 @@ TARGET_EXAMPLES = $(addsuffix .$(TARGET), $(RIME_EXAMPLES))
 all: $(TARGET_EXAMPLES)
 
 %.${TARGET}: ${RIME_FOLDER}/%.${TARGET}
-	cp $^ $@
+	mv $^ $@
 
 ${RIME_FOLDER}/%:
 	make -C ${RIME_FOLDER} TARGET=${TARGET} $*
 
 
-clean:
+clean distclean: %:
 	rm -f $(TARGET_EXAMPLES)
-	rm -f $(addprefix $(RIME_FOLDER)/, $(TARGET_EXAMPLES))
-	make -C ${RIME_FOLDER} TARGET=${TARGET} clean
+	make -C ${RIME_FOLDER} TARGET=${TARGET} $@
 
