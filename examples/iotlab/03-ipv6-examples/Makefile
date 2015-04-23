@@ -1,6 +1,4 @@
-ifndef TARGET
-TARGET = iotlab-m3
-endif
+-include Makefile.target
 
 APPLIS = rpl-dag-root rpl-node-info rpl-border-router
 

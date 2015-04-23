@@ -1,6 +1,4 @@
-ifndef TARGET
-TARGET=iotlab-m3
-endif
+-include Makefile.target
 
 RIME_FOLDER = ../../rime
 RIME_EXAMPLES += example-abc example-mesh example-collect example-trickle

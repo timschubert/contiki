@@ -1,9 +1,6 @@
 CONTIKI_PROJECT = console_server
 CONTIKI_SOURCEFILES += console_server.c myencode.c
 
-ifndef TARGET
-TARGET=iotlab-m3
-endif
 ELF_LOADER=1
 
 CONSOLE_CLIENT_SRCS = client.c myencode.c
