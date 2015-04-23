@@ -113,14 +113,18 @@ typedef unsigned int uip_stats_t;
 /*
  * Network setup for IPv6
  */
+
 #define NETSTACK_CONF_NETWORK       sicslowpan_driver
+
 #define NETSTACK_CONF_MAC           csma_driver
+
 #define NETSTACK_CONF_FRAMER        framer_802154
-/* NETSTACK_CONF_RDC */
+
 #define NETSTACK_CONF_RDC           contikimac_driver
 //#define NETSTACK_CONF_RDC           nullrdc_driver
 //#define NETSTACK_CONF_RDC           cxmac_driver
 //#define NETSTACK_CONF_RDC           sicslowmac_driver
+
 #else /* WITH_UIP6 */
 
 
@@ -130,9 +134,10 @@ typedef unsigned int uip_stats_t;
  */
 #error !WITH_UIP6 && WITH_UIP not tested
 // Cooja config:
-#define NETSTACK_CONF_NETWORK rime_driver
-#define UIP_CONF_IP_FORWARD           1
-#define NETSTACK_CONF_MAC nullmac_driver
+
+#define UIP_CONF_IP_FORWARD         1
+#define NETSTACK_CONF_NETWORK       rime_driver
+#define NETSTACK_CONF_MAC           nullmac_driver
 
 
 #else /* WITH_UIP */
@@ -166,16 +171,16 @@ typedef unsigned int uip_stats_t;
  */
 
 /* contikimac */
-#define RDC_CONF_HARDWARE_CSMA 0
-#define RDC_CONF_HARDWARE_ACK 0
-#define RDC_CONF_HARDWARE_SEND_ACK 0
-#define CONTIKIMAC_CONF_WITH_CONTIKIMAC_HEADER 0
+#define RDC_CONF_HARDWARE_CSMA                   0
+#define RDC_CONF_HARDWARE_ACK                    0
+#define RDC_CONF_HARDWARE_SEND_ACK               0
+#define CONTIKIMAC_CONF_WITH_CONTIKIMAC_HEADER   0
 
 /* Other configs, no idea why (not checked) */
-#define NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE 64
-#define CONTIKIMAC_CONF_CCA_COUNT_MAX 16
-#define CONTIKIMAC_CONF_WITH_PHASE_OPTIMIZATION 0
-#define CONTIKIMAC_CONF_INTER_PACKET_INTERVAL (RTIMER_ARCH_SECOND / 1000)
+#define NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE     64
+#define CONTIKIMAC_CONF_CCA_COUNT_MAX            16
+#define CONTIKIMAC_CONF_WITH_PHASE_OPTIMIZATION  0
+#define CONTIKIMAC_CONF_INTER_PACKET_INTERVAL    (RTIMER_ARCH_SECOND / 1000)
 
 /*
  * UIP config
@@ -196,6 +201,7 @@ typedef unsigned int uip_stats_t;
 
 /* IPv6 configuration */
 #if WITH_UIP6
+
 #define UIP_CONF_IPV6               1
 #define UIP_CONF_ICMP6              1
 #define UIP_CONF_IPV6_RPL           1
