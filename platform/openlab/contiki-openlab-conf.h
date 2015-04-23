@@ -139,8 +139,8 @@ typedef unsigned int uip_stats_t;
 /*
  * Network setup for Rime
  */
-//# TODO TEST THIS
-//#warning !WITH_UIP && !WITH_UIP6 not tested
+// Rime needs default RIMEADDR_SIZE 2
+#undef RIMEADDR_CONF_SIZE
 #define NETSTACK_CONF_NETWORK rime_driver
 #define NETSTACK_CONF_MAC csma_driver
 

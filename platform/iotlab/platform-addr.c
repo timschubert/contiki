@@ -2,12 +2,13 @@
 #include "contiki-net.h"
 #include "drivers/unique_id.h"
 
-#if RIMEADDR_SIZE != 8
-#error "RIME address size should be set to 8"
-#endif /*RIMEADDR_SIZE == 8*/
-
 void set_rime_addr()
 {
+#if RIMEADDR_SIZE == 2
+    uint16_t short_uid = platform_uid();
+    rimeaddr_node_addr.u8[0] = 0xff & (short_uid >> 8);
+    rimeaddr_node_addr.u8[1] = 0xff & (short_uid);
+#else
 
 #define IOTLAB_UID_ADDR 0
 #if !(IOTLAB_UID_ADDR)
@@ -17,7 +18,7 @@ void set_rime_addr()
     rimeaddr_node_addr.u8[2] = 0x45;
 
     /* Platform identifier */
-    rimeaddr_node_addr.u8[3] = 0x00;
+    rimeaddr_node_addr.u8[3] = 0x01;
 
     /* Generate 4 remaining bytes using uid of processor */
     // use bytes 8-11 to ensure uniqueness (tested empirically)
@@ -32,6 +33,7 @@ void set_rime_addr()
     rimeaddr_node_addr.u8[6] = 0xff & (short_uid >> 8);
     rimeaddr_node_addr.u8[7] = 0xff & (short_uid);
 
+#endif
 #endif
 
 }

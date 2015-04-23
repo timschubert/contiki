@@ -20,6 +20,7 @@
 
 OPENLAB = $(CONTIKI)/platform/openlab
 OPENLAB_REL = ../openlab
+OPENLAB_TARGET_DIRS  += ../iotlab/
 
 
 DEBUG            = 1
