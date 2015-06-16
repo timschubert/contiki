@@ -53,6 +53,11 @@ extern rf2xx_t RF2XX_DEVICE;
 #define RF2XX_TX_POWER  PHY_POWER_3dBm
 #endif
 
+// Default: no filtering
+#ifndef RF2XX_RX_RSSI_THRESHOLD
+#define RF2XX_RX_RSSI_THRESHOLD RF2XX_PHY_RX_THRESHOLD__m101dBm
+#endif
+
 #define RF2XX_MAX_PAYLOAD 125
 static uint8_t tx_buf[RF2XX_MAX_PAYLOAD];
 static uint8_t tx_len;
@@ -593,6 +598,9 @@ static void reset(void)
             | RF2XX_PHY_TX_PWR_DEFAULT__PA_LT
             | rf_tx_power;
     rf2xx_reg_write(RF2XX_DEVICE, RF2XX_REG__PHY_TX_PWR, reg);
+
+    // Set RSSI RX threshold
+    rf2xx_set_rx_rssi_threshold(RF2XX_RX_RSSI_THRESHOLD);
 
     // Disable CLKM signal
     reg = RF2XX_TRX_CTRL_0_DEFAULT__PAD_IO
