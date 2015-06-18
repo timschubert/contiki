@@ -600,7 +600,7 @@ static void reset(void)
     rf2xx_reg_write(RF2XX_DEVICE, RF2XX_REG__PHY_TX_PWR, reg);
 
     // Set RSSI RX threshold
-    rf2xx_set_rx_rssi_threshold(RF2XX_RX_RSSI_THRESHOLD);
+    rf2xx_set_rx_rssi_threshold(RF2XX_DEVICE, RF2XX_RX_RSSI_THRESHOLD);
 
     // Disable CLKM signal
     reg = RF2XX_TRX_CTRL_0_DEFAULT__PAD_IO
