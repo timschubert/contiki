@@ -194,7 +194,9 @@ typedef unsigned int uip_stats_t;
 
 #define UIP_CONF_LOGGING            1
 #define UIP_CONF_LL_802154          1
+#ifndef UIP_CONF_LLH_LEN
 #define UIP_CONF_LLH_LEN            0
+#endif//UIP_CONF_LLH_LEN
 #define UIP_CONF_UDP                1
 #define UIP_CONF_TCP                1
 
