@@ -40,6 +40,8 @@
 #include "contiki-net.h"
 #include "sys/rtimer.h"
 #include "dev/leds.h"
+#include "radio-rf2xx.h"
+
 /*---------------------------------------------------------------------------*/
 
 #ifndef RF2XX_DEVICE
@@ -58,7 +60,6 @@ extern rf2xx_t RF2XX_DEVICE;
 #define RF2XX_RX_RSSI_THRESHOLD RF2XX_PHY_RX_THRESHOLD__m101dBm
 #endif
 
-#define RF2XX_MAX_PAYLOAD 125
 static uint8_t tx_buf[RF2XX_MAX_PAYLOAD];
 static uint8_t tx_len;
 
