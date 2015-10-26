@@ -17,5 +17,5 @@ children=$(
 
 printf "%*c %s\n" $[ level * 5 ] "" "$base_addr"
 for child in $children; do
-	$0 $prefix::$child $[ level + 1 ]
+	bash $0 $prefix::$child $[ level + 1 ]
 done
