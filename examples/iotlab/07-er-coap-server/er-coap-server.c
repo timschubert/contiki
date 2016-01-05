@@ -43,12 +43,20 @@
 #include "contiki-net.h"
 #include "dev/serial-line.h"
 #include "erbium.h"
+#ifdef IOTLAB_M3
+#include "dev/light-sensor.h"
+#endif
+#include "dev/acc-mag-sensor.h"
+
 
 /* Define which resources to include to meet memory constraints. */
 #define REST_RES_HELLO 1
 #define REST_RES_CHUNKS 1
-#define REST_RES_PUSHING 1
-#define REST_RES_EVENT 1
+#ifdef IOTLAB_M3
+#define REST_RES_LIGHT 1
+#endif
+#define REST_RES_SERIAL 1
+#define REST_RES_ACC 1
 
 /* For CoAP-specific example: not required for normal RESTful Web service. */
 #if WITH_COAP == 3
@@ -73,7 +81,6 @@
 #define PRINT6ADDR(addr)
 #define PRINTLLADDR(addr)
 #endif
-
 
 RESOURCE(helloworld, METHOD_GET, "hello", "title=\"Hello world: ?len=0..\";rt=\"Text\"");
 
@@ -100,7 +107,8 @@ helloworld_handler(void* request, void* response, uint8_t *buffer, uint16_t pref
   REST.set_response_payload(response, buffer, length);
 }
 
-RESOURCE(chunks, METHOD_GET, "test/chunks", "title=\"Blockwise demo\";rt=\"Data\"");
+#if REST_RES_CHUNKS
+RESOURCE(chunks, METHOD_GET, "chunks", "title=\"Blockwise demo\";rt=\"Data\"");
 
 #define CHUNKS_TOTAL    2050
 
@@ -108,8 +116,8 @@ void
 chunks_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
   int32_t strpos = 0;
-  PRINTF("OFFSET : %d\n", (int)*offset);
-  PRINTF("PREFERRED_SIZE : %d\n", (int)preferred_size);
+  PRINTF("offset : %d\n", (int)*offset);
+  PRINTF("preferred_size : %d\n", (int)preferred_size);
   /* Check the offset for boundaries of the resource data. */
   if (*offset>=CHUNKS_TOTAL)
   {
@@ -125,7 +133,7 @@ chunks_handler(void* request, void* response, uint8_t *buffer, uint16_t preferre
   while (strpos<preferred_size)
   {
     strpos += snprintf((char *)buffer+strpos, preferred_size-strpos+1, "|%ld|", *offset);
-    PRINTF("STRPOS : %d\n", (int)strpos);
+    PRINTF("strpos : %d\n", (int)strpos);
   }
   if (strpos > preferred_size)
   {
@@ -137,8 +145,8 @@ chunks_handler(void* request, void* response, uint8_t *buffer, uint16_t preferre
   {
     strpos = CHUNKS_TOTAL - *offset;
   }
-  PRINTF("STRPOS : %d\n", (int)strpos);
-  PRINTF("BUFFER : %s\n", buffer);
+  PRINTF("strpos : %d\n", (int)strpos);
+  PRINTF("buffer : %s\n", buffer);
   REST.set_response_payload(response, buffer, strpos);
 
   /* IMPORTANT for chunk-wise resources: Signal chunk awareness to REST engine. */
@@ -150,74 +158,148 @@ chunks_handler(void* request, void* response, uint8_t *buffer, uint16_t preferre
     *offset = -1;
   }
 }
+#endif
 
-PERIODIC_RESOURCE(pushing, METHOD_GET, "test/push", "title=\"Periodic demo\";obs", 5*CLOCK_SECOND);
+#ifdef IOTLAB_M3
+#if REST_RES_LIGHT
+/* Light sensor */
+static void config_light()
+{
+  light_sensor.configure(LIGHT_SENSOR_SOURCE, ISL29020_LIGHT__AMBIENT);
+  light_sensor.configure(LIGHT_SENSOR_RESOLUTION, ISL29020_RESOLUTION__16bit);
+  light_sensor.configure(LIGHT_SENSOR_RANGE, ISL29020_RANGE__1000lux);
+  SENSORS_ACTIVATE(light_sensor);
+}
+
+PERIODIC_RESOURCE(light, METHOD_GET, "light", "title=\"Periodic light demo\";obs", 5*CLOCK_SECOND);
 
 void
-pushing_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
+light_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
   REST.set_header_content_type(response, REST.type.TEXT_PLAIN);
 
   /* Usually, a CoAP server would response with the resource representation matching the periodic_handler. */
-  const char *msg = "It's periodic!";
+  const char *msg = "it's periodic!";
   REST.set_response_payload(response, msg, strlen(msg));
 
   /* A post_handler that handles subscriptions will be called for periodic resources by the REST framework. */
 }
 
 void
-pushing_periodic_handler(resource_t *r)
+light_periodic_handler(resource_t *r)
 {
   static uint16_t obs_counter = 0;
-  static char content[11];
+  static char content[32];
 
   ++obs_counter;
 
-  PRINTF("PERIODIC TICK %u for /%s\n", obs_counter, r->url);
+  PRINTF("periodic light measure %u for /%s\n", obs_counter, r->url);
+  int light_val = light_sensor.value(0);
+  float light = ((float)light_val) / LIGHT_SENSOR_VALUE_SCALE;
+  PRINTF("light: %f lux\n", light);
 
   /* Build notification. */
   coap_packet_t notification[1]; /* This way the packet can be treated as pointer as usual. */
   coap_init_message(notification, COAP_TYPE_NON, REST.status.OK, 0 );
-  coap_set_payload(notification, content, snprintf(content, sizeof(content), "TICK %u", obs_counter));
+  coap_set_payload(notification, content, snprintf(content, sizeof(content), "light: %f lux", light));
 
   /* Notify the registered observers with the given message type, observe option, and payload. */
   REST.notify_subscribers(r, obs_counter, notification);
 }
+#endif
+#endif
 
-EVENT_RESOURCE(event, METHOD_GET, "sensors/button", "title=\"Event demo\";obs");
+#if REST_RES_SERIAL
+EVENT_RESOURCE(serial, METHOD_GET, "serial", "title=\"Serial event demo\";obs");
 
 void
-event_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
+serial_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
   REST.set_header_content_type(response, REST.type.TEXT_PLAIN);
   /* Usually, a CoAP server would response with the current resource representation. */
-  const char *msg = "It's eventful!";
+  const char *msg = "it's eventful!";
   REST.set_response_payload(response, (uint8_t *)msg, strlen(msg));
 
   /* A post_handler that handles subscriptions/observing will be called for periodic resources by the framework. */
 }
 
 void
-event_event_handler(resource_t *r)
+serial_event_handler(resource_t *r)
 {
   static uint16_t event_counter = 0;
-  static char content[30];
+  static char content[64];
   char *data = rest_get_user_data(r);
 
   ++event_counter;
 
-  PRINTF("EVENT TICK %u for /%s\n", event_counter, r->url);
+  PRINTF("serial event %u for /%s\n", event_counter, r->url);
   PRINTF("data : %s\n", data);
 
   /* Build notification. */
   coap_packet_t notification[1]; /* This way the packet can be treated as pointer as usual. */
   coap_init_message(notification, COAP_TYPE_CON, REST.status.OK, 0 );
 
-  coap_set_payload(notification, content, snprintf(content, sizeof(content), "EVENT %u: %s", event_counter, data));
+  coap_set_payload(notification, content, snprintf(content, sizeof(content), "%s", data));
 
   /* Notify the registered observers with the given message type, observe option, and payload. */
   REST.notify_subscribers(r, event_counter, notification);
 }
+#endif
+
+
+#if REST_RES_ACC
+static unsigned acc_freq = 0;
+static void config_acc()
+{
+  acc_sensor.configure(ACC_MAG_SENSOR_DATARATE,
+      LSM303DLHC_ACC_RATE_1344HZ_N_5376HZ_LP);
+  acc_freq = 1344;
+  acc_sensor.configure(ACC_MAG_SENSOR_SCALE, LSM303DLHC_ACC_SCALE_2G);
+  acc_sensor.configure(ACC_MAG_SENSOR_MODE, LSM303DLHC_ACC_UPDATE_ON_READ);
+  SENSORS_ACTIVATE(acc_sensor);
+}
+
+EVENT_RESOURCE(acc, METHOD_GET, "acc", "title=\"Accelerometer event demo\";obs");
+
+void
+acc_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
+{
+  REST.set_header_content_type(response, REST.type.TEXT_PLAIN);
+  /* Usually, a CoAP server would response with the current resource representation. */
+  const char *msg = "it's eventful!";
+  REST.set_response_payload(response, (uint8_t *)msg, strlen(msg));
+
+  /* A post_handler that handles subscriptions/observing will be called for periodic resources by the framework. */
+}
+
+void
+acc_event_handler(resource_t *r)
+{ 
+  static uint16_t event_counter = 0;
+  static char content[64];
+  int xyz[3];
+  static unsigned count = 0;
+  // we want one measure per second
+  if ((++count % acc_freq) != 0) {
+    return;
+  } else {
+    ++event_counter;
+    xyz[0] = acc_sensor.value(ACC_MAG_SENSOR_X);
+    xyz[1] = acc_sensor.value(ACC_MAG_SENSOR_Y);
+    xyz[2] = acc_sensor.value(ACC_MAG_SENSOR_Z);
+    PRINTF("acc event %u for /%s\n", event_counter, r->url);
+    PRINTF("acc: %d %d %d xyz mg\n", xyz[0], xyz[1], xyz[2]);
+    /* Build notification. */
+    coap_packet_t notification[1]; /* This way the packet can be treated as pointer as usual. */
+    coap_init_message(notification, COAP_TYPE_CON, REST.status.OK, 0 );
+
+    coap_set_payload(notification, content, snprintf(content, sizeof(content),"acc: %d %d %d xyz mg\n", xyz[0], xyz[1], xyz[2]));
+
+    /* Notify the registered observers with the given message type, observe option, and payload. */
+    REST.notify_subscribers(r, event_counter, notification);
+  }
+}
+#endif
 
 
 PROCESS(rest_server_example, "IoT-LAB CoAP Server");
@@ -231,6 +313,19 @@ PROCESS_THREAD(rest_server_example, ev, data)
 
   /* Initialize the REST engine. */
   rest_init_engine();
+ 
+  /* Init sensors */ 
+#ifdef IOTLAB_M3 
+#if REST_RES_LIGHT
+  config_light();
+  rest_activate_periodic_resource(&periodic_resource_light);
+#endif
+#endif
+#if REST_RES_ACC
+  config_acc();
+  rest_activate_event_resource(&resource_acc);
+#endif
+
 
   /* Activate the application-specific resources. */
 #if REST_RES_HELLO
@@ -239,23 +334,25 @@ PROCESS_THREAD(rest_server_example, ev, data)
 #if REST_RES_CHUNKS
   rest_activate_resource(&resource_chunks);
 #endif
-#if REST_RES_PUSHING 
-  rest_activate_periodic_resource(&periodic_resource_pushing);
-#endif
-#if REST_RES_EVENT 
-  rest_activate_event_resource(&resource_event);
+#if REST_RES_SERIAL 
+  rest_activate_event_resource(&resource_serial);
 #endif
   
   while(1) {
     PROCESS_WAIT_EVENT();
     if (ev == serial_line_event_message) {
-      PRINTF("Echo cmd: '%s'\n", (char*)data);
-      rest_set_user_data(&resource_event, data);
-#if REST_RES_EVENT
+      //PRINTF("Echo cmd: '%s'\n", (char*)data);
+#if REST_RES_SERIAL
+      rest_set_user_data(&resource_serial, data);
       /* Call the event_handler for this application-specific event. */
-      event_event_handler(&resource_event);
+      serial_event_handler(&resource_serial);
+#endif 
+    } else if (ev == sensors_event && data == &acc_sensor) {
+#if REST_RES_ACC
+      acc_event_handler(&resource_acc);
 #endif 
     }
+
   } /* while (1) */
    
   PROCESS_END();
