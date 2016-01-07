@@ -272,32 +272,35 @@ acc_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_s
   /* A post_handler that handles subscriptions/observing will be called for periodic resources by the framework. */
 }
 
+#define ACC_PEAK_THRESHOLD  -800
+
 void
 acc_event_handler(resource_t *r)
 { 
   static uint16_t event_counter = 0;
   static char content[64];
-  int xyz[3];
+  int z;
   static unsigned count = 0;
-  // we want one measure per second
-  if ((++count % acc_freq) != 0) {
+  if (count != 0) {
+     --count; 
+     return;
+  } 
+  z = acc_sensor.value(ACC_MAG_SENSOR_Z);
+  if (z < ACC_PEAK_THRESHOLD)
     return;
-  } else {
-    ++event_counter;
-    xyz[0] = acc_sensor.value(ACC_MAG_SENSOR_X);
-    xyz[1] = acc_sensor.value(ACC_MAG_SENSOR_Y);
-    xyz[2] = acc_sensor.value(ACC_MAG_SENSOR_Z);
-    PRINTF("acc event %u for /%s\n", event_counter, r->url);
-    PRINTF("acc: %d %d %d xyz mg\n", xyz[0], xyz[1], xyz[2]);
-    /* Build notification. */
-    coap_packet_t notification[1]; /* This way the packet can be treated as pointer as usual. */
-    coap_init_message(notification, COAP_TYPE_CON, REST.status.OK, 0 );
 
-    coap_set_payload(notification, content, snprintf(content, sizeof(content),"acc: %d %d %d xyz mg\n", xyz[0], xyz[1], xyz[2]));
+  ++event_counter;  
 
-    /* Notify the registered observers with the given message type, observe option, and payload. */
-    REST.notify_subscribers(r, event_counter, notification);
-  }
+  count = acc_freq; // one peak detect by second
+
+  /* Build notification. */
+  coap_packet_t notification[1]; /* This way the packet can be treated as pointer as usual. */
+  coap_init_message(notification, COAP_TYPE_CON, REST.status.OK, 0 );
+  
+  coap_set_payload(notification, content, snprintf(content, sizeof(content),"peak: %d\n", event_counter));
+  
+  /* Notify the registered observers with the given message type, observe option, and payload. */
+  REST.notify_subscribers(r, event_counter, notification);
 }
 #endif
 
