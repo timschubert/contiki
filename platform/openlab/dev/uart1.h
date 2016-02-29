@@ -28,6 +28,24 @@
  */
 
 #define BAUD2UBR(baud) baud
+
+/* Multiple version inline management
+ * http://www.greenend.org.uk/rjk/tech/inline.html
+ */
+#ifndef INLINE
+# if __GNUC__ && !__GNUC_STDC_INLINE__
+#  define INLINE extern inline
+# else
+#  define INLINE inline
+# endif
+#endif
+
+extern int (*uart1_input_handler) (unsigned char);
+
 typedef int (*uart_input_handler_t)(unsigned char);
 void uart1_set_input(uart_input_handler_t input);
-inline uart_input_handler_t uart1_get_input_handler();
+
+INLINE uart_input_handler_t uart1_get_input_handler()
+{
+    return uart1_input_handler;
+}
