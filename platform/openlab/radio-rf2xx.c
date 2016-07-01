@@ -53,6 +53,9 @@ extern rf2xx_t RF2XX_DEVICE;
 #ifndef RF2XX_TX_POWER
 #define RF2XX_TX_POWER  PHY_POWER_3dBm
 #endif
+#ifndef RF2XX_RX_RSSI_THRESHOLD
+#define RF2XX_RX_RSSI_THRESHOLD  RF2XX_PHY_RX_THRESHOLD__m101dBm
+#endif
 #ifndef RF2XX_SOFT_PREPARE
 /* The RF2xx has a single FIFO for Tx and Rx.
  * - When RF2XX_SOFT_PREPARE is set, rf2xx_wr_prepare merely copies the data to be sent to a soft tx_buf.
@@ -792,7 +795,13 @@ static void reset(void)
             RF2XX_IRQ_STATUS_MASK__TRX_END |
             RF2XX_IRQ_STATUS_MASK__RX_START);
     set_poll_mode(poll_mode);
+
+    reg = rf2xx_reg_read(RF2XX_DEVICE, RF2XX_REG__RX_SYN);
+    reg &= 0xF0;
+    reg |= (0x0F & RF2XX_RX_RSSI_THRESHOLD);
+    rf2xx_reg_write(RF2XX_DEVICE, RF2XX_REG__RX_SYN, reg);
 }
+
 
 /*---------------------------------------------------------------------------*/
 
@@ -963,4 +972,3 @@ static void irq_handler(handler_arg_t arg)
         }
     }
 }
-
