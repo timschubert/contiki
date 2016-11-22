@@ -167,6 +167,8 @@ int main()
      */
     serial_line_init();
     uart_set_rx_handler(uart_print, char_rx, NULL);
+    // configure highest priority to avoid missing bytes
+    uart_set_irq_priority(uart_print, 0);
 
     /*
      * eventually init slip device
