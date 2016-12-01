@@ -196,7 +196,6 @@ OPENLAB_SRC += 					\
 	stm32f1xx/sdio.c			\
 	stm32f1xx/stm32f1xx.c		\
 	\
-	random/random.c				\
 	softtimer/soft_timer_delay.c\
 	rf2xx/rf2xx.c
 
