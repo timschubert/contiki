@@ -91,6 +91,11 @@ typedef unsigned int uip_stats_t;
 /* Max payload of rf2xx is 125 bytes (128 -1 for length -2 for CRC) */
 #define PACKETBUF_CONF_SIZE         125
 
+/* Use big conf buffer size as there is plenty of ram */
+#ifndef UIP_CONF_BUFFER_SIZE
+#define UIP_CONF_BUFFER_SIZE       1500
+#endif /* UIP_CONF_BUFFER_SIZE */
+
 
 #ifdef NETSTACK_CONF_H
 /*
