@@ -54,6 +54,10 @@
 #include "net/mac/tsch/tsch-packet.h"
 #include "net/mac/tsch/tsch-security.h"
 #include "net/mac/tsch/tsch-adaptive-timesync.h"
+#if CONTIKI_TARGET_COOJA || CONTIKI_TARGET_COOJA_IP64
+#include "lib/simEnvChange.h"
+#include "sys/cooja_mt.h"
+#endif /* CONTIKI_TARGET_COOJA || CONTIKI_TARGET_COOJA_IP64 */
 
 #if TSCH_LOG_LEVEL >= 1
 #define DEBUG DEBUG_PRINT
@@ -104,7 +108,10 @@
 #if RTIMER_SECOND < (32 * 1024)
 #error "TSCH: RTIMER_SECOND < (32 * 1024)"
 #endif
-#if RTIMER_SECOND >= 200000
+#if CONTIKI_TARGET_COOJA || CONTIKI_TARGET_COOJA_IP64
+/* Use 0 usec guard time for Cooja Mote with a 1 MHz Rtimer*/
+#define RTIMER_GUARD 0u
+#elif RTIMER_SECOND >= 200000
 #define RTIMER_GUARD (RTIMER_SECOND / 100000)
 #else
 #define RTIMER_GUARD 2u
@@ -154,6 +161,9 @@ static rtimer_clock_t volatile current_slot_start;
 /* Are we currently inside a slot? */
 static volatile int tsch_in_slot_operation = 0;
 
+/* If we are inside a slot, this tells the current channel */
+static uint8_t current_channel;
+
 /* Info about the link, packet and neighbor of
  * the current (or next) slot */
 struct tsch_link *current_link = NULL;
@@ -197,7 +207,12 @@ tsch_get_lock(void)
     if(tsch_in_slot_operation) {
       busy_wait = 1;
       busy_wait_time = RTIMER_NOW();
-      while(tsch_in_slot_operation);
+      while(tsch_in_slot_operation) {
+#if CONTIKI_TARGET_COOJA || CONTIKI_TARGET_COOJA_IP64
+        simProcessRunValue = 1;
+        cooja_mt_yield();
+#endif /* CONTIKI_TARGET_COOJA || CONTIKI_TARGET_COOJA_IP64 */
+      }
       busy_wait_time = RTIMER_NOW() - busy_wait_time;
     }
     if(!tsch_locked) {
@@ -580,7 +595,7 @@ PT_THREAD(tsch_tx_slot(struct pt *pt, struct rtimer *t))
               tsch_radio_on(TSCH_RADIO_CMD_ON_WITHIN_TIMESLOT);
               /* Wait for ACK to come */
               BUSYWAIT_UNTIL_ABS(NETSTACK_RADIO.receiving_packet(),
-                  tx_start_time, tx_duration + tsch_timing[tsch_ts_rx_ack_delay] + tsch_timing[tsch_ts_ack_wait]);
+                  tx_start_time, tx_duration + tsch_timing[tsch_ts_rx_ack_delay] + tsch_timing[tsch_ts_ack_wait] + RADIO_DELAY_BEFORE_DETECT);
               TSCH_DEBUG_TX_EVENT();
 
               ack_start_time = RTIMER_NOW() - RADIO_DELAY_BEFORE_DETECT;
@@ -753,7 +768,7 @@ PT_THREAD(tsch_rx_slot(struct pt *pt, struct rtimer *t))
     if(!packet_seen) {
       /* Check if receiving within guard time */
       BUSYWAIT_UNTIL_ABS((packet_seen = NETSTACK_RADIO.receiving_packet()),
-          current_slot_start, tsch_timing[tsch_ts_rx_offset] + tsch_timing[tsch_ts_rx_wait]);
+          current_slot_start, tsch_timing[tsch_ts_rx_offset] + tsch_timing[tsch_ts_rx_wait] + RADIO_DELAY_BEFORE_DETECT);
     }
     if(!packet_seen) {
       /* no packets on air */
@@ -780,6 +795,7 @@ PT_THREAD(tsch_rx_slot(struct pt *pt, struct rtimer *t))
         NETSTACK_RADIO.get_value(RADIO_PARAM_LAST_RSSI, &radio_last_rssi);
         current_input->rx_asn = current_asn;
         current_input->rssi = (signed)radio_last_rssi;
+        current_input->channel = current_channel;
         header_len = frame802154_parse((uint8_t *)current_input->payload, current_input->len, &frame);
         frame_valid = header_len > 0 &&
           frame802154_check_dest_panid(&frame) &&
@@ -937,7 +953,6 @@ PT_THREAD(tsch_slot_operation(struct rtimer *t, void *ptr))
       );
 
     } else {
-      uint8_t current_channel;
       int is_active_slot;
       TSCH_DEBUG_SLOT_START();
       tsch_in_slot_operation = 1;
