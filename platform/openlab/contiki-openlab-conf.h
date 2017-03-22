@@ -174,6 +174,10 @@ typedef unsigned int uip_stats_t;
  *
  */
 
+/* Outgoing packet queue */
+ #undef QUEUEBUF_CONF_NUM
+ #define QUEUEBUF_CONF_NUM 16
+
 /* contikimac */
 #define RDC_CONF_HARDWARE_CSMA 0
 #define RDC_CONF_HARDWARE_ACK 0
