@@ -35,25 +35,24 @@
 #ifndef __IOTLAB_PROJECT_CONF_H__
 #define __IOTLAB_PROJECT_CONF_H__
 
+#define NETWORK_SIZE 256
+#define NETWORK_DENSITY 160
+
 #ifndef IOTLAB_WITH_NON_STORING
 #define IOTLAB_WITH_NON_STORING 1 /* Set this to run with RPL non-storing mode */
 #endif
 
 #undef NBR_TABLE_CONF_MAX_NEIGHBORS
-#define NBR_TABLE_CONF_MAX_NEIGHBORS 130
+#define NBR_TABLE_CONF_MAX_NEIGHBORS NETWORK_DENSITY
 
- /* Add a bit of extra probing in the non-storing case to compensate for reduced DAO traffic */
- #undef RPL_CONF_PROBING_INTERVAL
- #define RPL_CONF_PROBING_INTERVAL (60 * CLOCK_SECOND)
-
- /* Use no DIO suppression */
- #undef RPL_CONF_DIO_REDUNDANCY
- #define RPL_CONF_DIO_REDUNDANCY 0xff
+/* Use no DIO suppression */
+#undef RPL_CONF_DIO_REDUNDANCY
+#define RPL_CONF_DIO_REDUNDANCY 0xff
 
 #if IOTLAB_WITH_NON_STORING
 
 #undef RPL_NS_CONF_LINK_NUM
-#define RPL_NS_CONF_LINK_NUM 360 /* Number of links maintained at the root. Can be set to 0 at non-root nodes. */
+#define RPL_NS_CONF_LINK_NUM NETWORK_SIZE /* Number of links maintained at the root. Can be set to 0 at non-root nodes. */
 #undef UIP_CONF_MAX_ROUTES
 #define UIP_CONF_MAX_ROUTES 0 /* No need for routes */
 #undef RPL_CONF_MOP
@@ -64,7 +63,7 @@
 #undef RPL_NS_CONF_LINK_NUM
 #define RPL_NS_CONF_LINK_NUM 0
 #undef UIP_CONF_MAX_ROUTES
-#define UIP_CONF_MAX_ROUTES  360
+#define UIP_CONF_MAX_ROUTES  NETWORK_SIZE
 #undef RPL_CONF_MOP
 #define RPL_CONF_MOP RPL_MOP_STORING_NO_MULTICAST
 
