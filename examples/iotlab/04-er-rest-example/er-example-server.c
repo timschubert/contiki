@@ -43,9 +43,7 @@
 #include "contiki-net.h"
 #include "rest-engine.h"
 
-#if PLATFORM_HAS_BUTTON
-#include "dev/button-sensor.h"
-#endif
+#include "dev/serial-line.h"
 
 #define DEBUG 0
 #if DEBUG
@@ -100,6 +98,8 @@ extern resource_t res_sht11;
 #endif
 */
 
+extern char* res_serial_data;
+
 PROCESS(er_example_server, "Erbium Example Server");
 AUTOSTART_PROCESSES(&er_example_server);
 
@@ -136,7 +136,7 @@ PROCESS_THREAD(er_example_server, ev, data)
 /*  rest_activate_resource(&res_chunks, "test/chunks"); */
 /*  rest_activate_resource(&res_separate, "test/separate"); */
   rest_activate_resource(&res_push, "test/push");
-/*  rest_activate_resource(&res_event, "sensors/button"); */
+/*  rest_activate_resource(&res_event, "test/serial"); */
 /*  rest_activate_resource(&res_sub, "test/sub"); */
 /*  rest_activate_resource(&res_b1_sep_b2, "test/b1sepb2"); */
 #if PLATFORM_HAS_LEDS
@@ -169,17 +169,15 @@ PROCESS_THREAD(er_example_server, ev, data)
   /* Define application-specific events here. */
   while(1) {
     PROCESS_WAIT_EVENT();
-#if PLATFORM_HAS_BUTTON
-    if(ev == sensors_event && data == &button_sensor) {
-      PRINTF("*******BUTTON*******\n");
+    if(ev == serial_line_event_message) {
+      res_serial_data = (char*)data;
 
       /* Call the event_handler for this application-specific event. */
       res_event.trigger();
 
       /* Also call the separate response example handler. */
-      res_separate.resume();
+      // res_separate.resume();
     }
-#endif /* PLATFORM_HAS_BUTTON */
   }                             /* while (1) */
 
   PROCESS_END();

@@ -72,12 +72,14 @@ EVENT_RESOURCE(res_event,
  * Use local resource state that is accessed by res_get_handler() and altered by res_event_handler() or PUT or POST.
  */
 static int32_t event_counter = 0;
+char* res_serial_data;
 
 static void
 res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
   REST.set_header_content_type(response, REST.type.TEXT_PLAIN);
-  REST.set_response_payload(response, buffer, snprintf((char *)buffer, preferred_size, "EVENT %lu", event_counter));
+  if(res_serial_data)
+    REST.set_response_payload(response, buffer, snprintf((char *)buffer, preferred_size, "%s", (char*)res_serial_data));
 
   /* A post_handler that handles subscriptions/observing will be called for periodic resources by the framework. */
 }
