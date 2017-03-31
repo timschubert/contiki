@@ -224,6 +224,10 @@ typedef unsigned int uip_stats_t;
 /* Sensors / actuators */
 #define PLATFORM_HAS_LEDS    1
 #define PLATFORM_HAS_LIGHT   1
+#define PLATFORM_HAS_PRESSURE 1
+#define PLATFORM_HAS_GYROSCOPE 1
+#define PLATFORM_HAS_ACCELEROMETER 1
+#define PLATFORM_HAS_MAGNETOMETER 1
 
 /* include the project config */
 /* PROJECT_CONF_H might be defined in the project Makefile */
