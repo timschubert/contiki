@@ -69,7 +69,11 @@ extern resource_t
   res_push,
   res_event,
   res_sub,
-  res_b1_sep_b2;
+  res_b1_sep_b2,
+  res_pressure,
+  res_gyros,
+  res_accel,
+  res_magne;
 #if PLATFORM_HAS_LEDS
 extern resource_t res_leds, res_toggle;
 #endif
@@ -97,6 +101,22 @@ extern resource_t res_radio;
 extern resource_t res_sht11;
 #endif
 */
+#if PLATFORM_HAS_PRESSURE
+#include "dev/pressure-sensor.h"
+extern resource_t res_pressure;
+#endif
+#if PLATFORM_HAS_GYROSCOPE
+#include "dev/gyr-sensor.h"
+extern resource_t res_gyros;
+#endif
+#if PLATFORM_HAS_ACCELEROMETER
+#include "dev/acc-mag-sensor.h"
+extern resource_t res_accel;
+#endif
+#if PLATFORM_HAS_MAGNETOMETER
+#include "dev/acc-mag-sensor.h"
+extern resource_t res_magne;
+#endif
 
 extern char* res_serial_data;
 
@@ -165,6 +185,22 @@ PROCESS_THREAD(er_example_server, ev, data)
   SENSORS_ACTIVATE(sht11_sensor);  
 #endif
 */
+#if PLATFORM_HAS_PRESSURE
+  rest_activate_resource(&res_pressure, "sensors/pressure");
+  SENSORS_ACTIVATE(pressure_sensor);
+#endif
+#if PLATFORM_HAS_GYROSCOPE
+  rest_activate_resource(&res_gyros, "sensors/gyros");
+  SENSORS_ACTIVATE(gyr_sensor);
+#endif
+#if PLATFORM_HAS_ACCELEROMETER
+  rest_activate_resource(&res_accel, "sensors/accel");
+  SENSORS_ACTIVATE(acc_sensor);
+#endif
+#if PLATFORM_HAS_MAGNETOMETER
+  rest_activate_resource(&res_magne, "sensors/magne");
+  SENSORS_ACTIVATE(mag_sensor);
+#endif
 
   /* Define application-specific events here. */
   while(1) {
