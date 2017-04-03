@@ -34,22 +34,21 @@
  *      Example resource
  * \author
  *      Matthias Kovatsch <kovatsch@inf.ethz.ch>
- *      Julien Vandaele <julien.vandaele@inria.fr>
  */
 
 #include "contiki.h"
 
-#if PLATFORM_HAS_LIGHT
+#if PLATFORM_HAS_BATTERY
 
 #include <string.h>
 #include "rest-engine.h"
-#include "dev/light-sensor.h"
+#include "dev/battery-sensor.h"
 
 static void res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
 
 /* A simple getter example. Returns the reading from light sensor with a simple etag */
-RESOURCE(res_light,
-         "title=\"Ambient light (supports JSON)\";rt=\"LightSensor\"",
+RESOURCE(res_battery,
+         "title=\"Battery status\";rt=\"Battery\"",
          res_get_handler,
          NULL,
          NULL,
@@ -58,30 +57,25 @@ RESOURCE(res_light,
 static void
 res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
-  uint16_t light = light_sensor.value(0) / LIGHT_SENSOR_VALUE_SCALE;
+  int battery = battery_sensor.value(0);
 
   unsigned int accept = -1;
   REST.get_header_accept(request, &accept);
 
   if(accept == -1 || accept == REST.type.TEXT_PLAIN) {
     REST.set_header_content_type(response, REST.type.TEXT_PLAIN);
-    snprintf((char *)buffer, REST_MAX_CHUNK_SIZE, "%u", light);
+    snprintf((char *)buffer, REST_MAX_CHUNK_SIZE, "%d", battery);
 
     REST.set_response_payload(response, (uint8_t *)buffer, strlen((char *)buffer));
-  } else if(accept == REST.type.APPLICATION_XML) {
-    REST.set_header_content_type(response, REST.type.APPLICATION_XML);
-    snprintf((char *)buffer, REST_MAX_CHUNK_SIZE, "<light value=\"%u\"/>", light);
-
-    REST.set_response_payload(response, buffer, strlen((char *)buffer));
   } else if(accept == REST.type.APPLICATION_JSON) {
     REST.set_header_content_type(response, REST.type.APPLICATION_JSON);
-    snprintf((char *)buffer, REST_MAX_CHUNK_SIZE, "{'light':%u}", light);
+    snprintf((char *)buffer, REST_MAX_CHUNK_SIZE, "{'battery':%d}", battery);
 
     REST.set_response_payload(response, buffer, strlen((char *)buffer));
   } else {
     REST.set_response_status(response, REST.status.NOT_ACCEPTABLE);
-    const char *msg = "Supporting content-types text/plain, application/xml, and application/json";
+    const char *msg = "Supporting content-types text/plain and application/json";
     REST.set_response_payload(response, msg, strlen(msg));
   }
 }
-#endif /* PLATFORM_HAS_LIGHT */
+#endif /* PLATFORM_HAS_BATTERY */

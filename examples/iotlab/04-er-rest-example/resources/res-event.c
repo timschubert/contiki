@@ -39,9 +39,8 @@
 #include <string.h>
 #include "rest-engine.h"
 #include "er-coap.h"
-#include "dev/acc-mag-sensor.h"
 
-#define DEBUG 1
+#define DEBUG 0
 #if DEBUG
 #include <stdio.h>
 #define PRINTF(...) printf(__VA_ARGS__)
@@ -54,14 +53,14 @@
 #endif
 
 static void res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
-static void res_event_handler();
+static void res_event_handler(void);
 
 /*
  * Example for an event resource.
  * Additionally takes a period parameter that defines the interval to call [name]_periodic_handler().
  * A default post_handler takes care of subscriptions and manages a list of subscribers to notify.
  */
-EVENT_RESOURCE(res_acc,
+EVENT_RESOURCE(res_event,
                "title=\"Event demo\";obs",
                res_get_handler,
                NULL,
@@ -73,51 +72,32 @@ EVENT_RESOURCE(res_acc,
  * Use local resource state that is accessed by res_get_handler() and altered by res_event_handler() or PUT or POST.
  */
 static int32_t event_counter = 0;
+char* res_serial_data;
 
 static void
 res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
   REST.set_header_content_type(response, REST.type.TEXT_PLAIN);
-  REST.set_response_payload(response, buffer, snprintf((char *)buffer, preferred_size, "peak: %lu\n", event_counter));
-  //REST.set_response_payload(response, buffer, snprintf((char *)buffer, preferred_size, "EVENT %lu", event_counter));
+  if(res_serial_data)
+    REST.set_response_payload(response, buffer, snprintf((char *)buffer, preferred_size, "%s", (char*)res_serial_data));
 
   /* A post_handler that handles subscriptions/observing will be called for periodic resources by the framework. */
 }
-
-#define ACC_PEAK_THRESHOLD  -800
-
 /*
  * Additionally, res_event_handler must be implemented for each EVENT_RESOURCE.
  * It is called through <res_name>.trigger(), usually from the server process.
  */
 static void
-res_event_handler()
-{ 
-  int x, y, z;
-  // accelerometer frequency
-  static unsigned acc_freq = 1344;
-  static unsigned count = 0;
-  if (count != 0) {
-     --count;
-     return;
-  }
-  z = acc_sensor.value(ACC_MAG_SENSOR_Z);
-  x = acc_sensor.value(ACC_MAG_SENSOR_X);
-  y = acc_sensor.value(ACC_MAG_SENSOR_Y);
-  PRINTF("accel: %d %d %d xyz mg\n", x, y, z);
-  if (z < ACC_PEAK_THRESHOLD)
-    return;
-
+res_event_handler(void)
+{
   /* Do the update triggered by the event here, e.g., sampling a sensor. */
   ++event_counter;
-    
-  count = acc_freq; // one peak detect by second
 
   /* Usually a condition is defined under with subscribers are notified, e.g., event was above a threshold. */
   if(1) {
-    PRINTF("TICK %lu for /%s\n", event_counter, res_acc.url);
+    PRINTF("TICK %u for /%s\n", event_counter, res_event.url);
 
     /* Notify the registered observers which will trigger the res_get_handler to create the response. */
-    REST.notify_subscribers(&res_acc);
+    REST.notify_subscribers(&res_event);
   }
 }

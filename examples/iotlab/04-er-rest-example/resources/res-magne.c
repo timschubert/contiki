@@ -39,17 +39,17 @@
 
 #include "contiki.h"
 
-#if PLATFORM_HAS_LIGHT
+#if PLATFORM_HAS_MAGNETOMETER
 
 #include <string.h>
 #include "rest-engine.h"
-#include "dev/light-sensor.h"
+#include "dev/acc-mag-sensor.h"
 
 static void res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
 
-/* A simple getter example. Returns the reading from light sensor with a simple etag */
-RESOURCE(res_light,
-         "title=\"Ambient light (supports JSON)\";rt=\"LightSensor\"",
+/* A simple getter example. Returns the reading from magnetometer sensor with a simple etag */
+RESOURCE(res_magne,
+         "title=\"Three axis magnetometer (supports JSON)\";rt=\"MagnetometerSensor\"",
          res_get_handler,
          NULL,
          NULL,
@@ -58,24 +58,26 @@ RESOURCE(res_light,
 static void
 res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
-  uint16_t light = light_sensor.value(0) / LIGHT_SENSOR_VALUE_SCALE;
+  int x = mag_sensor.value(ACC_MAG_SENSOR_X);
+  int y = mag_sensor.value(ACC_MAG_SENSOR_Y);
+  int z = mag_sensor.value(ACC_MAG_SENSOR_Z);
 
   unsigned int accept = -1;
   REST.get_header_accept(request, &accept);
 
   if(accept == -1 || accept == REST.type.TEXT_PLAIN) {
     REST.set_header_content_type(response, REST.type.TEXT_PLAIN);
-    snprintf((char *)buffer, REST_MAX_CHUNK_SIZE, "%u", light);
+    snprintf((char *)buffer, REST_MAX_CHUNK_SIZE, "%d;%d;%d", x, y, z);
 
     REST.set_response_payload(response, (uint8_t *)buffer, strlen((char *)buffer));
   } else if(accept == REST.type.APPLICATION_XML) {
     REST.set_header_content_type(response, REST.type.APPLICATION_XML);
-    snprintf((char *)buffer, REST_MAX_CHUNK_SIZE, "<light value=\"%u\"/>", light);
+    snprintf((char *)buffer, REST_MAX_CHUNK_SIZE, "<magnetometer x=\"%d\" y=\"%d\" z=\"%d\"/>", x, y, z);
 
     REST.set_response_payload(response, buffer, strlen((char *)buffer));
   } else if(accept == REST.type.APPLICATION_JSON) {
     REST.set_header_content_type(response, REST.type.APPLICATION_JSON);
-    snprintf((char *)buffer, REST_MAX_CHUNK_SIZE, "{'light':%u}", light);
+    snprintf((char *)buffer, REST_MAX_CHUNK_SIZE, "{'magnetometer':{'x':%d,'y':%d,'z':%d}}", x, y, z);
 
     REST.set_response_payload(response, buffer, strlen((char *)buffer));
   } else {
@@ -84,4 +86,4 @@ res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferr
     REST.set_response_payload(response, msg, strlen(msg));
   }
 }
-#endif /* PLATFORM_HAS_LIGHT */
+#endif /* PLATFORM_HAS_MAGNETOMETER */

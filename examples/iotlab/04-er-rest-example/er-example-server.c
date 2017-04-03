@@ -43,13 +43,9 @@
 #include "contiki-net.h"
 #include "rest-engine.h"
 
-#ifdef IOTLAB_M3
-#include "dev/light-sensor.h"
-#endif
-#include "dev/acc-mag-sensor.h"
 #include "dev/serial-line.h"
 
-#define DEBUG 1
+#define DEBUG 0
 #if DEBUG
 #include <stdio.h>
 #define PRINTF(...) printf(__VA_ARGS__)
@@ -67,35 +63,64 @@
  */
 extern resource_t
   res_hello,
+  res_mirror,
   res_chunks,
-  res_serial,
-  res_acc;
+  res_separate,
+  res_push,
+  res_event,
+  res_sub,
+  res_b1_sep_b2,
+  res_pressure,
+  res_gyros,
+  res_accel,
+  res_magne;
+#if PLATFORM_HAS_LEDS
+extern resource_t res_leds, res_toggle;
+#endif
+#if PLATFORM_HAS_LIGHT
+#include "dev/light-sensor.h"
+extern resource_t res_light;
+#endif
+#if PLATFORM_HAS_BATTERY
+#include "dev/battery-sensor.h"
+extern resource_t res_battery;
+#endif
+#if PLATFORM_HAS_TEMPERATURE
+#include "dev/temperature-sensor.h"
+extern resource_t res_temperature;
+#endif
+/*
+extern resource_t res_battery;
+#endif
+#if PLATFORM_HAS_RADIO
+#include "dev/radio-sensor.h"
+extern resource_t res_radio;
+#endif
+#if PLATFORM_HAS_SHT11
+#include "dev/sht11/sht11-sensor.h"
+extern resource_t res_sht11;
+#endif
+*/
+#if PLATFORM_HAS_PRESSURE
+#include "dev/pressure-sensor.h"
+extern resource_t res_pressure;
+#endif
+#if PLATFORM_HAS_GYROSCOPE
+#include "dev/gyr-sensor.h"
+extern resource_t res_gyros;
+#endif
+#if PLATFORM_HAS_ACCELEROMETER
+#include "dev/acc-mag-sensor.h"
+extern resource_t res_accel;
+#endif
+#if PLATFORM_HAS_MAGNETOMETER
+#include "dev/acc-mag-sensor.h"
+extern resource_t res_magne;
+#endif
 
 extern char* res_serial_data;
 
-#ifdef IOTLAB_M3
-extern resource_t res_light;
-
-/* Light sensor */
-static void config_light()
-{
-  light_sensor.configure(LIGHT_SENSOR_SOURCE, ISL29020_LIGHT__AMBIENT);
-  light_sensor.configure(LIGHT_SENSOR_RESOLUTION, ISL29020_RESOLUTION__16bit);
-  light_sensor.configure(LIGHT_SENSOR_RANGE, ISL29020_RANGE__1000lux);
-  SENSORS_ACTIVATE(light_sensor);
-}
-#endif
-
-static void config_acc()
-{
-  acc_sensor.configure(ACC_MAG_SENSOR_DATARATE,
-      LSM303DLHC_ACC_RATE_1344HZ_N_5376HZ_LP);
-  acc_sensor.configure(ACC_MAG_SENSOR_SCALE, LSM303DLHC_ACC_SCALE_2G);
-  acc_sensor.configure(ACC_MAG_SENSOR_MODE, LSM303DLHC_ACC_UPDATE_ON_READ);
-  SENSORS_ACTIVATE(acc_sensor);
-}
-
-PROCESS(er_example_server, "IoT-LAB CoAP Server");
+PROCESS(er_example_server, "Erbium Example Server");
 AUTOSTART_PROCESSES(&er_example_server);
 
 PROCESS_THREAD(er_example_server, ev, data)
@@ -103,6 +128,8 @@ PROCESS_THREAD(er_example_server, ev, data)
   PROCESS_BEGIN();
 
   PROCESS_PAUSE();
+
+  PRINTF("Starting Erbium Example Server\n");
 
 #ifdef RF_CHANNEL
   PRINTF("RF channel: %u\n", RF_CHANNEL);
@@ -124,25 +151,68 @@ PROCESS_THREAD(er_example_server, ev, data)
    * WARNING: Activating twice only means alternate path, not two instances!
    * All static variables are the same for each URI path.
    */
-  rest_activate_resource(&res_hello, "hello");
-  rest_activate_resource(&res_chunks, "chunks"); 
-  rest_activate_resource(&res_serial, "serial");
-  config_acc();
-  rest_activate_resource(&res_acc, "acc");
-#ifdef IOTLAB_M3
-  config_light();
-  rest_activate_resource(&res_light, "light");
+  rest_activate_resource(&res_hello, "test/hello");
+/*  rest_activate_resource(&res_mirror, "debug/mirror"); */
+/*  rest_activate_resource(&res_chunks, "test/chunks"); */
+/*  rest_activate_resource(&res_separate, "test/separate"); */
+  rest_activate_resource(&res_push, "test/push");
+/*  rest_activate_resource(&res_event, "test/serial"); */
+/*  rest_activate_resource(&res_sub, "test/sub"); */
+/*  rest_activate_resource(&res_b1_sep_b2, "test/b1sepb2"); */
+#if PLATFORM_HAS_LEDS
+/*  rest_activate_resource(&res_leds, "actuators/leds"); */
+  rest_activate_resource(&res_toggle, "actuators/toggle");
 #endif
+#if PLATFORM_HAS_LIGHT
+  rest_activate_resource(&res_light, "sensors/light"); 
+  SENSORS_ACTIVATE(light_sensor);  
+#endif
+#if PLATFORM_HAS_BATTERY
+  rest_activate_resource(&res_battery, "sensors/battery");  
+  SENSORS_ACTIVATE(battery_sensor);  
+#endif
+#if PLATFORM_HAS_TEMPERATURE
+  rest_activate_resource(&res_temperature, "sensors/temperature");  
+  SENSORS_ACTIVATE(temperature_sensor);  
+#endif
+/*
+#if PLATFORM_HAS_RADIO
+  rest_activate_resource(&res_radio, "sensors/radio");  
+  SENSORS_ACTIVATE(radio_sensor);  
+#endif
+#if PLATFORM_HAS_SHT11
+  rest_activate_resource(&res_sht11, "sensors/sht11");  
+  SENSORS_ACTIVATE(sht11_sensor);  
+#endif
+*/
+#if PLATFORM_HAS_PRESSURE
+  rest_activate_resource(&res_pressure, "sensors/pressure");
+  SENSORS_ACTIVATE(pressure_sensor);
+#endif
+#if PLATFORM_HAS_GYROSCOPE
+  rest_activate_resource(&res_gyros, "sensors/gyros");
+  SENSORS_ACTIVATE(gyr_sensor);
+#endif
+#if PLATFORM_HAS_ACCELEROMETER
+  rest_activate_resource(&res_accel, "sensors/accel");
+  SENSORS_ACTIVATE(acc_sensor);
+#endif
+#if PLATFORM_HAS_MAGNETOMETER
+  rest_activate_resource(&res_magne, "sensors/magne");
+  SENSORS_ACTIVATE(mag_sensor);
+#endif
+
   /* Define application-specific events here. */
   while(1) {
     PROCESS_WAIT_EVENT();
-    if (ev == serial_line_event_message) {
-      PRINTF("Echo cmd: '%s'\n", (char*)data);
+    if(ev == serial_line_event_message) {
       res_serial_data = (char*)data;
-      res_serial.trigger();
-    }
-    else if (ev == sensors_event && data == &acc_sensor) {
-      res_acc.trigger();
+
+      /* Call the event_handler for this application-specific event. */
+      res_event.trigger();
+
+      /* Also call the separate response example handler. */
+      // res_separate.resume();
     }
   }                             /* while (1) */
 

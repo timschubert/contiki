@@ -36,11 +36,15 @@
  *      Matthias Kovatsch <kovatsch@inf.ethz.ch>
  */
 
+#include "contiki.h"
+
+#if PLATFORM_HAS_LEDS
+
 #include <string.h>
 #include "rest-engine.h"
-#include "er-coap.h"
+#include "dev/leds.h"
 
-#define DEBUG 1
+#define DEBUG 0
 #if DEBUG
 #include <stdio.h>
 #define PRINTF(...) printf(__VA_ARGS__)
@@ -52,53 +56,53 @@
 #define PRINTLLADDR(addr)
 #endif
 
-char* res_serial_data;
+static void res_post_put_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
 
-static void res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
-static void res_event_handler();
-
-/*
- * Example for an event resource.
- * Additionally takes a period parameter that defines the interval to call [name]_periodic_handler().
- * A default post_handler takes care of subscriptions and manages a list of subscribers to notify.
- */
-EVENT_RESOURCE(res_serial,
-               "title=\"Serial event demo\";obs",
-               res_get_handler,
-               NULL,
-               NULL,
-               NULL,
-               res_event_handler);
-
-/*
- * Use local resource state that is accessed by res_get_handler() and altered by res_event_handler() or PUT or POST.
- */
-static int32_t event_counter = 0;
+/*A simple actuator example, depending on the color query parameter and post variable mode, corresponding led is activated or deactivated*/
+RESOURCE(res_leds,
+         "title=\"LEDs: ?color=r|g|b, POST/PUT mode=on|off\";rt=\"Control\"",
+         NULL,
+         res_post_put_handler,
+         res_post_put_handler,
+         NULL);
 
 static void
-res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
+res_post_put_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
-  REST.set_header_content_type(response, REST.type.TEXT_PLAIN);
-  REST.set_response_payload(response, buffer, snprintf((char *)buffer, preferred_size, "serial: %s", (char*)res_serial_data));
+  size_t len = 0;
+  const char *color = NULL;
+  const char *mode = NULL;
+  uint8_t led = 0;
+  int success = 1;
 
-  /* A post_handler that handles subscriptions/observing will be called for periodic resources by the framework. */
-}
-/*
- * Additionally, res_event_handler must be implemented for each EVENT_RESOURCE.
- * It is called through <res_name>.trigger(), usually from the server process.
- */
-static void
-res_event_handler()
-{ 
+  if((len = REST.get_query_variable(request, "color", &color))) {
+    PRINTF("color %.*s\n", len, color);
 
-  /* Do the update triggered by the event here, e.g., sampling a sensor. */
-  ++event_counter;
+    if(strncmp(color, "r", len) == 0) {
+      led = LEDS_RED;
+    } else if(strncmp(color, "g", len) == 0) {
+      led = LEDS_GREEN;
+    } else if(strncmp(color, "b", len) == 0) {
+      led = LEDS_BLUE;
+    } else {
+      success = 0;
+    }
+  } else {
+    success = 0;
+  } if(success && (len = REST.get_post_variable(request, "mode", &mode))) {
+    PRINTF("mode %s\n", mode);
 
-  /* Usually a condition is defined under with subscribers are notified, e.g., event was above a threshold. */
-  if(1) {
-    PRINTF("TICK %lu for /%s\n", event_counter, res_serial.url);
-
-    /* Notify the registered observers which will trigger the res_get_handler to create the response. */
-    REST.notify_subscribers(&res_serial);
+    if(strncmp(mode, "on", len) == 0) {
+      leds_on(led);
+    } else if(strncmp(mode, "off", len) == 0) {
+      leds_off(led);
+    } else {
+      success = 0;
+    }
+  } else {
+    success = 0;
+  } if(!success) {
+    REST.set_response_status(response, REST.status.BAD_REQUEST);
   }
 }
+#endif /* PLATFORM_HAS_LEDS */
