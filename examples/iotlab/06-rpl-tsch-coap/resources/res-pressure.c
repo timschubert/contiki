@@ -31,20 +31,25 @@
 
 /**
  * \file
- *      ETSI Plugtest resource
+ *      Example resource
  * \author
  *      Matthias Kovatsch <kovatsch@inf.ethz.ch>
+ *      Julien Vandaele <julien.vandaele@inria.fr>
  */
+
+#include "contiki.h"
+
+#if PLATFORM_HAS_PRESSURE
 
 #include <string.h>
 #include "rest-engine.h"
-#include "er-coap.h"
-#include "er-plugtest.h"
+#include "dev/pressure-sensor.h"
 
 static void res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
 
-RESOURCE(res_plugtest_query,
-         "title=\"Resource accepting query parameters\"",
+/* A simple getter example. Returns the reading from pressure sensor with a simple etag */
+RESOURCE(res_pressure,
+         "title=\"Pressure (supports JSON)\";rt=\"PressureSensor\"",
          res_get_handler,
          NULL,
          NULL,
@@ -53,23 +58,31 @@ RESOURCE(res_plugtest_query,
 static void
 res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
-  coap_packet_t *const coap_req = (coap_packet_t *)request;
-  int len = 0;
-  const char *query = NULL;
+  int pressure = pressure_sensor.value(0);
+  pressure = pressure / PRESSURE_SENSOR_VALUE_SCALE;
 
-  PRINTF(
-    "/query          GET (%s %u)\n", coap_req->type == COAP_TYPE_CON ? "CON" : "NON", coap_req->mid);
+  unsigned int accept = -1;
+  REST.get_header_accept(request, &accept);
 
-  if((len = REST.get_query(request, &query))) {
-    PRINTF("Query: %.*s\n", len, query);
-    /* Code 2.05 CONTENT is default. */
+  if(accept == -1 || accept == REST.type.TEXT_PLAIN) {
+    REST.set_header_content_type(response, REST.type.TEXT_PLAIN);
+    snprintf((char *)buffer, REST_MAX_CHUNK_SIZE, "%d", pressure);
+
+    REST.set_response_payload(response, (uint8_t *)buffer, strlen((char *)buffer));
+  } else if(accept == REST.type.APPLICATION_XML) {
+    REST.set_header_content_type(response, REST.type.APPLICATION_XML);
+    snprintf((char *)buffer, REST_MAX_CHUNK_SIZE, "<pressure value=\"%d\"/>", pressure);
+
+    REST.set_response_payload(response, buffer, strlen((char *)buffer));
+  } else if(accept == REST.type.APPLICATION_JSON) {
+    REST.set_header_content_type(response, REST.type.APPLICATION_JSON);
+    snprintf((char *)buffer, REST_MAX_CHUNK_SIZE, "{'pressure':%d}", pressure);
+
+    REST.set_response_payload(response, buffer, strlen((char *)buffer));
+  } else {
+    REST.set_response_status(response, REST.status.NOT_ACCEPTABLE);
+    const char *msg = "Supporting content-types text/plain, application/xml, and application/json";
+    REST.set_response_payload(response, msg, strlen(msg));
   }
-  REST.set_header_content_type(response,
-                               REST.type.TEXT_PLAIN);
-  REST.set_response_payload(
-    response,
-    buffer,
-    snprintf((char *)buffer, MAX_PLUGFEST_PAYLOAD,
-             "Type: %u\nCode: %u\nMID: %u\nQuery: %.*s", coap_req->type,
-             coap_req->code, coap_req->mid, len, query));
 }
+#endif /* PLATFORM_HAS_PRESSURE */

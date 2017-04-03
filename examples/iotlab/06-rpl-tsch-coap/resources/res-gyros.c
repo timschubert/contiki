@@ -31,42 +31,59 @@
 
 /**
  * \file
- *      ETSI Plugtest resource
+ *      Example resource
  * \author
  *      Matthias Kovatsch <kovatsch@inf.ethz.ch>
+ *      Julien Vandaele <julien.vandaele@inria.fr>
  */
+
+#include "contiki.h"
+
+#if PLATFORM_HAS_GYROSCOPE
 
 #include <string.h>
 #include "rest-engine.h"
-#include "er-coap.h"
-#include "er-plugtest.h"
+#include "dev/gyr-sensor.h"
 
 static void res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
 
-PARENT_RESOURCE(res_plugtest_path,
-                "title=\"Path test resource\";ct=\"40\"",
-                res_get_handler,
-                NULL,
-                NULL,
-                NULL);
+/* A simple getter example. Returns the reading from gyroscope sensor with a simple etag */
+RESOURCE(res_gyros,
+         "title=\"Three axis gyroscope (supports JSON)\";rt=\"GyroscopeSensor\"",
+         res_get_handler,
+         NULL,
+         NULL,
+         NULL);
 
 static void
-res_get_handler(void *request, void *response, uint8_t *buffer,
-                uint16_t preferred_size, int32_t *offset)
+res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
+  int x = gyr_sensor.value(GYR_SENSOR_X);
+  int y = gyr_sensor.value(GYR_SENSOR_Y);
+  int z = gyr_sensor.value(GYR_SENSOR_Z);
 
-  const char *uri_path = NULL;
-  int len = REST.get_url(request, &uri_path);
-  int base_len = strlen(res_plugtest_path.url);
+  unsigned int accept = -1;
+  REST.get_header_accept(request, &accept);
 
-  if(len == base_len) {
-    REST.set_header_content_type(response, REST.type.APPLICATION_LINK_FORMAT);
-    snprintf((char *)buffer, MAX_PLUGFEST_PAYLOAD,
-             "</path/sub1>,</path/sub2>,</path/sub3>");
-  } else {
+  if(accept == -1 || accept == REST.type.TEXT_PLAIN) {
     REST.set_header_content_type(response, REST.type.TEXT_PLAIN);
-    snprintf((char *)buffer, MAX_PLUGFEST_PAYLOAD, "/%.*s", len, uri_path);
-  }
+    snprintf((char *)buffer, REST_MAX_CHUNK_SIZE, "%d;%d;%d", x, y, z);
 
-  REST.set_response_payload(response, buffer, strlen((char *)buffer));
+    REST.set_response_payload(response, (uint8_t *)buffer, strlen((char *)buffer));
+  } else if(accept == REST.type.APPLICATION_XML) {
+    REST.set_header_content_type(response, REST.type.APPLICATION_XML);
+    snprintf((char *)buffer, REST_MAX_CHUNK_SIZE, "<gyroscope x=\"%d\" y=\"%d\" z=\"%d\"/>", x, y, z);
+
+    REST.set_response_payload(response, buffer, strlen((char *)buffer));
+  } else if(accept == REST.type.APPLICATION_JSON) {
+    REST.set_header_content_type(response, REST.type.APPLICATION_JSON);
+    snprintf((char *)buffer, REST_MAX_CHUNK_SIZE, "{'gyroscope':{'x':%d,'y':%d,'z':%d}}", x, y, z);
+
+    REST.set_response_payload(response, buffer, strlen((char *)buffer));
+  } else {
+    REST.set_response_status(response, REST.status.NOT_ACCEPTABLE);
+    const char *msg = "Supporting content-types text/plain, application/xml, and application/json";
+    REST.set_response_payload(response, msg, strlen(msg));
+  }
 }
+#endif /* PLATFORM_HAS_GYROSCOPE */

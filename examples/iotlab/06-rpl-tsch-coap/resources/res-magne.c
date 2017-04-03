@@ -31,20 +31,25 @@
 
 /**
  * \file
- *      ETSI Plugtest resource
+ *      Example resource
  * \author
  *      Matthias Kovatsch <kovatsch@inf.ethz.ch>
+ *      Julien Vandaele <julien.vandaele@inria.fr>
  */
+
+#include "contiki.h"
+
+#if PLATFORM_HAS_MAGNETOMETER
 
 #include <string.h>
 #include "rest-engine.h"
-#include "er-coap.h"
-#include "er-plugtest.h"
+#include "dev/acc-mag-sensor.h"
 
 static void res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
 
-RESOURCE(res_plugtest_multi,
-         "title=\"Resource providing text/plain and application/xml\";ct=\"0 41\"",
+/* A simple getter example. Returns the reading from magnetometer sensor with a simple etag */
+RESOURCE(res_magne,
+         "title=\"Three axis magnetometer (supports JSON)\";rt=\"MagnetometerSensor\"",
          res_get_handler,
          NULL,
          NULL,
@@ -53,35 +58,32 @@ RESOURCE(res_plugtest_multi,
 static void
 res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
-  coap_packet_t *const coap_req = (coap_packet_t *)request;
+  int x = mag_sensor.value(ACC_MAG_SENSOR_X);
+  int y = mag_sensor.value(ACC_MAG_SENSOR_Y);
+  int z = mag_sensor.value(ACC_MAG_SENSOR_Z);
 
   unsigned int accept = -1;
   REST.get_header_accept(request, &accept);
 
-  PRINTF("/multi-format   GET (%s %u) ", coap_req->type == COAP_TYPE_CON ? "CON" : "NON", coap_req->mid);
-
   if(accept == -1 || accept == REST.type.TEXT_PLAIN) {
     REST.set_header_content_type(response, REST.type.TEXT_PLAIN);
-    REST.set_response_payload(
-      response,
-      buffer,
-      snprintf((char *)buffer, MAX_PLUGFEST_PAYLOAD,
-               "Type: %u\nCode: %u\nMID: %u%s", coap_req->type, coap_req->code,
-               coap_req->mid, accept != -1 ? "\nAccept: 0" : ""));
-    PRINTF("PLAIN\n");
+    snprintf((char *)buffer, REST_MAX_CHUNK_SIZE, "%d;%d;%d", x, y, z);
+
+    REST.set_response_payload(response, (uint8_t *)buffer, strlen((char *)buffer));
   } else if(accept == REST.type.APPLICATION_XML) {
     REST.set_header_content_type(response, REST.type.APPLICATION_XML);
-    REST.set_response_payload(
-      response,
-      buffer,
-      snprintf((char *)buffer, MAX_PLUGFEST_PAYLOAD,
-               "<status type=\"%u\" code=\"%u\" mid=\"%u\" accept=\"%u\"/>",
-               coap_req->type, coap_req->code, coap_req->mid, accept));
-    PRINTF("XML\n");
+    snprintf((char *)buffer, REST_MAX_CHUNK_SIZE, "<magnetometer x=\"%d\" y=\"%d\" z=\"%d\"/>", x, y, z);
+
+    REST.set_response_payload(response, buffer, strlen((char *)buffer));
+  } else if(accept == REST.type.APPLICATION_JSON) {
+    REST.set_header_content_type(response, REST.type.APPLICATION_JSON);
+    snprintf((char *)buffer, REST_MAX_CHUNK_SIZE, "{'magnetometer':{'x':%d,'y':%d,'z':%d}}", x, y, z);
+
+    REST.set_response_payload(response, buffer, strlen((char *)buffer));
   } else {
     REST.set_response_status(response, REST.status.NOT_ACCEPTABLE);
-    const char *msg = "Supporting content-types text/plain and application/xml";
+    const char *msg = "Supporting content-types text/plain, application/xml, and application/json";
     REST.set_response_payload(response, msg, strlen(msg));
-    PRINTF("ERROR\n");
   }
 }
+#endif /* PLATFORM_HAS_MAGNETOMETER */

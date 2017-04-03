@@ -31,32 +31,25 @@
 
 /**
  * \file
- *      ETSI Plugtest resource
+ *      Example resource
  * \author
  *      Matthias Kovatsch <kovatsch@inf.ethz.ch>
+ *      Julien Vandaele <julien.vandaele@inria.fr>
  */
+
+#include "contiki.h"
+
+#if PLATFORM_HAS_ACCELEROMETER
 
 #include <string.h>
 #include "rest-engine.h"
-#include "er-coap.h"
-#include "er-plugtest.h"
+#include "dev/acc-mag-sensor.h"
 
 static void res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
 
-RESOURCE(res_plugtest_link1,
-         "rt=\"Type1 Type2\";if=\"If1\"",
-         res_get_handler,
-         NULL,
-         NULL,
-         NULL);
-RESOURCE(res_plugtest_link2,
-         "rt=\"Type2 Type3\";if=\"If2\"",
-         res_get_handler,
-         NULL,
-         NULL,
-         NULL);
-RESOURCE(res_plugtest_link3,
-         "rt=\"Type1 Type3\";if=\"foo\"",
+/* A simple getter example. Returns the reading from accelerometer sensor with a simple etag */
+RESOURCE(res_accel,
+         "title=\"Three axis accelerometer (supports JSON)\";rt=\"AccelerometerSensor\"",
          res_get_handler,
          NULL,
          NULL,
@@ -65,7 +58,32 @@ RESOURCE(res_plugtest_link3,
 static void
 res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
-  const char *msg = "Dummy link";
-  REST.set_header_content_type(response, REST.type.TEXT_PLAIN);
-  REST.set_response_payload(response, msg, strlen(msg));
+  int x = acc_sensor.value(ACC_MAG_SENSOR_X);
+  int y = acc_sensor.value(ACC_MAG_SENSOR_Y);
+  int z = acc_sensor.value(ACC_MAG_SENSOR_Z);
+
+  unsigned int accept = -1;
+  REST.get_header_accept(request, &accept);
+
+  if(accept == -1 || accept == REST.type.TEXT_PLAIN) {
+    REST.set_header_content_type(response, REST.type.TEXT_PLAIN);
+    snprintf((char *)buffer, REST_MAX_CHUNK_SIZE, "%d;%d;%d", x, y, z);
+
+    REST.set_response_payload(response, (uint8_t *)buffer, strlen((char *)buffer));
+  } else if(accept == REST.type.APPLICATION_XML) {
+    REST.set_header_content_type(response, REST.type.APPLICATION_XML);
+    snprintf((char *)buffer, REST_MAX_CHUNK_SIZE, "<accelerometer x=\"%d\" y=\"%d\" z=\"%d\"/>", x, y, z);
+
+    REST.set_response_payload(response, buffer, strlen((char *)buffer));
+  } else if(accept == REST.type.APPLICATION_JSON) {
+    REST.set_header_content_type(response, REST.type.APPLICATION_JSON);
+    snprintf((char *)buffer, REST_MAX_CHUNK_SIZE, "{'accelerometer':{'x':%d,'y':%d,'z':%d}}", x, y, z);
+
+    REST.set_response_payload(response, buffer, strlen((char *)buffer));
+  } else {
+    REST.set_response_status(response, REST.status.NOT_ACCEPTABLE);
+    const char *msg = "Supporting content-types text/plain, application/xml, and application/json";
+    REST.set_response_payload(response, msg, strlen(msg));
+  }
 }
+#endif /* PLATFORM_HAS_ACCELEROMETER */
