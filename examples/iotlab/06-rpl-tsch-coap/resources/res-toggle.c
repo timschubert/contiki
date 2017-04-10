@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Inria.
+ * Copyright (c) 2013, Institute for Pervasive Computing, ETH Zurich
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,47 +26,38 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * This file is part of the Contiki operating system.
  */
 
 /**
- * \author Simon Duquennoy <simon.duquennoy@inria.fr>
+ * \file
+ *      Example resource
+ * \author
+ *      Matthias Kovatsch <kovatsch@inf.ethz.ch>
  */
 
-#ifndef __IOTLAB_PROJECT_CONF_H__
-#define __IOTLAB_PROJECT_CONF_H__
+#include "contiki.h"
 
-#define NETWORK_SIZE 256
-#define NETWORK_DENSITY 160
+#if PLATFORM_HAS_LEDS
 
-#ifndef IOTLAB_WITH_NON_STORING
-#define IOTLAB_WITH_NON_STORING 1 /* Set this to run with RPL non-storing mode */
-#endif
+#include <string.h>
+#include "contiki.h"
+#include "rest-engine.h"
+#include "dev/leds.h"
 
-#undef NBR_TABLE_CONF_MAX_NEIGHBORS
-#define NBR_TABLE_CONF_MAX_NEIGHBORS NETWORK_DENSITY
+static void res_post_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
 
-/* Use no DIO suppression */
-#undef RPL_CONF_DIO_REDUNDANCY
-#define RPL_CONF_DIO_REDUNDANCY 0xff
+/* A simple actuator example. Toggles the red led */
+RESOURCE(res_toggle,
+         "title=\"Red LED\";rt=\"Control\"",
+         NULL,
+         res_post_handler,
+         NULL,
+         NULL);
 
-#if IOTLAB_WITH_NON_STORING
-
-#undef RPL_NS_CONF_LINK_NUM
-#define RPL_NS_CONF_LINK_NUM NETWORK_SIZE /* Number of links maintained at the root. Can be set to 0 at non-root nodes. */
-#undef UIP_CONF_MAX_ROUTES
-#define UIP_CONF_MAX_ROUTES 0 /* No need for routes */
-#undef RPL_CONF_MOP
-#define RPL_CONF_MOP RPL_MOP_NON_STORING /* Mode of operation*/
-
-#else /* IOTLAB_WITH_NON_STORING */
-
-#undef RPL_NS_CONF_LINK_NUM
-#define RPL_NS_CONF_LINK_NUM 0
-#undef UIP_CONF_MAX_ROUTES
-#define UIP_CONF_MAX_ROUTES  NETWORK_SIZE
-#undef RPL_CONF_MOP
-#define RPL_CONF_MOP RPL_MOP_STORING_NO_MULTICAST
-
-#endif /* IOTLAB_WITH_NON_STORING */
-
-#endif /* __IOTLAB_PROJECT_CONF_H__ */
+static void
+res_post_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
+{
+  leds_toggle(LEDS_RED);
+}
+#endif /* PLATFORM_HAS_LEDS */
