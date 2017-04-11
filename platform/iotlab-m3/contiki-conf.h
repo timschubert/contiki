@@ -59,6 +59,14 @@
 #define ELFLOADER_CONF_TEXTMEMORY_SIZE 0x800
 #endif
 
+/* Sensors / actuators */
+#define PLATFORM_HAS_LEDS    1
+#define PLATFORM_HAS_LIGHT   1
+#define PLATFORM_HAS_PRESSURE 1
+#define PLATFORM_HAS_GYROSCOPE 1
+#define PLATFORM_HAS_ACCELEROMETER 1
+#define PLATFORM_HAS_MAGNETOMETER 1
+
 /* Openlab common definitions */
 
 #include "../openlab/contiki-openlab-conf.h"

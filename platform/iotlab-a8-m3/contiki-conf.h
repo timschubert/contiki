@@ -43,6 +43,12 @@
 #define SLIP_ARCH_CONF_BAUDRATE 500000
 #endif
 
+/* Sensors / actuators */
+#define PLATFORM_HAS_LEDS    1
+#define PLATFORM_HAS_GYROSCOPE 1
+#define PLATFORM_HAS_ACCELEROMETER 1
+#define PLATFORM_HAS_MAGNETOMETER 1
+
 /* Openlab common definitions */
 
 #include "../openlab/contiki-openlab-conf.h"
