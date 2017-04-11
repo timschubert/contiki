@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 2010, Swedish Institute of Computer Science.
+ * All rights reserved.
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -23,45 +26,45 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * This file is part of the Contiki operating system.
- *
  */
-
-/*
-  Author:  Robert Olsson <robert@radio-sensors.com>
-*/
-
-#include "contiki.h"
-#include "net/rime/rime.h"
-#include "random.h"
-#include "dev/button-sensor.h"
-#include "dev/leds.h"
-#include <stdio.h>
 /*---------------------------------------------------------------------------*/
-
-PROCESS(sniffer_process, "Sniffer process");
-AUTOSTART_PROCESSES(&sniffer_process);
-
+/**
+ * \file
+ *         A simple webserver
+ * \author
+ *         Adam Dunkels <adam@sics.se>
+ *         Niclas Finne <nfi@sics.se>
+ *         Joakim Eriksson <joakime@sics.se>
+ */
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(sniffer_process, ev, data)
-{
-  PROCESS_BEGIN();
+#ifndef HTTPD_SIMPLE_H_
+#define HTTPD_SIMPLE_H_
 
-  /*
-    To get rf230bb radio in sniff mode we need to have radio in RX_ON.
-    The promisc commands fixes this for us. No need to set PAN and 
-    address or MAC to zero is this case. Se Atmel datasheet. There is
-    a chance other radios works the same way.
-  */
-
-  rf230_set_promiscuous_mode(1);
-
-  printf("Sniffer started\n");
-
-  while(1) {
-    PROCESS_YIELD();
-  }
-
-  PROCESS_END();
-}
+#include "contiki-net.h"
+#ifndef WEBSERVER_CONF_CFS_PATHLEN
+#define HTTPD_PATHLEN 2
+#else /* WEBSERVER_CONF_CFS_CONNS */
+#define HTTPD_PATHLEN WEBSERVER_CONF_CFS_PATHLEN
+#endif /* WEBSERVER_CONF_CFS_CONNS */
 /*---------------------------------------------------------------------------*/
+struct httpd_state;
+typedef char (* httpd_simple_script_t)(struct httpd_state *s);
+/*---------------------------------------------------------------------------*/
+struct httpd_state {
+  struct timer timer;
+  struct psock sin, sout;
+  struct pt outputpt;
+  char inputbuf[HTTPD_PATHLEN + 24];
+/*char outputbuf[UIP_TCP_MSS]; */
+  char filename[HTTPD_PATHLEN];
+  httpd_simple_script_t script;
+  char state;
+};
+/*---------------------------------------------------------------------------*/
+void httpd_init(void);
+void httpd_appcall(void *state);
+httpd_simple_script_t httpd_simple_get_script(const char *name);
+/*---------------------------------------------------------------------------*/
+#define SEND_STRING(s, str) PSOCK_SEND(s, (uint8_t *)str, strlen(str))
+/*---------------------------------------------------------------------------*/
+#endif /* HTTPD_SIMPLE_H_ */
