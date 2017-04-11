@@ -5,7 +5,7 @@ This repository is a fork of the official Contiki repository, bringing support f
 
 You may retrieve the last changes from the official repository with these commands:
 
-    git remote add contiki git@github.com:contiki-os/contiki.git
+    git remote add contiki https://github.com/contiki-os/contiki
     git fetch contiki
     git merge contiki/master
 
