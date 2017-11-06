@@ -56,6 +56,11 @@
 #include <limits.h>
 #include <string.h>
 
+#ifdef RPL_RESTORE
+uint8_t stateFound;
+uint16_t clock;
+#endif
+
 #if RPL_CONF_STATS
 rpl_stats_t rpl_stats;
 #endif
@@ -299,6 +304,36 @@ rpl_ipv6_neighbor_callback(uip_ds6_nbr_t *nbr)
   }
 }
 /*---------------------------------------------------------------------------*/
+
+#ifdef RPL_RESTORE
+/*
+ * check if an older state was already saved. if not, "initialize" the filessystem
+ */
+void
+rpl_restore() {
+  clock = 0;
+  xmem_init();
+
+  unsigned char read[1];
+  xmem_pread(read,1,RPL_RESTORE_INITIALIZED_FLAG);
+  if(read[0]==0) {
+    PRINTF("unused filesystem, initialize\n");
+    unsigned char toWrite[1];
+    toWrite[0] = 111;
+    xmem_pwrite(toWrite,1,RPL_RESTORE_INITIALIZED_FLAG);
+    PRINTF("done\n");
+  } else if(read[0]==111) {
+    PRINTF("found a saved state\n");
+    stateFound = 1;
+  }
+
+  if (stateFound) {
+    PRINTF("restoring rpl\n");
+    invoke_restore();
+  }
+}
+#endif
+
 void
 rpl_purge_dags(void)
 {
@@ -335,6 +370,11 @@ rpl_init(void)
   default_instance = NULL;
 
   rpl_dag_init();
+
+#ifdef RPL_RESTORE
+  rpl_restore();
+#endif
+
   rpl_reset_periodic_timer();
   rpl_icmp6_register_handlers();
 
