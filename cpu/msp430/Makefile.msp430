@@ -29,6 +29,11 @@ ifndef CONTIKI_CPU_FAM_DIR
  endif
 endif
 ifndef CONTIKI_CPU_FAM_DIR
+ ifneq (,$(findstring msp430x1611,$(MCU)))
+  CONTIKI_CPU_FAM_DIR = x1611
+ endif
+endif
+ifndef CONTIKI_CPU_FAM_DIR
  ${error Unhandled MSP430 family: "$(MCU)"}
 endif
 
