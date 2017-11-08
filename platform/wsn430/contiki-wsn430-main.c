@@ -130,6 +130,8 @@ void uip_log(char *msg) { puts(msg); }
 /*---------------------------------------------------------------------------*/
 #ifndef RF_CHANNEL
 #define RF_CHANNEL              26
+#endif
+
 #if 0
 void
 force_inclusion(int d1, int d2)
