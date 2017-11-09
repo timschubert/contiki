@@ -44,9 +44,9 @@ endif # clean
 ARCH=node-id.c cfs-coffee.c \
      cc2420.c cc2420-arch.c cc2420-arch-sfd.c \
      uip-ipchksum.c \
-     uart0.c slip_arch.c uart-putchar.c \
+     uart0.c uart-putchar.c \
      spi1.c ds2411.c ds1722.c m25p80.c xmem.c \
-     leds_arch.c leds.c cc1101.c
+     cc1101.c
 
 CONTIKI_TARGET_DIRS = . dev apps net
 ifndef CONTIKI_TARGET_MAIN
