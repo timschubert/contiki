@@ -41,12 +41,15 @@ endif # radio_val
 endif # radio
 endif # clean
 
-ARCH=node-id.c cfs-coffee.c \
-     cc2420.c cc2420-arch.c cc2420-arch-sfd.c \
+ARCH=node-id.c \
+     cfs-coffee.c \
      uip-ipchksum.c \
-     uart0.c uart-putchar.c \
-     spi1.c ds2411.c ds1722.c m25p80.c xmem.c \
-     cc1101.c
+     uart0.c slip_uart0.c uart-putchar.c \
+     spi1.c \
+     ds2411.c ds1722.c \
+     m25p80.c xmem.c \
+     cc2420.c cc2420-arch.c cc2420-arch-sfd.c \
+     c1101.c cc1101-arch.c cc1101-arch-sfd.c
 
 CONTIKI_TARGET_DIRS = . dev apps net
 ifndef CONTIKI_TARGET_MAIN
