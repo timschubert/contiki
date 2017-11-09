@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Swedish Institute of Computer Science
+ * Copyright (c) 2006, Swedish Institute of Computer Science
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,78 +26,70 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * This file is part of the Contiki operating system.
+ * @(#)$Id: slip_uart1.c,v 1.8 2008/02/03 20:59:35 adamdunkels Exp $
+ */
+
+/*
+ * Machine dependent MSP430 SLIP routines for UART.
+ */
+
+#include "contiki.h"
+
+#include "dev/slip.h"
+#include "uart0.h"
+/*---------------------------------------------------------------------------*/
+void
+slip_arch_writeb(unsigned char c)
+{
+  uart0_putchar(c);
+}
+/*---------------------------------------------------------------------------*/
+/*
+ * The serial line is used to transfer IP packets using slip. To make
+ * it possible to send debug output over the same line we send debug
+ * output as slip frames (i.e delimeted by SLIP_END).
  *
  */
-#include "contiki.h"
-#include "lib/sensors.h"
-#include "dev/hwconf.h"
-#include "dev/button-sensor.h"
-#include "isr_compat.h"
-
-const struct sensors_sensor button_sensor;
-
-static struct timer debouncetimer;
-static int status(int type);
-
-HWCONF_PIN(BUTTON, 2, 7);
-HWCONF_IRQ(BUTTON, 2, 7);
-
 /*---------------------------------------------------------------------------*/
-ISR(PORT2, irq_p2)
+#if WITH_UIP
+int
+putchar(int c)
 {
-  ENERGEST_ON(ENERGEST_TYPE_IRQ);
+#define SLIP_END 0300
+  static char debug_frame = 0;
 
-  if(BUTTON_CHECK_IRQ()) {
-    if(timer_expired(&debouncetimer)) {
-      timer_set(&debouncetimer, CLOCK_SECOND / 4);
-      sensors_changed(&button_sensor);
-      LPM4_EXIT;
-    }
+  if (!debug_frame) {		/* Start of debug output */
+    slip_arch_writeb(SLIP_END);
+    slip_arch_writeb('\r');	/* Type debug line == '\r' */
+    debug_frame = 1;
   }
-  P2IFG = 0x00;
-  ENERGEST_OFF(ENERGEST_TYPE_IRQ);
-}
-/*---------------------------------------------------------------------------*/
-static int
-value(int type)
-{
-  return BUTTON_READ() || !timer_expired(&debouncetimer);
-}
-/*---------------------------------------------------------------------------*/
-static int
-configure(int type, int c)
-{
-  switch (type) {
-  case SENSORS_ACTIVE:
-    if (c) {
-      if(!status(SENSORS_ACTIVE)) {
-	timer_set(&debouncetimer, 0);
-	BUTTON_IRQ_EDGE_SELECTD();
 
-	BUTTON_SELECT();
-	BUTTON_MAKE_INPUT();
+  slip_arch_writeb((char)c);
 
-	BUTTON_ENABLE_IRQ();
-      }
-    } else {
-      BUTTON_DISABLE_IRQ();
-    }
-    return 1;
+  /*
+   * Line buffered output, a newline marks the end of debug output and
+   * implicitly flushes debug output.
+   */
+  if (c == '\n') {
+    slip_arch_writeb(SLIP_END);
+    debug_frame = 0;
   }
-  return 0;
+
+  return c;
 }
+#endif
 /*---------------------------------------------------------------------------*/
-static int
-status(int type)
+
+static uint16_t uart0_callback(uint8_t c) {
+  return (uint16_t) slip_input_byte(c);
+}
+/**
+ * Initalize the RS232 port and the SLIP driver.
+ *
+ */
+void
+slip_arch_init(unsigned long ubr)
 {
-  switch (type) {
-  case SENSORS_ACTIVE:
-  case SENSORS_READY:
-    return BUTTON_IRQ_ENABLED();
-  }
-  return 0;
+    uart0_register_callback(uart0_callback);
 }
 /*---------------------------------------------------------------------------*/
-SENSORS_SENSOR(button_sensor, BUTTON_SENSOR,
-	       value, configure, status);
