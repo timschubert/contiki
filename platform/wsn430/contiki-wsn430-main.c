@@ -39,6 +39,11 @@
 #include "dev/uart1.h"
 #include "dev/watchdog.h"
 #include "dev/xmem.h"
+#ifdef WITH_CC1101
+#include "dev/cc1101-radio.h"
+#else
+#include "dev/cc2420-radio.h"
+#endif
 #include "lib/random.h"
 #include "net/netstack.h"
 #include "net/mac/frame802154.h"
@@ -53,6 +58,13 @@
 #include "cfs-coffee-arch.h"
 #include "cfs/cfs-coffee.h"
 #include "sys/autostart.h"
+#include "sys/profile.h"
+
+// WSN430 drivers
+#include "uart0.h"
+#include "ds2411.h"
+#include "ds1722.h"
+
 
 #if UIP_CONF_ROUTER
 
@@ -104,7 +116,7 @@ static uint8_t is_gateway;
 #define PRINTF(...)
 #endif /* DEBUG */
 
-void init_platform(void);
+//void init_platform(void);
 
 /*---------------------------------------------------------------------------*/
 #if 0
@@ -129,6 +141,10 @@ force_inclusion(int d1, int d2)
 {
   snprintf(NULL, 0, "%d", d1 % d2);
 }
+#endif
+/*---------------------------------------------------------------------------*/
+#ifndef RF_CHANNEL
+#define RF_CHANNEL              26
 #endif
 /*---------------------------------------------------------------------------*/
 static void
@@ -205,7 +221,7 @@ main(int argc, char **argv)
   leds_on(LEDS_RED);
 
 
-  uart1_init(BAUD2UBR(115200)); /* Must come before first printf */
+  uart0_init(UART0_CONFIG_8MHZ_115200); /* Must come before first printf */
 
   leds_on(LEDS_GREEN);
   ds2411_init();
@@ -263,12 +279,16 @@ main(int argc, char **argv)
   init_platform();
 
   set_rime_addr();
-  
-  cc2420_init();
+
+#ifdef WITH_CC1101
+  cc1101_radio_init();
+#else
+  cc2420_radio_init();
+#endif
   {
     uint8_t longaddr[8];
     uint16_t shortaddr;
-    
+
     shortaddr = (linkaddr_node_addr.u8[0] << 8) +
       linkaddr_node_addr.u8[1];
     memset(longaddr, 0, sizeof(longaddr));
@@ -276,8 +296,8 @@ main(int argc, char **argv)
     PRINTF("MAC %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x ",
            longaddr[0], longaddr[1], longaddr[2], longaddr[3],
            longaddr[4], longaddr[5], longaddr[6], longaddr[7]);
-    
-    cc2420_set_pan_addr(IEEE802154_PANID, shortaddr, longaddr);
+
+    //cc2420_set_pan_addr(IEEE802154_PANID, shortaddr, longaddr);
   }
 
   PRINTF(CONTIKI_VERSION_STRING " started. ");
@@ -356,9 +376,14 @@ main(int argc, char **argv)
 #endif /* NETSTACK_CONF_WITH_IPV6 */
 
 #if !NETSTACK_CONF_WITH_IPV4 && !NETSTACK_CONF_WITH_IPV6
-  uart1_set_input(serial_line_input_byte);
+  // uart0_register_callback((uart0_cb_t)serial_line_input_byte);
+  uart0_set_input(serial_line_input_byte);
   serial_line_init();
 #endif
+
+#if PROFILE_CONF_ON
+  profile_init();
+#endif /* PROFILE_CONF_ON */
 
   leds_off(LEDS_GREEN);
 
@@ -413,18 +438,24 @@ main(int argc, char **argv)
   /*  watchdog_stop();*/
   while(1) {
     int r;
+#if PROFILE_CONF_ON
+    profile_episode_start();
+#endif /* PROFILE_CONF_ON */
     do {
       /* Reset watchdog. */
       watchdog_periodic();
       r = process_run();
     } while(r > 0);
+#if PROFILE_CONF_ON
+    profile_episode_end();
+#endif /* PROFILE_CONF_ON */
 
     /*
      * Idle processing.
      */
     int s = splhigh();		/* Disable interrupts. */
-    /* uart1_active is for avoiding LPM3 when still sending or receiving */
-    if(process_nevents() != 0 || uart1_active()) {
+    /* uart0_active is for avoiding LPM3 when still sending or receiving */
+    if(process_nevents() != 0) || uart0_active()) {
       splx(s);			/* Re-enable interrupts. */
     } else {
       static unsigned long irq_energest = 0;
