@@ -40,9 +40,9 @@
 #include "dev/watchdog.h"
 #include "dev/xmem.h"
 #ifdef WITH_CC1101
-#include "dev/cc1101-radio.h"
+#include "dev/cc1101/cc1101.h"
 #else
-#include "dev/cc2420-radio.h"
+#include "dev/cc2420/cc2420.h"
 #endif
 #include "lib/random.h"
 #include "net/netstack.h"
@@ -58,12 +58,11 @@
 #include "cfs-coffee-arch.h"
 #include "cfs/cfs-coffee.h"
 #include "sys/autostart.h"
-#include "sys/profile.h"
 
 // WSN430 drivers
 #include "uart0.h"
-#include "ds2411.h"
-#include "ds1722.h"
+//#include "ds1722.h"
+//#include "tsl2550.h"
 
 
 #if UIP_CONF_ROUTER
@@ -221,7 +220,7 @@ main(int argc, char **argv)
   leds_on(LEDS_RED);
 
 
-  uart0_init(UART0_CONFIG_8MHZ_115200); /* Must come before first printf */
+  uart0_init(BAUD2UBR(115200)); /* Must come before first printf */
 
   leds_on(LEDS_GREEN);
   ds2411_init();
@@ -276,14 +275,14 @@ main(int argc, char **argv)
   slip_arch_init(BAUD2UBR(115200));
 #endif /* NETSTACK_CONF_WITH_IPV4 */
 
-  init_platform();
+  //init_platform();
 
   set_rime_addr();
 
 #ifdef WITH_CC1101
-  cc1101_radio_init();
+  cc1101_init();
 #else
-  cc2420_radio_init();
+  cc2420_init();
 #endif
   {
     uint8_t longaddr[8];
@@ -381,10 +380,6 @@ main(int argc, char **argv)
   serial_line_init();
 #endif
 
-#if PROFILE_CONF_ON
-  profile_init();
-#endif /* PROFILE_CONF_ON */
-
   leds_off(LEDS_GREEN);
 
 #if TIMESYNCH_CONF_ENABLED
@@ -438,24 +433,18 @@ main(int argc, char **argv)
   /*  watchdog_stop();*/
   while(1) {
     int r;
-#if PROFILE_CONF_ON
-    profile_episode_start();
-#endif /* PROFILE_CONF_ON */
     do {
       /* Reset watchdog. */
       watchdog_periodic();
       r = process_run();
     } while(r > 0);
-#if PROFILE_CONF_ON
-    profile_episode_end();
-#endif /* PROFILE_CONF_ON */
 
     /*
      * Idle processing.
      */
     int s = splhigh();		/* Disable interrupts. */
     /* uart0_active is for avoiding LPM3 when still sending or receiving */
-    if(process_nevents() != 0) || uart0_active()) {
+    if(process_nevents() != 0 || uart0_active()) {
       splx(s);			/* Re-enable interrupts. */
     } else {
       static unsigned long irq_energest = 0;

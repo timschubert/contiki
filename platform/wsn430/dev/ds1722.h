@@ -69,6 +69,8 @@
 #ifndef _DS1722_H_
 #define _DS1722_H_
 
+#include <stdint.h>
+
 /**
  * \brief Initialize the SPI1 for transfer.
  *
