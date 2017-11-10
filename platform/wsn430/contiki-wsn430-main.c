@@ -296,7 +296,12 @@ main(int argc, char **argv)
            longaddr[0], longaddr[1], longaddr[2], longaddr[3],
            longaddr[4], longaddr[5], longaddr[6], longaddr[7]);
 
-    //cc2420_set_pan_addr(IEEE802154_PANID, shortaddr, longaddr);
+
+#ifdef WITH_CC1101
+    cc1101_set_pan_addr(IEEE802154_PANID, shortaddr, longaddr);
+#else
+    cc2420_set_pan_addr(IEEE802154_PANID, shortaddr, longaddr);
+#endif
   }
 
   PRINTF(CONTIKI_VERSION_STRING " started. ");
