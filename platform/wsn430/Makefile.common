@@ -44,7 +44,7 @@ endif # clean
 ARCH=cfs-coffee.c \
      node-id.c \
      uart0.c \
-     spi1.c \
+     spi.c \
      ds2411.c \
      ds1722.c \
      m25p80.c \
