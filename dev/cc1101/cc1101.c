@@ -284,7 +284,7 @@ static unsigned char channel_get(void);
 
 static int current_channel;
 
-#define MIN(a,b) ((a)<(b)?(a):(b))
+//#define MIN(a,b) ((a)<(b)?(a):(b))
 
 #define OFF 0
 #define ON  1
@@ -1341,9 +1341,10 @@ rssi_dbm(unsigned char raw_rssi)
 signed char
 cc1101_read_rssi(void)
 {
-  int s;
+  //int s;
   uint8_t raw;
-  uint8_t cca, cca_bit, radio_was_off;
+  //uint8_t cca,
+  uint8_t cca_bit, radio_was_off;
 
   if(SPI_IS_LOCKED()) {
     return 0;
@@ -1451,7 +1452,7 @@ static int
 channel_clear(void)
 {
   uint8_t cca, cca_bit, radio_was_off;
-  int s;
+  //int s;
 
   if(SPI_IS_LOCKED()) {
     return 0;

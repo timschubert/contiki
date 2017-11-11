@@ -61,7 +61,7 @@
 
 // WSN430 drivers
 #include "uart0.h"
-//#include "ds1722.h"
+#include "ds1722.h"
 //#include "tsl2550.h"
 
 

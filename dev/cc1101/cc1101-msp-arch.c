@@ -51,6 +51,7 @@
 #include "cc1101-arch.h"
 #include "dev/spi.h"
 #include "dev/leds.h"
+#include "dev/watchdog.h"
 
 #include "isr_compat.h"
 #include <stdio.h>
