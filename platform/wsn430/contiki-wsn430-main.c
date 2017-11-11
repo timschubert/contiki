@@ -36,7 +36,7 @@
 #include "dev/leds.h"
 #include "dev/serial-line.h"
 #include "dev/slip.h"
-#include "dev/uart1.h"
+//#include "dev/uart1.h"
 #include "dev/watchdog.h"
 #include "dev/xmem.h"
 #ifdef WITH_CC1101
@@ -93,7 +93,7 @@ extern int msp430_dco_required;
 #include "net/ipv4/uip-fw-drv.h"
 #include "net/ipv4/uip-over-mesh.h"
 static struct uip_fw_netif slipif =
-  {UIP_FW_NETIF(192,168,1,2, 255,255,255,255, slip_send)};
+  {UIP_FW_NETIF(0,0,0,0, 255,255,255,255, slip_send)};
 static struct uip_fw_netif meshif =
   {UIP_FW_NETIF(172,16,0,0, 255,255,0,0, uip_over_mesh_send)};
 
@@ -115,6 +115,7 @@ static uint8_t is_gateway;
 #define PRINTF(...)
 #endif /* DEBUG */
 
+/* do not init sensors */
 //void init_platform(void);
 
 /*---------------------------------------------------------------------------*/
@@ -275,7 +276,8 @@ main(int argc, char **argv)
   slip_arch_init(BAUD2UBR(115200));
 #endif /* NETSTACK_CONF_WITH_IPV4 */
 
-  //init_platform();
+  /* do not init sensors */
+  init_platform();
 
   set_rime_addr();
 
