@@ -32,99 +32,78 @@
  * The fact that you are presently reading this means that you have had
  * knowledge of the CeCILL license and that you accept its terms.
  */
-
-
 /**
- * \defgroup ds1722 DS1722 temperature sensor driver
+ * \defgroup tsl2550 TSL2550 light sensor driver
  * \ingroup wsn430
  * @{
- * The DS1722 chip is a digital thermometer from MAXIM.
- * It communicates with the MSP430 via an SPI bus.
+ * The TSL2550 is a light sensor communicating with the MSP430
+ * via I2C on the USART0 port.
  *
- * This temperature sensor has two main modes of sampling:
- * one-shot and continuous; and a temperature resolution
- * between 8 and 12 bits.
- *
- * There are two 8bit registers in the chip (the LSB and MSB)
- * containing the latest sampled value that can be read from SPI.
- * When asked for continuous sampling,
- * the chip samples and updates the two register repeatedly,
- * whereas for a one-shot conversion it is done only once.
- *
- * \sa http://www.maxim-ic.com/quick_view2.cfm/qv_pk/2766
+ * Once powered-up, the chip continuously samples
+ * the ambient light with two photodiodes, that need
+ * to be further processed in order to get a light power
+ * value in lux. See the datasheet for more details.
  */
-
 
 /**
  * \file
- * \brief  DS1722 temperature sensor driver header
+ * \brief  TSL2550 light sensor driver header
  * \author Colin Chaballier
  * \author Clément Burin des Roziers <clement.burin-des-roziers@inria.fr>
  * \date   2008
  **/
 
-
-
-
-#ifndef _DS1722_H_
-#define _DS1722_H_
+#ifndef _TSL2550_H_
+#define _TSL2550_H_
 
 #include "gcc_uniarch/io.h"
 
 /**
- * \brief Initialize the SPI1 for transfer.
+ * \brief Configure IO pins and USART0 for I2C.
  *
- * This function must be called first before using any other one.
+ * This should be called before any other driver function.
  */
-void ds1722_init(void);
+void tsl2550_init(void);
 
 /**
- * \brief Set the temperature sensor resolution.
- * \param res the resolution, should be 8/9/10/11/12
+ * \brief Put the device in Power Down mode.
  */
-void ds1722_set_res(uint16_t res);
+void tsl2550_powerdown(void);
 
 /**
- * \brief Command a single sampling to the sensor.
+ * \brief Put the device in Power Up mode and read the command register.
+ * \return the command register, should be 0x03.
  */
-void ds1722_sample_1shot(void);
+uint8_t tsl2550_powerup(void);
 
 /**
- * \brief Command a continuous sampling to the sensor.
+ * \brief Set extended conversion mode.
  */
-void ds1722_sample_cont(void);
+void tsl2550_set_extended(void);
 
 /**
- * \brief Stop conversions and the sensor.
+ * \brief Reset the device to standard conversion mode.
  */
-void ds1722_stop(void);
+void tsl2550_set_standard(void);
+
+/*
+ * The ADC output values are composed as follows:
+ * |  B7   |  B6  |  B5  |  B4  |  B3  |  B2  |  B1  |  B0  |
+ * | valid |     CHORD bits     |        STEP bits          |
+ */
 
 /**
- * \brief Read the MSB of the latest sensor conversion.
- * \return the 8bit MSB of the conversion
+ * \brief Read the channel 0 conversion value. (Visible+Infrared)
+ * \return the read value
  */
-uint8_t ds1722_read_MSB(void);
+uint8_t tsl2550_read_adc0(void);
 
 /**
- * \brief Read the LSB of the latest sensor conversion.
- * \return the 8bit LSB of the conversion
+ * \brief Read the channel 1 conversion value. (Infrared only)
+ * \return the read value
  */
-uint8_t ds1722_read_LSB(void);
-
-/**
- * \brief Read the configuration register.
- * \return the 8bit value of the register
- */
-uint8_t ds1722_read_cfg(void);
-
-/**
- * \brief Write a value to the configuration register.
- * \param c the 8bit value
- */
-void ds1722_write_cfg(uint8_t c);
-
+uint8_t tsl2550_read_adc1(void);
 #endif
-
 
 /**
  * @}

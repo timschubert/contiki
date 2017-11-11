@@ -52,7 +52,7 @@
 
 #include <msp430.h>
 #include "ds1722.h"
-#include "spi.h"
+#include "spi1.h"
 
 #define REG_CONF 0x0
 #define REG_LSB  0x1

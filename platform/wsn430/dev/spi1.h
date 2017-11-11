@@ -32,100 +32,65 @@
  * The fact that you are presently reading this means that you have had
  * knowledge of the CeCILL license and that you accept its terms.
  */
-
-
 /**
- * \defgroup ds1722 DS1722 temperature sensor driver
+ * \defgroup spi1 SPI1 driver
  * \ingroup wsn430
  * @{
- * The DS1722 chip is a digital thermometer from MAXIM.
- * It communicates with the MSP430 via an SPI bus.
  *
- * This temperature sensor has two main modes of sampling:
- * one-shot and continuous; and a temperature resolution
- * between 8 and 12 bits.
+ * The SPI1 driver allows SPI communication
+ * using the USART1 block of the MSP430. This driver is mainly
+ * used by other peripheral devices' drivers.
  *
- * There are two 8bit registers in the chip (the LSB and MSB)
- * containing the latest sampled value that can be read from SPI.
- * When asked for continuous sampling,
- * the chip samples and updates the two register repeatedly,
- * whereas for a one-shot conversion it is done only once.
+ * It defines macros to initialize the SPI module,
+ * to chip select/deselect the three default hardware
+ * peripherals connected by SPI to the MSP430,
+ * to write/read bytes to/from these peripherals.
  *
- * \sa http://www.maxim-ic.com/quick_view2.cfm/qv_pk/2766
+ * Note that when chip selecting a device,
+ * the driver automatically deselects
+ * the two other ones to avoid bus collision.
+ *
  */
-
 
 /**
  * \file
- * \brief  DS1722 temperature sensor driver header
+ * \brief SPI1 driver.
+ * \author Antoine Fraboulet <antoine.fraboulet@insa-lyon.fr>
  * \author Colin Chaballier
  * \author Clément Burin des Roziers <clement.burin-des-roziers@inria.fr>
- * \date   2008
- **/
+ * \date November 08
+ */
 
+#ifndef SPI1_H
+#define SPI1_H
 
+extern uint8_t spi1_tx_return_value;
 
-
-#ifndef _DS1722_H_
-#define _DS1722_H_
-
-#include "gcc_uniarch/io.h"
+enum {
+    SPI1_CC1101 = 1,
+    SPI1_CC2420 = 1,
+    SPI1_DS1722 = 2,
+    SPI1_M25P80 = 3
+};
 
 /**
- * \brief Initialize the SPI1 for transfer.
- *
- * This function must be called first before using any other one.
+ * Initialize the UART1 for SPI use.
  */
-void ds1722_init(void);
+void spi1_init(void);
 
-/**
- * \brief Set the temperature sensor resolution.
- * \param res the resolution, should be 8/9/10/11/12
- */
-void ds1722_set_res(uint16_t res);
+uint8_t spi1_write_single(uint8_t byte);
+uint8_t spi1_read_single(void);
 
-/**
- * \brief Command a single sampling to the sensor.
- */
-void ds1722_sample_1shot(void);
+uint8_t spi1_write(uint8_t* data, int16_t len);
+void spi1_read(uint8_t* data, int16_t len);
 
-/**
- * \brief Command a continuous sampling to the sensor.
- */
-void ds1722_sample_cont(void);
+void spi1_select(int16_t chip);
+void spi1_deselect(int16_t chip);
 
-/**
- * \brief Stop conversions and the sensor.
- */
-void ds1722_stop(void);
-
-/**
- * \brief Read the MSB of the latest sensor conversion.
- * \return the 8bit MSB of the conversion
- */
-uint8_t ds1722_read_MSB(void);
-
-/**
- * \brief Read the LSB of the latest sensor conversion.
- * \return the 8bit LSB of the conversion
- */
-uint8_t ds1722_read_LSB(void);
-
-/**
- * \brief Read the configuration register.
- * \return the 8bit value of the register
- */
-uint8_t ds1722_read_cfg(void);
-
-/**
- * \brief Write a value to the configuration register.
- * \param c the 8bit value
- */
-void ds1722_write_cfg(uint8_t c);
-
-#endif
-
+int16_t spi1_read_somi(void);
 
 /**
  * @}
  */
+
+#endif

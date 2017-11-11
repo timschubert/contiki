@@ -37,8 +37,8 @@ ARCH=spi.c ds2411.c xmem.c i2c.c node-id.c sensors.c cfs-coffee.c \
      sky-sensors.c uip-ipchksum.c \
      uart1.c slip_uart1.c uart1-putchar.c \
      uart0.c uart0-putchar.c \
-     #ds1722.c
-     #tsl2550.c
+     tsl2550.c \
+     ds1722.c
 
 CONTIKI_TARGET_DIRS = . dev apps net
 ifndef CONTIKI_TARGET_MAIN
