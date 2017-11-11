@@ -116,7 +116,7 @@ static uint8_t is_gateway;
 #endif /* DEBUG */
 
 /* do not init sensors */
-//void init_platform(void);
+void init_platform(void);
 
 /*---------------------------------------------------------------------------*/
 #if 0
