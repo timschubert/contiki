@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Swedish Institute of Computer Science.
+ * Copyright (c) 2009, Swedish Institute of Computer Science
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,25 +26,14 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
- *
- * -----------------------------------------------------------------
- *
- * Author  : Adam Dunkels, Joakim Eriksson, Niclas Finne
- * Created : 2010-01-08
- * Updated : $Date: 2010/01/14 20:23:02 $
- *           $Revision: 1.2 $
  */
+#ifndef CC1101_ARCH_SFD_H
+#define CC1101_ARCH_SFD_H
 
-#ifndef LIGHT_SENSOR_H_
-#define LIGHT_SENSOR_H_
+extern volatile uint8_t cc1101_arch_sfd_counter;
+extern volatile uint16_t cc1101_arch_sfd_start_time;
+extern volatile uint16_t cc1101_arch_sfd_end_time;
 
-#include "lib/sensors.h"
+void cc1101_arch_sfd_init(void);
 
-extern const struct sensors_sensor light_sensor;
-
-#define LIGHT_SENSOR_PHOTOSYNTHETIC 0
-#define LIGHT_SENSOR_TOTAL_SOLAR    1
-
-
-#endif /* LIGHT-SENSOR_H_ */
+#endif /* CC1101_ARCH_SFD_H */

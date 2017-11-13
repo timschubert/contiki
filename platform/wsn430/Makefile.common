@@ -32,13 +32,22 @@ endif # radio_val
 endif # radio
 endif # clean
 
-ARCH=spi.c ds2411.c xmem.c i2c.c node-id.c sensors.c cfs-coffee.c \
-     cc2420.c cc2420-arch.c cc2420-arch-sfd.c \
-     sky-sensors.c uip-ipchksum.c \
-     uart1.c slip_uart1.c uart1-putchar.c \
-     uart0.c uart0-putchar.c \
+ARCH=ADC.c \
+     ds1722.c \
+     i2c0.c \
+     mcp73861.c \
+     spi1.c \
+     timerA.c \
+     timerB.c \
      tsl2550.c \
-     ds1722.c
+     xmem.c \
+     node-id.c \
+     cfs-coffee.c \
+     cc2420.c cc2420-arch.c cc2420-arch-sfd.c \
+     cc1101.c cc1101-arch.c cc1101-arch-sfd.c \
+     uip-ipchksum.c \
+     uart0.c slip_uart0.c uart0-putchar.c
+     #uart1.c slip_uart1.c uart1-putchar.c \
 
 CONTIKI_TARGET_DIRS = . dev apps net
 ifndef CONTIKI_TARGET_MAIN
