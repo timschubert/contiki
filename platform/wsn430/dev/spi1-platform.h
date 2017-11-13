@@ -66,6 +66,7 @@
 #define SPI1_H
 
 #include "spi.h"
+#include "../platform-conf.h"
 
 extern uint8_t spi1_tx_return_value;
 

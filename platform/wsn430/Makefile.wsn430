@@ -2,6 +2,8 @@
 
 CONTIKI_TARGET_SOURCEFILES += contiki-wsn430-platform.c
 
+WITH_CC2420=1
+
 ifndef SMALL
 SMALL=1
 endif

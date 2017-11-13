@@ -123,15 +123,15 @@ typedef long off_t;
  */
 
 /* SPI input/output registers. */
-#define SPI_TXBUF U0TXBUF
-#define SPI_RXBUF U0RXBUF
+#define SPI_TXBUF U1TXBUF
+#define SPI_RXBUF U1RXBUF
 
-                                /* USART0 Tx ready? */
-#define SPI_WAITFOREOTx() while ((U0TCTL & TXEPT) == 0)
-                                /* USART0 Rx ready? */
-#define SPI_WAITFOREORx() while ((IFG1 & URXIFG0) == 0)
-                                /* USART0 Tx buffer ready? */
-#define SPI_WAITFORTxREADY() while ((IFG1 & UTXIFG0) == 0)
+                                /* USART1 Tx ready? */
+#define SPI_WAITFOREOTx() while ((U1TCTL & TXEPT) == 0)
+                                /* USART1 Rx ready? */
+#define SPI_WAITFOREORx() while ((IFG1 & URXIFG1) == 0)
+                                /* USART1 Tx buffer ready? */
+#define SPI_WAITFORTxREADY() while ((IFG1 & UTXIFG1) == 0)
 
 #define SCK            1  /* P3.1 - Output: SPI Serial Clock (SCLK) */
 #define MOSI           2  /* P3.2 - Output: SPI Master out - slave in (MOSI) */
@@ -152,6 +152,14 @@ typedef long off_t;
 
 #define SPI_FLASH_HOLD()                ( P4OUT &= ~BV(FLASH_HOLD) )
 #define SPI_FLASH_UNHOLD()              ( P4OUT |=  BV(FLASH_HOLD) )
+
+/* P4.3 - Output: SPI Chip Select (CS_N) */
+#define DS1722_CSN_PORT(type)      P4##type
+#define DS1722_CSN_PIN             3
+
+/* P4.4 - Output: SPI Chip Select (CS_N) */
+#define M25P80_CSN_PORT(type)      P4##type
+#define M25P80_CSN_PIN             4
 
 /*
  * SPI bus - CC2420 pin configuration.
@@ -189,6 +197,18 @@ typedef long off_t;
 #define CC2420_CCA_IS_1   (!!(CC2420_CCA_PORT(IN) & BV(CC2420_CCA_PIN)))
 #define CC2420_SFD_IS_1   (!!(CC2420_SFD_PORT(IN) & BV(CC2420_SFD_PIN)))
 
+#ifndef WITH_C1101
+
+/* The CC1101 reset pin. */
+#define SET_RESET_INACTIVE()   (CC1101_RESET_PORT(OUT) |=  BV(CC1101_RESET_PIN))
+#define SET_RESET_ACTIVE()     (CC1101_RESET_PORT(OUT) &= ~BV(CC1101_RESET_PIN))
+
+/* CC1101 voltage regulator enable pin. */
+#define SET_VREG_ACTIVE()       (CC1101_VREG_PORT(OUT) |=  BV(CC1101_VREG_PIN))
+#define SET_VREG_INACTIVE()     (CC1101_VREG_PORT(OUT) &= ~BV(CC1101_VREG_PIN))
+
+#else
+
 /* The CC2420 reset pin. */
 #define SET_RESET_INACTIVE()   (CC2420_RESET_PORT(OUT) |=  BV(CC2420_RESET_PIN))
 #define SET_RESET_ACTIVE()     (CC2420_RESET_PORT(OUT) &= ~BV(CC2420_RESET_PIN))
@@ -196,6 +216,8 @@ typedef long off_t;
 /* CC2420 voltage regulator enable pin. */
 #define SET_VREG_ACTIVE()       (CC2420_VREG_PORT(OUT) |=  BV(CC2420_VREG_PIN))
 #define SET_VREG_INACTIVE()     (CC2420_VREG_PORT(OUT) &= ~BV(CC2420_VREG_PIN))
+
+#endif
 
 /* CC2420 rising edge trigger for external interrupt 0 (FIFOP). */
 #define CC2420_FIFOP_INT_INIT() do {                  \
@@ -209,7 +231,54 @@ typedef long off_t;
 #define CC2420_CLEAR_FIFOP_INT()   do {CC2420_FIFOP_PORT(IFG) &= ~BV(CC2420_FIFOP_PIN);} while(0)
 
 /*
- * Enables/disables CC2420 access to the SPI bus (not the bus).
+ * SPI bus - CC1101 pin configuration.
+ */
+
+#define CC1101_CONF_SYMBOL_LOOP_COUNT 800
+
+/* P1.0 - Input: FIFOP from CC1101 */
+#define CC1101_FIFOP_PORT(type)   P1##type
+#define CC1101_FIFOP_PIN          0
+/* P1.3 - Input: FIFO from CC1101 */
+#define CC1101_FIFO_PORT(type)     P1##type
+#define CC1101_FIFO_PIN            3
+/* P1.4 - Input: CCA from CC1101 */
+#define CC1101_CCA_PORT(type)      P1##type
+#define CC1101_CCA_PIN             4
+/* P4.1 - Input:  SFD from CC1101 */
+#define CC1101_SFD_PORT(type)      P4##type
+#define CC1101_SFD_PIN             1
+/* P4.2 - Output: SPI Chip Select (CS_N) */
+#define CC1101_CSN_PORT(type)      P4##type
+#define CC1101_CSN_PIN             2
+/* P4.5 - Output: VREG_EN to CC1101 */
+#define CC1101_VREG_PORT(type)     P4##type
+#define CC1101_VREG_PIN            5
+/* P4.6 - Output: RESET_N to CC1101 */
+#define CC1101_RESET_PORT(type)    P4##type
+#define CC1101_RESET_PIN           6
+
+#define CC1101_IRQ_VECTOR PORT1_VECTOR
+
+/* Pin status. */
+#define CC1101_FIFOP_IS_1 (!!(CC1101_FIFOP_PORT(IN) & BV(CC1101_FIFOP_PIN)))
+#define CC1101_FIFO_IS_1  (!!(CC1101_FIFO_PORT(IN) & BV(CC1101_FIFO_PIN)))
+#define CC1101_CCA_IS_1   (!!(CC1101_CCA_PORT(IN) & BV(CC1101_CCA_PIN)))
+#define CC1101_SFD_IS_1   (!!(CC1101_SFD_PORT(IN) & BV(CC1101_SFD_PIN)))
+
+/* CC1101 rising edge trigger for external interrupt 0 (FIFOP). */
+#define CC1101_FIFOP_INT_INIT() do {                  \
+    CC1101_FIFOP_PORT(IES) &= ~BV(CC1101_FIFOP_PIN);  \
+    CC1101_CLEAR_FIFOP_INT();                         \
+  } while(0)
+
+/* FIFOP on external interrupt 0. */
+#define CC1101_ENABLE_FIFOP_INT()  do {CC1101_FIFOP_PORT(IE) |= BV(CC1101_FIFOP_PIN);} while(0)
+#define CC1101_DISABLE_FIFOP_INT() do {CC1101_FIFOP_PORT(IE) &= ~BV(CC1101_FIFOP_PIN);} while(0)
+#define CC1101_CLEAR_FIFOP_INT()   do {CC1101_FIFOP_PORT(IFG) &= ~BV(CC1101_FIFOP_PIN);} while(0)
+
+/*
+ * Enables/disables access to the SPI bus (not the bus).
  * (Chip Select)
  */
 
@@ -218,5 +287,17 @@ typedef long off_t;
  /* DISABLE CSn (active low) */
 #define CC2420_SPI_DISABLE()    (CC2420_CSN_PORT(OUT) |=  BV(CC2420_CSN_PIN))
 #define CC2420_SPI_IS_ENABLED() ((CC2420_CSN_PORT(OUT) & BV(CC2420_CSN_PIN)) != BV(CC2420_CSN_PIN))
+
+#define CC1101_SPI_ENABLE()     (CC1101_CSN_PORT(OUT) &= ~BV(CC1101_CSN_PIN))
+#define CC1101_SPI_DISABLE()    (CC1101_CSN_PORT(OUT) |=  BV(CC1101_CSN_PIN))
+#define CC1101_SPI_IS_ENABLED() ((CC1101_CSN_PORT(OUT) & BV(CC1101_CSN_PIN)) != BV(CC1101_CSN_PIN))
+
+#define DS1722_SPI_ENABLE()     (DS1722_CSN_PORT(OUT) &= ~BV(DS1722_CSN_PIN))
+#define DS1722_SPI_DISABLE()    (DS1722_CSN_PORT(OUT) |=  BV(DS1722_CSN_PIN))
+#define DS1722_SPI_IS_ENABLED() ((DS1722_CSN_PORT(OUT) & BV(DS1722_CSN_PIN)) != BV(DS1722_CSN_PIN))
+
+#define M25P80_SPI_ENABLE()     (M25P80_CSN_PORT(OUT) &= ~BV(M25P80_CSN_PIN))
+#define M25P80_SPI_DISABLE()    (M25P80_CSN_PORT(OUT) |=  BV(M25P80_CSN_PIN))
+#define M25P80_SPI_IS_ENABLED() ((M25P80_CSN_PORT(OUT) & BV(M25P80_CSN_PIN)) != BV(M25P80_CSN_PIN))
 
 #endif /* PLATFORM_CONF_H_ */

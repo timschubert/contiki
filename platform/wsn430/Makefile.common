@@ -17,9 +17,11 @@ else
 #
 ifeq ($(RADIO),WITH_CC1101)
 RADIO_VAL=1
+WITH_CC1101=1
 endif # cc1101
 ifeq ($(RADIO),WITH_CC2420)
 RADIO_VAL=1
+WITH_CC2420=1
 endif # cc2420
 $(info Using RADIO=$(RADIO))
 ifndef RADIO_VAL

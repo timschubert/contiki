@@ -60,38 +60,10 @@
 #include "gcc_uniarch/io.h"
 #include "spi1-platform.h"
 
-/* Local Macros */
-/*
- * wait until a byte has been received on spi port
- */
-#define WAIT_EORX() while ( (IFG2 & URXIFG1) == 0){}
-
-/*
- * wait until a byte has been sent on spi port
- */
-#define WAIT_EOTX() while ( (IFG2 & UTXIFG1) == 0){}
-
-#define CC1101_CS_PIN (1<<2)
-#define CC2420_CS_PIN (1<<2)
-#define DS1722_CS_PIN (1<<3)
-#define M25P80_CS_PIN (1<<4)
-
-#define CC1101_ENABLE()  P4OUT &= ~CC1101_CS_PIN
-#define CC1101_DISABLE() P4OUT |=  CC1101_CS_PIN
-
-#define CC2420_ENABLE()  P4OUT &= ~CC2420_CS_PIN
-#define CC2420_DISABLE() P4OUT |=  CC2420_CS_PIN
-
-#define DS1722_ENABLE()  P4OUT |=  DS1722_CS_PIN
-#define DS1722_DISABLE() P4OUT &= ~DS1722_CS_PIN
-
-#define M25P80_ENABLE()  P4OUT &= ~M25P80_CS_PIN
-#define M25P80_DISABLE() P4OUT |=  M25P80_CS_PIN
-
 uint8_t spi1_write_single(uint8_t byte) {
     uint8_t dummy;
     U1TXBUF = byte;
-    WAIT_EORX();
+    SPI_WAITFOREORx();
     dummy = U1RXBUF;
 
     return dummy;
@@ -107,7 +79,7 @@ uint8_t spi1_write(uint8_t* data, int16_t len) {
 
     for (i=0; i<len; i++) {
         U1TXBUF = data[i];
-        WAIT_EORX();
+        SPI_WAITFOREORx();
         dummy = U1RXBUF;
     }
     return dummy;
@@ -117,7 +89,7 @@ void spi1_read(uint8_t* data, int16_t len) {
 
     for (i=0; i<len; i++) {
         U1TXBUF = 0x0;
-        WAIT_EORX();
+        SPI_WAITFOREORx();
         data[i] = U1RXBUF;
     }
 }
@@ -125,23 +97,23 @@ void spi1_read(uint8_t* data, int16_t len) {
 void spi1_select(int16_t chip) {
     switch (chip) {
     case SPI1_CC1101:
-        M25P80_DISABLE();
-        DS1722_DISABLE();
-        CC1101_ENABLE();
+        M25P80_SPI_DISABLE();
+        DS1722_SPI_DISABLE();
+        CC1101_SPI_ENABLE();
         break;
     case SPI1_DS1722:
-        M25P80_DISABLE();
-        CC1101_DISABLE();
-        DS1722_DISABLE();
+        M25P80_SPI_DISABLE();
+        CC1101_SPI_DISABLE();
+        DS1722_SPI_DISABLE();
         U1CTL |= SWRST;
         U1TCTL &= ~(CKPH);
         U1CTL &= ~(SWRST);
-        DS1722_ENABLE();
+        DS1722_SPI_ENABLE();
         break;
     case SPI1_M25P80:
-        CC1101_DISABLE();
-        DS1722_DISABLE();
-        M25P80_ENABLE();
+        CC1101_SPI_DISABLE();
+        DS1722_SPI_DISABLE();
+        M25P80_SPI_ENABLE();
         break;
     default:
         break;
@@ -151,16 +123,16 @@ void spi1_select(int16_t chip) {
 void spi1_deselect(int16_t chip) {
     switch (chip) {
     case SPI1_CC1101:
-        CC1101_DISABLE();
+        CC1101_SPI_DISABLE();
         break;
     case SPI1_DS1722:
-        DS1722_DISABLE();
+        DS1722_SPI_DISABLE();
         U1CTL |= SWRST;
         U1TCTL |= CKPH;
         U1CTL &= ~(SWRST);
         break;
     case SPI1_M25P80:
-        M25P80_DISABLE();
+        M25P80_SPI_DISABLE();
         break;
     default:
         break;
