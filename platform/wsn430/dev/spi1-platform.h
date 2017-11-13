@@ -61,22 +61,20 @@
  * \date November 08
  */
 
+
 #ifndef SPI1_H
 #define SPI1_H
+
+#include "spi.h"
 
 extern uint8_t spi1_tx_return_value;
 
 enum {
-    SPI1_CC1101 = 1,
-    SPI1_CC2420 = 1,
-    SPI1_DS1722 = 2,
-    SPI1_M25P80 = 3
+  SPI1_CC1101 = 1,
+  SPI1_CC2420 = 1,
+  SPI1_DS1722 = 2,
+  SPI1_M25P80 = 3
 };
-
-/**
- * Initialize the UART1 for SPI use.
- */
-void spi1_init(void);
 
 uint8_t spi1_write_single(uint8_t byte);
 uint8_t spi1_read_single(void);

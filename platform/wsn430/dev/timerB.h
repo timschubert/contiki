@@ -67,6 +67,8 @@
 #ifndef _TIMERB_H
 #define _TIMERB_H
 
+#include "gcc_uniarch/io.h"
+
 /**
  * Number of CCR register, and thus the maximum
  * number of alarms that can be set.

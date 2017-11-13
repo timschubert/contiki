@@ -64,6 +64,8 @@
 #ifndef _I2C0_H_
 #define _I2C0_H_
 
+#include "gcc_uniarch/io.h"
+
 /**
  * \brief Initialize the I2C USART module.
  *

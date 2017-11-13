@@ -57,8 +57,8 @@
  * @}
  */
 
-#include <io.h>
-#include "spi1.h"
+#include "gcc_uniarch/io.h"
+#include "spi1-platform.h"
 
 /* Local Macros */
 /*
@@ -87,35 +87,6 @@
 
 #define M25P80_ENABLE()  P4OUT &= ~M25P80_CS_PIN
 #define M25P80_DISABLE() P4OUT |=  M25P80_CS_PIN
-
-void spi1_init(void) {
-    /* Configure IO pins */
-    P5DIR  |=   (1<<1) | (1<<3); /* output for CLK and SIMO */
-    P5DIR  &=  ~(1<<2);   /* input for SOMI */
-    P5SEL  |=   (1<<1) | (1<<2) | (1<<3); /* SPI for all three */
-
-    /* Configure USART1 */
-    U1CTL = SWRST; /* SPI 1 software reset */
-    U1CTL = CHAR | SYNC | MM | SWRST;  /* 8bit SPI master */
-    U1TCTL = CKPH | SSEL1 | STC;    /* clock delay, SMCLK */
-
-    U1RCTL = 0; /* clear errors */
-    U1BR0 = 0x2; /* baudrate = SMCLK/2 */
-    U1BR1 = 0x0;
-
-    ME2 |= USPIE1; /* enable SPI module */
-    IE2 &= ~(UTXIE1 | URXIE1); /* disable SPI interrupt */
-    U1CTL &= ~(SWRST); /* clear reset */
-
-    /* CS IO pins configuration */
-    P4SEL &= ~(CC1101_CS_PIN | DS1722_CS_PIN | M25P80_CS_PIN);
-    P4DIR |=  (CC1101_CS_PIN | DS1722_CS_PIN | M25P80_CS_PIN);
-
-    /* disable peripherals */
-    M25P80_DISABLE();
-    CC1101_DISABLE();
-    DS1722_DISABLE();
-}
 
 uint8_t spi1_write_single(uint8_t byte) {
     uint8_t dummy;

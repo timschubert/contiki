@@ -43,6 +43,8 @@
 #ifndef _ADC_H
 #define _ADC_H
 
+#include "gcc_uniarch/io.h"
+
 
 #define ADC(i) (1<<i)
 

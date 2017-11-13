@@ -52,7 +52,7 @@
 
 #include <msp430.h>
 #include "ds1722.h"
-#include "spi1.h"
+#include "spi1-platform.h"
 
 #define REG_CONF 0x0
 #define REG_LSB  0x1
@@ -84,7 +84,7 @@ static uint8_t resolution = 0x2;
 
 critical void ds1722_init(void)
 {
-    spi1_init();
+    spi_init();
 }
 
 void ds1722_set_res(uint16_t res)
