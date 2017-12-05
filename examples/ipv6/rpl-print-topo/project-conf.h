@@ -69,4 +69,16 @@
 #define RPL_CONF_MOP RPL_MOP_NON_STORING /* Mode of operation*/
 #endif /* WITH_NON_STORING */
 
+#undef CONTIKI_WITH_IPV6
+#define CONTIKI_WITH_IPV6 1
+
+#undef RPL_CONF_STATS
+#define RPL_CONF_STATS 1
+
+#undef NETSTACK_CONF_WITH_IPV6
+#define NETSTACK_CONF_WITH_IPV6 1
+
+#undef UIP_CONF_IPV6_RPL
+#define UIP_CONF_IPV6_RPL 1
+
 #endif

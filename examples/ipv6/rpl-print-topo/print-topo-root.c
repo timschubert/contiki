@@ -139,6 +139,18 @@ set_global_address(void)
   uip_ip6addr(&ipaddr, UIP_DS6_DEFAULT_PREFIX, 0, 0, 0, 0, 0, 0, 0);
   uip_ds6_set_addr_iid(&ipaddr, &uip_lladdr);
   uip_ds6_addr_add(&ipaddr, 0, ADDR_AUTOCONF);
+
+  root_if = uip_ds6_addr_lookup(&ipaddr);
+  if(root_if != NULL) {
+    rpl_dag_t *dag;
+    dag = rpl_set_root(RPL_DEFAULT_INSTANCE,(uip_ip6addr_t *)&ipaddr);
+    uip_ip6addr(&ipaddr, UIP_DS6_DEFAULT_PREFIX, 0, 0, 0, 0, 0, 0, 0);
+    rpl_set_prefix(dag, &ipaddr, 64);
+    PRINTF("created a new RPL dag\n");
+  } else {
+    PRINTF("failed to create a new RPL DAG\n");
+  }
+
 }
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(rpl_print_process, ev, data)
