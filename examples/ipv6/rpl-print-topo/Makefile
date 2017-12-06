@@ -1,5 +1,7 @@
-all: print-topo print-topo-root
+all: rpl-eval-sink rpl-eval-source
 CONTIKI=../../..
+
+PROJECT_SOURCEFILES += rpl-eval-common.c
 
 CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
 

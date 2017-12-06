@@ -81,4 +81,10 @@
 #undef UIP_CONF_IPV6_RPL
 #define UIP_CONF_IPV6_RPL 1
 
+#undef RF_CHANNEL
+#define RF_CHANNEL 16
+
+#undef PERIOD
+#define PERIOD 5
+
 #endif
