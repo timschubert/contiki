@@ -3,19 +3,19 @@
 void
 rpl_eval_print_neighbors(void)
 {
+  // <last_byte>,<isrouter>,<state>
   uip_ds6_nbr_t *nbr = nbr_table_head(ds6_neighbors);
 
-  printf("NEIGHBORS");
   while(nbr != NULL) {
-    printf(";%x,%d,%d", nbr->ipaddr.u8[sizeof(nbr->ipaddr.u8) - 1], nbr->isrouter, nbr->state);
+    printf("NEIGHBOR,%d,%d,%d\n", nbr->ipaddr.u8[sizeof(nbr->ipaddr.u8) - 1], nbr->isrouter, nbr->state);
     nbr = nbr_table_next(ds6_neighbors, nbr);
   }
-  printf("\n");
 }
 
 void
 rpl_eval_print_routes(void)
 {
+  // <dest>,<neighbor>,<lifetime>,<isinfinite>
   uip_ds6_route_t *r;
   uip_ipaddr_t *nexthop;
   uip_ds6_defrt_t *defrt;
@@ -25,22 +25,16 @@ rpl_eval_print_routes(void)
     defrt = uip_ds6_defrt_lookup(ipaddr);
   }
   if(defrt != NULL) {
-    printf("DefRT: :: -> %02d", defrt->ipaddr.u8[15]);
-    printf(" lt:%lu inf:%d\n", stimer_remaining(&defrt->lifetime),
-           defrt->isinfinite);
+    printf("ROUTE,default,%d,%lu,%d\n", defrt->ipaddr.u8[15], stimer_remaining(&defrt->lifetime), defrt->isinfinite);
   } else {
-    printf("DefRT: :: -> NULL\n");
+    printf("ROUTE,default,0\n");
   }
 
   for(r = uip_ds6_route_head();
       r != NULL;
       r = uip_ds6_route_next(r)) {
     nexthop = uip_ds6_route_nexthop(r);
-    printf("Route: %02d -> %02d", r->ipaddr.u8[15], nexthop->u8[15]);
-    /* PRINT6ADDR(&r->ipaddr); */
-    /* PRINTF(" -> "); */
-    /* PRINT6ADDR(nexthop); */
-    printf(" lt:%lu\n", r->state.lifetime);
+    printf("ROUTE,%02d,%02d,%lu,%u,%u\n", r->ipaddr.u8[15], nexthop->u8[15], r->state.lifetime, r->state.dao_seqno_out, r->state.dao_seqno_in);
   }
 }
 

@@ -5,6 +5,7 @@ AUTOSTART_PROCESSES(&rpl_eval_sink);
 
 static uint16_t reply;
 static uint16_t seq_id;
+static struct uip_udp_conn *server_conn;
 
 static void
 tcpip_handler(void)
@@ -59,6 +60,18 @@ PROCESS_THREAD(rpl_eval_sink, ev, data)
   init_dag(&server_addr);
 
   rpl_eval_print_local_addresses();
+
+  server_conn = udp_new(NULL, UIP_HTONS(UDP_CLIENT_PORT), NULL);
+  if(server_conn == NULL) {
+    PRINTF("No UDP connection available, exiting the process!\n");
+    PROCESS_EXIT();
+  }
+  udp_bind(server_conn, UIP_HTONS(UDP_SERVER_PORT));
+
+  printf("Created a server connection with remote address ");
+  PRINT6ADDR(&server_conn->ripaddr);
+  PRINTF(" local/remote port %u/%u\n", UIP_HTONS(server_conn->lport),
+         UIP_HTONS(server_conn->rport));
 
   printf("RPL print process started nbr:%d routes:%d\n",
          NBR_TABLE_CONF_MAX_NEIGHBORS, UIP_CONF_MAX_ROUTES);
