@@ -109,9 +109,7 @@ PROCESS_THREAD(rpl_eval_source, ev, data)
       etimer_reset(&periodic);
       ctimer_set(&backoff_timer, SEND_TIME, send_packet, NULL);
 
-      rpl_eval_print_neighbors();
-      rpl_eval_print_routes();
-      rpl_print_neighbor_list();
+      rpl_eval_print_status();
 
 #if WITH_COMPOWER
       if (print == 0) {

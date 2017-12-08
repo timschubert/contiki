@@ -16,9 +16,7 @@ tcpip_handler(void)
     str = uip_appdata;
     str[uip_datalen()] = '\0';
     reply++;
-    printf("DATA recv '%s' (s:%d, r:%d)\n", str, seq_id, reply);
-  } else {
-    printf("DATA recv <empty>\n");
+    printf("DATA,recv,%d,%d,%s\n", seq_id, reply, str);
   }
 }
 
@@ -68,12 +66,12 @@ PROCESS_THREAD(rpl_eval_sink, ev, data)
   }
   udp_bind(server_conn, UIP_HTONS(UDP_SERVER_PORT));
 
-  printf("Created a server connection with remote address ");
+  PRINTF("Created a server connection with remote address ");
   PRINT6ADDR(&server_conn->ripaddr);
   PRINTF(" local/remote port %u/%u\n", UIP_HTONS(server_conn->lport),
          UIP_HTONS(server_conn->rport));
 
-  printf("RPL print process started nbr:%d routes:%d\n",
+  PRINTF("RPL print process started nbr:%d routes:%d\n",
          NBR_TABLE_CONF_MAX_NEIGHBORS, UIP_CONF_MAX_ROUTES);
 
 #if WITH_COMPOWER
@@ -98,9 +96,8 @@ PROCESS_THREAD(rpl_eval_sink, ev, data)
 
     if(etimer_expired(&periodic)) {
       etimer_reset(&periodic);
-      rpl_eval_print_neighbors();
-      rpl_eval_print_routes();
-      rpl_print_neighbor_list();
+
+      rpl_eval_print_status();
 
 #if WITH_COMPOWER
       if (print == 0) {

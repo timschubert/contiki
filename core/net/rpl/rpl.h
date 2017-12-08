@@ -293,6 +293,7 @@ uip_ds6_nbr_t *rpl_get_nbr(rpl_parent_t *parent);
 void rpl_print_neighbor_list(void);
 int rpl_process_srh_header(void);
 int rpl_srh_get_next_hop(uip_ipaddr_t *ipaddr);
+rpl_instance_t *rpl_get_default_instance(void);
 
 /* Per-parent RPL information */
 NBR_TABLE_DECLARE(rpl_parents);

@@ -15,6 +15,7 @@
 #include "net/ipv6/uip-ds6-route.h"
 #include "net/ip/uip-debug.h"
 #include "net/rpl/rpl.h"
+#include "net/link-stats.h"
 
 #define UDP_CLIENT_PORT 8765
 #define UDP_SERVER_PORT 5678
@@ -35,3 +36,4 @@ void rpl_eval_print_routes(void);
 void rpl_eval_print_local_addresses(void);
 void rpl_eval_set_global_address(void);
 void rpl_eval_set_server_address(uip_ipaddr_t *server_ipaddr);
+void rpl_eval_print_status(void);

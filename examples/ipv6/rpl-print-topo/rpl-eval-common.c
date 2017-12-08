@@ -3,7 +3,7 @@
 void
 rpl_eval_print_neighbors(void)
 {
-  // <last_byte>,<isrouter>,<state>
+  // NEIGHBOR,<last_byte>,<isrouter>,<state>
   uip_ds6_nbr_t *nbr = nbr_table_head(ds6_neighbors);
 
   while(nbr != NULL) {
@@ -15,7 +15,6 @@ rpl_eval_print_neighbors(void)
 void
 rpl_eval_print_routes(void)
 {
-  // <dest>,<neighbor>,<lifetime>,<isinfinite>
   uip_ds6_route_t *r;
   uip_ipaddr_t *nexthop;
   uip_ds6_defrt_t *defrt;
@@ -24,12 +23,14 @@ rpl_eval_print_routes(void)
   if((ipaddr = uip_ds6_defrt_choose()) != NULL) {
     defrt = uip_ds6_defrt_lookup(ipaddr);
   }
+  // ROUTE,default,<ipaddr>,<lifetime>,<isinfinite>
   if(defrt != NULL) {
     printf("ROUTE,default,%d,%lu,%d\n", defrt->ipaddr.u8[15], stimer_remaining(&defrt->lifetime), defrt->isinfinite);
   } else {
     printf("ROUTE,default,0\n");
   }
 
+  // ROUTE,<dest>,<nexthop>,<lifetime>,<dao_seqno_out>,<dao_seqno_in>
   for(r = uip_ds6_route_head();
       r != NULL;
       r = uip_ds6_route_next(r)) {
@@ -44,20 +45,19 @@ rpl_eval_print_local_addresses(void)
   int i;
   uint8_t state;
 
-  printf("Client IPv6 addresses: ");
   for(i = 0; i < UIP_DS6_ADDR_NB; i++) {
     state = uip_ds6_if.addr_list[i].state;
     if(uip_ds6_if.addr_list[i].isused &&
        (state == ADDR_TENTATIVE || state == ADDR_PREFERRED)) {
-      printf("\n");
+      printf("ADDR,");
       PRINT6ADDR(&uip_ds6_if.addr_list[i].ipaddr);
+      printf("\n");
       /* hack to make address "final" */
       if (state == ADDR_TENTATIVE) {
         uip_ds6_if.addr_list[i].state = ADDR_PREFERRED;
       }
     }
   }
-  printf("\n");
 }
 
 void
@@ -99,4 +99,45 @@ rpl_eval_set_server_address(uip_ipaddr_t *server_ipaddr)
 /* Mode 3 - derived from server link-local (MAC) address */
   uip_ip6addr(server_ipaddr, UIP_DS6_DEFAULT_PREFIX, 0, 0, 0, 0x0250, 0xc2ff, 0xfea8, 0xcd1a); //redbee-econotag
 #endif
+}
+
+void
+rpl_eval_rpl_print_neighbor_list(void)
+{
+  rpl_instance_t *default_instance = rpl_get_default_instance();
+
+  if(default_instance != NULL && default_instance->current_dag != NULL &&
+      default_instance->of != NULL) {
+    int curr_dio_interval = default_instance->dio_intcurrent;
+    int curr_rank = default_instance->current_dag->rank;
+    rpl_parent_t *p = nbr_table_head(rpl_parents);
+    clock_time_t clock_now = clock_time();
+
+    // RPL,dio,<MOP>,<OCP>,<rank>,<dioint>,<nbr count>
+    printf("RPL,dag,%u,%u,%u,%u,,%u\n",
+        default_instance->mop, default_instance->of->ocp, curr_rank, curr_dio_interval, uip_ds6_nbr_num());
+    while(p != NULL) {
+      const struct link_stats *stats = rpl_get_parent_link_stats(p);
+      // RPL,peer,<parent>,<rank>,<parent metric>,<rank via parent>,<freshness>,<isfresh>,<preferred parent>,<last tx time>
+      printf("RPL,parent,%3u,%5u,%5u,%5u,%2u,%c,%c,%u\n",
+          rpl_get_parent_ipaddr(p)->u8[15],
+          p->rank,
+          rpl_get_parent_link_metric(p),
+          rpl_rank_via_parent(p),
+          stats != NULL ? stats->freshness : 0,
+          link_stats_is_fresh(stats) ? 'f' : ' ',
+          p == default_instance->current_dag->preferred_parent ? 'p' : ' ',
+          stats->last_tx_time
+      );
+      p = nbr_table_next(rpl_parents, p);
+    }
+  }
+}
+
+void
+rpl_eval_print_status(void)
+{
+  rpl_eval_print_neighbors();
+  rpl_eval_print_routes();
+  rpl_eval_rpl_print_neighbor_list();
 }
