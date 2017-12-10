@@ -119,7 +119,7 @@ rpl_eval_rpl_print_neighbor_list(void)
     while(p != NULL) {
       const struct link_stats *stats = rpl_get_parent_link_stats(p);
       // RPL,peer,<parent>,<rank>,<parent metric>,<rank via parent>,<freshness>,<isfresh>,<preferred parent>,<last tx time>
-      printf("RPL,parent,%3u,%5u,%5u,%5u,%2u,%c,%c,%u\n",
+      printf("RPL,parent,%u,%u,%u,%u,%u,%c,%c,%u\n",
           rpl_get_parent_ipaddr(p)->u8[15],
           p->rank,
           rpl_get_parent_link_metric(p),
