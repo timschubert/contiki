@@ -3,7 +3,6 @@
 PROCESS(rpl_eval_sink, "RPL eval process");
 AUTOSTART_PROCESSES(&rpl_eval_sink);
 
-static uint16_t reply;
 static uint16_t seq_id;
 static struct uip_udp_conn *server_conn;
 
@@ -15,8 +14,8 @@ tcpip_handler(void)
   if(uip_newdata()) {
     str = uip_appdata;
     str[uip_datalen()] = '\0';
-    reply++;
-    printf("DATA,recv,%d,%d,%s\n", seq_id, reply, str);
+    seq_id++;
+    printf("DATA,recv,%d\n", seq_id);
   }
 }
 

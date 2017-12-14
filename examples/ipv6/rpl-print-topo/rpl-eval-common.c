@@ -114,7 +114,7 @@ rpl_eval_rpl_print_neighbor_list(void)
     clock_time_t clock_now = clock_time();
 
     // RPL,dio,<MOP>,<OCP>,<rank>,<dioint>,<nbr count>
-    printf("RPL,dag,%u,%u,%u,%u,,%u\n",
+    printf("RPL,dag,%u,%u,%u,%u,%u\n",
         default_instance->mop, default_instance->of->ocp, curr_rank, curr_dio_interval, uip_ds6_nbr_num());
     while(p != NULL) {
       const struct link_stats *stats = rpl_get_parent_link_stats(p);
