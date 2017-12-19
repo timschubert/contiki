@@ -3,11 +3,12 @@
 void
 rpl_eval_print_neighbors(void)
 {
-  // NEIGHBOR,<last_byte>,<isrouter>,<state>
   uip_ds6_nbr_t *nbr = nbr_table_head(ds6_neighbors);
 
   while(nbr != NULL) {
-    printf("NEIGHBOR,%d,%d,%d\n", nbr->ipaddr.u8[sizeof(nbr->ipaddr.u8) - 1], nbr->isrouter, nbr->state);
+    printf("NEIGHBOR;");
+    uip_debug_ipaddr_print(&nbr->ipaddr);
+    printf(";%d;%d\n", nbr->isrouter, nbr->state);
     nbr = nbr_table_next(ds6_neighbors, nbr);
   }
 }
@@ -23,19 +24,23 @@ rpl_eval_print_routes(void)
   if((ipaddr = uip_ds6_defrt_choose()) != NULL) {
     defrt = uip_ds6_defrt_lookup(ipaddr);
   }
-  // ROUTE,default,<ipaddr>,<lifetime>,<isinfinite>
   if(defrt != NULL) {
-    printf("ROUTE,default,%d,%lu,%d\n", defrt->ipaddr.u8[15], stimer_remaining(&defrt->lifetime), defrt->isinfinite);
+    printf("DEFAULT;");
+    uip_debug_ipaddr_print(&defrt->ipaddr);
+    printf(";%lu;%d\n", stimer_remaining(&defrt->lifetime), defrt->isinfinite);
   } else {
-    printf("ROUTE,default,0\n");
+    printf("DEFAULT;0;0;0\n");
   }
 
-  // ROUTE,<dest>,<nexthop>,<lifetime>,<dao_seqno_out>,<dao_seqno_in>
   for(r = uip_ds6_route_head();
       r != NULL;
       r = uip_ds6_route_next(r)) {
     nexthop = uip_ds6_route_nexthop(r);
-    printf("ROUTE,%02d,%02d,%lu,%u,%u\n", r->ipaddr.u8[15], nexthop->u8[15], r->state.lifetime, r->state.dao_seqno_out, r->state.dao_seqno_in);
+    printf("ROUTE;");
+    uip_debug_ipaddr_print(&r->ipaddr);
+    printf(";");
+    uip_debug_ipaddr_print(nexthop);
+    printf(";%lu;%u;%u\n", r->state.lifetime, r->state.dao_seqno_out, r->state.dao_seqno_in);
   }
 }
 
@@ -49,8 +54,9 @@ rpl_eval_print_local_addresses(void)
     state = uip_ds6_if.addr_list[i].state;
     if(uip_ds6_if.addr_list[i].isused &&
        (state == ADDR_TENTATIVE || state == ADDR_PREFERRED)) {
-      printf("ADDR,");
-      PRINT6ADDR(&uip_ds6_if.addr_list[i].ipaddr);
+      printf("ADDR;");
+      uip_debug_ipaddr_print(&uip_ds6_if.addr_list[i].ipaddr);
+      //printf("%hhu", uip_ds6_if.addr_list[i].ipaddr.u8[sizeof(server_ipaddr.u8) - 1]);
       printf("\n");
       /* hack to make address "final" */
       if (state == ADDR_TENTATIVE) {
@@ -111,23 +117,23 @@ rpl_eval_rpl_print_neighbor_list(void)
     int curr_dio_interval = default_instance->dio_intcurrent;
     int curr_rank = default_instance->current_dag->rank;
     rpl_parent_t *p = nbr_table_head(rpl_parents);
-    clock_time_t clock_now = clock_time();
 
-    // RPL,dio,<MOP>,<OCP>,<rank>,<dioint>,<nbr count>
-    printf("RPL,dag,%u,%u,%u,%u,%u\n",
+    // RPL;dio;<MOP>;<OCP>;<rank>;<dioint>;<nbr count>
+    printf("DAG;%u;%u;%u;%u;%u\n",
         default_instance->mop, default_instance->of->ocp, curr_rank, curr_dio_interval, uip_ds6_nbr_num());
     while(p != NULL) {
       const struct link_stats *stats = rpl_get_parent_link_stats(p);
-      // RPL,peer,<parent>,<rank>,<parent metric>,<rank via parent>,<freshness>,<isfresh>,<preferred parent>,<last tx time>
-      printf("RPL,parent,%u,%u,%u,%u,%u,%c,%c,%u\n",
-          rpl_get_parent_ipaddr(p)->u8[15],
-          p->rank,
-          rpl_get_parent_link_metric(p),
-          rpl_rank_via_parent(p),
-          stats != NULL ? stats->freshness : 0,
-          link_stats_is_fresh(stats) ? 'f' : ' ',
-          p == default_instance->current_dag->preferred_parent ? 'p' : ' ',
-          stats->last_tx_time
+      // RPL;<parent>;<rank>;<parent metric>,<rank via parent>,<freshness>,<isfresh>,<preferred parent>,<last tx time>
+      printf("PARENT;");
+      uip_debug_ipaddr_print(rpl_get_parent_ipaddr(p));
+      printf(";%u;%u;%u;%u;%d;%d;%u\n",
+             p->rank,
+             rpl_get_parent_link_metric(p),
+             rpl_rank_via_parent(p),
+             stats != NULL ? stats->freshness : 0,
+             link_stats_is_fresh(stats),
+             p == default_instance->current_dag->preferred_parent,
+             (unsigned int) stats->last_tx_time
       );
       p = nbr_table_next(rpl_parents, p);
     }
@@ -137,6 +143,7 @@ rpl_eval_rpl_print_neighbor_list(void)
 void
 rpl_eval_print_status(void)
 {
+  rpl_eval_print_local_addresses();
   rpl_eval_print_neighbors();
   rpl_eval_print_routes();
   rpl_eval_rpl_print_neighbor_list();

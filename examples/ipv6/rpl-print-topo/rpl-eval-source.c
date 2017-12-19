@@ -29,7 +29,7 @@
 
 #include "rpl-eval-common.h"
 
-#define MAX_PAYLOAD_LEN 30
+#define MAX_PAYLOAD_LEN 120
 
 PROCESS(rpl_eval_source, "RPL print process");
 AUTOSTART_PROCESSES(&rpl_eval_source);
@@ -44,7 +44,7 @@ send_packet(void *ptr)
   char buf[MAX_PAYLOAD_LEN];
 
   seq_id++;
-  printf("DATA,send,%d,%d'\n",
+  printf("DATA;send;%d;%d'\n",
          server_ipaddr.u8[sizeof(server_ipaddr.u8) - 1], seq_id);
   sprintf(buf, "Hello");
   uip_udp_packet_sendto(client_conn, buf, strlen(buf),
