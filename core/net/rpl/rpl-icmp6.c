@@ -81,6 +81,14 @@ static void dao_ack_input(void);
 static void dao_output_target_seq(rpl_parent_t *parent, uip_ipaddr_t *prefix,
 				  uint8_t lifetime, uint8_t seq_no);
 
+#ifdef RPL_RESTORE_USE_UIDS
+static void uid_input(void);
+static void uid_request_input(void);
+
+UIP_ICMP6_HANDLER(uid_handler, ICMP6_RPL, RPL_CODE_UID, uid_input);
+UIP_ICMP6_HANDLER(uid_request_handler, ICMP6_RPL, RPL_CODE_UID_REQUEST,  uid_request_input);
+#endif
+
 /* some debug callbacks useful when debugging RPL networks */
 #ifdef RPL_DEBUG_DIO_INPUT
 void RPL_DEBUG_DIO_INPUT(uip_ipaddr_t *, rpl_dio_t *);
@@ -158,8 +166,8 @@ get_global_addr(uip_ipaddr_t *addr)
 static uint32_t
 get32(uint8_t *buffer, int pos)
 {
-  return (uint32_t)buffer[pos] << 24 | (uint32_t)buffer[pos + 1] << 16 |
-         (uint32_t)buffer[pos + 2] << 8 | buffer[pos + 3];
+  return (uint32_t) buffer[pos] << 24 | (uint32_t) buffer[pos + 1] << 16
+      | (uint32_t) buffer[pos + 2] << 8 | buffer[pos + 3];
 }
 /*---------------------------------------------------------------------------*/
 static void
@@ -171,10 +179,9 @@ set32(uint8_t *buffer, int pos, uint32_t value)
   buffer[pos++] = value & 0xff;
 }
 /*---------------------------------------------------------------------------*/
-static uint16_t
-get16(uint8_t *buffer, int pos)
+static uint16_t get16(uint8_t *buffer, int pos)
 {
-  return (uint16_t)buffer[pos] << 8 | buffer[pos + 1];
+  return (uint16_t) buffer[pos] << 8 | buffer[pos + 1];
 }
 /*---------------------------------------------------------------------------*/
 static void
@@ -204,15 +211,886 @@ rpl_icmp6_update_nbr_table(uip_ipaddr_t *from, nbr_table_reason_t reason, void *
   return nbr;
  }
 /*---------------------------------------------------------------------------*/
-static void
-dis_input(void)
+#ifdef RPL_RESTORE
+
+/*
+ * some global offsets, and some data, so we know if and where to store the informations
+ */
+
+static uip_ipaddr_t parents[NBR_TABLE_MAX_NEIGHBORS];
+
+static uint16_t neighborUpdateHashes[NBR_TABLE_MAX_NEIGHBORS];
+static uint16_t neighborUpdateOffsets[NBR_TABLE_MAX_NEIGHBORS];
+static uint16_t neighborClockOffsets[NBR_TABLE_MAX_NEIGHBORS];
+static unsigned char neighborUpdates[NBR_TABLE_MAX_NEIGHBORS][NEIGHBOR_UPDATE_CONTENT_SIZE];
+
+static uint16_t neighborCountOffset = 0;
+static uint16_t dioIntOffset = 0;
+static uint8_t baseConfigSaved = 0;
+static uint8_t cancelRestore = 0;
+
+static unsigned char baseConfig[47];
+
+uint16_t clock;
+
+/*
+ * increase the clocks value. called by several functions in the rpl-dag.c
+ */
+void
+clock_tick(uint8_t tick, char *text)
 {
+  clock += tick;
+  PRINTF("RPL: new clock %u %s\n", clock, text);
+}
+
+/*
+ * returns an array, [0]=actual index, [1]=bool: was this neighbor new?
+ */
+static uint8_t *
+getNeighborIndex(uip_ipaddr_t in)
+{
+  static uint8_t ret[2];
+  uint8_t i, j;
+  for (i = 0; i < NBR_TABLE_MAX_NEIGHBORS; i++) {
+    uint16_t used = 0;
+    uint16_t equal = 1;
+    for (j = 0; j < 8; j++) {
+      used |= parents[i].u16[j];
+      if (parents[i].u16[j] != in.u16[j]) {
+        equal = 0;
+      }
+    }
+    if (!used) {
+      parents[i] = in;
+      ret[0] = i;
+      ret[1] = 1;
+      return ret;
+    }
+    if (equal) {
+      ret[0] = i;
+      ret[1] = 0;
+      return ret;
+    }
+  }
+  ret[0] = 0;
+  ret[1] = 0;
+  return ret;
+}
+
+/*
+ * returns the amount of saved neighbors
+ */
+static uint8_t
+getNeighborCount()
+{
+  uint8_t i, j;
+  for (i = 0; i < NBR_TABLE_MAX_NEIGHBORS; i++) {
+    uint16_t used = 0;
+    for (j = 0; j < 8; j++) {
+      used |= parents[i].u16[j];
+    }
+    if (!used) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+#ifndef RPL_RESTORE_SINGLE_ON_UID
+/*
+ * restore all saved neighbors
+ */
+static void
+restore_all_dios()
+{
+  uint16_t i = 0;
+
+  //first read some default values
+
+  uint8_t mop = baseConfig[1];
+  uip_ipaddr_t dag_id;
+
+  for (i = 0; i < 8; i++) {
+    uint16_t t = get16(baseConfig, 16 + i * 2);
+    dag_id.u16[i] = t;
+  }
+  PRINTF("read dag_id: "); PRINT6ADDR(&dag_id); PRINTF("\n");
+
+  uip_ipaddr_t prefix;
+  for (i = 0; i < 8; i++) {
+    uint16_t t = get16(baseConfig, 32 + i * 2);
+    prefix.u16[i] = t;
+  }
+
+  PRINTF("read prefix: "); PRINT6ADDR(&prefix); PRINTF("\n");
+
+  uint8_t intdoubl = baseConfig[2];
+  uint8_t intmin = baseConfig[3];
+  uint8_t redund = baseConfig[4];
+
+  uint16_t dag_max_rankinc = get16(baseConfig, 8);
+  uint16_t dag_min_hoprankinc = get16(baseConfig, 10);
+  uint16_t ocp = get16(baseConfig, 12);
+  uint8_t default_lifetime = baseConfig[5];
+  uint16_t lifetime_unit = get16(baseConfig, 14);
+
+  uint8_t prefix_length = baseConfig[6];
+  uint8_t prefix_flags = baseConfig[7];
+
+  uint32_t prefix_lifetime = 0; //this is always 0 in contikiRPL
+
+  //PRINTF("read dag_id "); PRINT6ADDR(&dag_id); PRINTF(" prefix "); PRINT6ADDR(&prefix); PRINTF("\n");
+
+  uint8_t id = 0;
+  for (i = 0; i < getNeighborCount(); i++) { //cycle through the saved neighbors
+    PRINTF("reading %u of %u dios\n", (i+1), getNeighborCount());
+
+    rpl_dio_t dio;
+    uint16_t j;
+    uint16_t k = 0;
+
+    memset(&dio, 0, sizeof(dio));
+
+    /* Set default values in case the DIO configuration option is missing. */
+    dio.dag_intdoubl = intdoubl;
+    dio.dag_intmin = intmin;
+    dio.dag_redund = redund;
+    dio.dag_min_hoprankinc = dag_max_rankinc;
+    dio.dag_max_rankinc = dag_min_hoprankinc;
+    dio.ocp = ocp;
+    dio.default_lifetime = default_lifetime;
+    dio.lifetime_unit = lifetime_unit;
+
+    getNeighborIndex(parents[i]);
+
+    PRINTF("RPL: restoring "); PRINT6ADDR(&parents[i]);  PRINTF("\n");
+
+    if (neighborUpdates[i][0] == 0 && neighborUpdates[i][1] == 0) {
+
+      PRINTF("no neighbor update read yet\n");
+      j = 0;
+      uint16_t neighborUpdateOffset = 0;
+      unsigned char neighborUpdate[256];
+      while (j < 16) {
+        k = 0;
+        xmem_pread(neighborUpdate, 256,
+            FIRST_NEIGHBOR_UPDATE_PAGE
+                + NEIGHBOR_UPDATE_PAGE_SIZE * i + j * 256);
+        while (k < 256) {
+          if (neighborUpdate[k] == 1) {
+            neighborUpdateOffset++;
+          } else {
+            neighborUpdateOffsets[i] = neighborUpdateOffset;
+            j = 20;
+            k = 256;
+          }
+          k++;
+        }
+        j++;
+      }PRINTF("neighborUpdateOffset %u\n",neighborUpdateOffset);
+
+      xmem_pread(neighborUpdates[i], 7,
+          FIRST_NEIGHBOR_UPDATE_PAGE
+              + NEIGHBOR_UPDATE_PAGE_SIZE
+                  * i+ (neighborUpdateOffset-1)*NEIGHBOR_UPDATE_CONTENT_SIZE
+                  + NEIGHBOR_UPDATE_OFFSET_PAGE_SIZE
+                  + NEIGHBOR_CLOCK_PAGE_SIZE);
+
+    }
+
+    //fill the dio structure with the read data
+
+    dio.instance_id = neighborUpdates[i][0];
+    dio.version = neighborUpdates[i][1];
+    dio.rank = get16(neighborUpdates[i], 5);
+
+    PRINTF("RPL: Incoming DIO (id, ver, rank) = (%u,%u,%u)\n",
+        (unsigned)dio.instance_id,
+        (unsigned)dio.version,
+        (unsigned)dio.rank);
+
+    dio.grounded = neighborUpdates[i][3];
+    dio.mop = mop;
+    dio.preference = neighborUpdates[i][4];
+    dio.dtsn = neighborUpdates[i][2];
+
+    dio.dag_id = dag_id;
+
+    PRINTF("RPL: DAG conf:dbl=%d, min=%d red=%d maxinc=%d mininc=%d ocp=%d d_l=%u l_u=%u\n",
+        dio.dag_intdoubl, dio.dag_intmin, dio.dag_redund,
+        dio.dag_max_rankinc, dio.dag_min_hoprankinc, dio.ocp,
+        dio.default_lifetime, dio.lifetime_unit);
+
+    dio.prefix_info.length = prefix_length;
+    dio.prefix_info.flags = prefix_flags;
+
+    dio.prefix_info.lifetime = prefix_lifetime;
+
+    dio.prefix_info.prefix = prefix;
+
+    PRINTF("RPL: Copying prefix information, length %u, flags %u, lifetime %u, prefix ", dio.prefix_info.length, dio.prefix_info.flags, dio.prefix_info.lifetime); PRINT6ADDR(&dio.prefix_info.prefix); PRINTF("\n");
+
+    id = dio.instance_id;
+
+    //let rpl do the rest
+    rpl_process_dio(&parents[i], &dio);
+
+  }
+
+  //restore the (local) current dio interval
+
+  rpl_instance_t *instance;
+  instance = rpl_get_instance(id);
+
+  unsigned char intCurrent[256];
+  xmem_pread(intCurrent, 256, DIO_INT_CURRENT_PAGE);
+
+  i = 0;
+  uint8_t current = RPL_DIO_INTERVAL_MIN;
+  while (i < 256) {
+    if (intCurrent[i] != 0) {
+      current = intCurrent[i];
+    } else {
+      dioIntOffset = i;
+      i = 256;
+    }
+    i++;
+  }
+  PRINTF("intCurrent %u\n", current);
+  instance->dio_intcurrent = current;
+
+  PRINTF("done restoring\n");
+}
+#endif //RPL_RESTORE_SINGLE_ON_UID
+
+
+#ifdef RPL_RESTORE_USE_UIDS
+
+#ifdef RPL_RESTORE_ALL_ON_UID_THRESHOLD
+static uint8_t uids_requested = 0;
+static uint8_t uids_positive = 0;
+static uint8_t restored = 0;
+
+/*
+ * handler for incomming uids from neighbor nodes, that restores all neighbors if enough positive uids were received
+ */
+static void
+uid_input(void)
+{
+  PRINTF("RPL: received uid");
+  if (restored) {
+    PRINTF(", already restored -> ignore\n");
+    return;
+  }
+
+#ifdef RPL_RESTORE_CANCEL_ON_NEGATIVE_UID
+  if(cancelRestore) return;
+#endif //RPL_RESTORE_CANCEL_ON_NEGATIVE_UID
+
+  uip_ipaddr_t from;
+  uip_ipaddr_copy(&from, &UIP_IP_BUF->srcipaddr);
+  unsigned char *buffer;
+  buffer = UIP_ICMP_PAYLOAD;
+  uint16_t i, j, k;
+  uint8_t index = getNeighborIndex(from)[0];
+
+   PRINTF(" from "); PRINT6ADDR(&from); PRINTF("\n");
+
+  if(getNeighborIndex(from)[1]) {
+    PRINTF("received uid from unknown neighbor\n");
+    return;
+  }
+
+  uint8_t dag_id_ok = 1;
+  //check the received dag_id against the saved dag_id of this node and set a flag accordingly
+  for (i = 0; i < 8; i++) {
+    if (get16(buffer, 0 + i * 2) != get16(baseConfig, 16 + i * 2)) {
+      dag_id_ok = 0;
+    }
+  }
+
+  //read the rest of the needed values: instance_id, version, clock. they are stored in global arrays so they can be used later when the actual restoring process gets started
+  j = 0;
+  uint16_t neighborUpdateOffset = 0;
+  unsigned char neighborUpdate[256];
+  while (j < 16) {
+    k = 0;
+    xmem_pread(neighborUpdate, 256,
+        FIRST_NEIGHBOR_UPDATE_PAGE + NEIGHBOR_UPDATE_PAGE_SIZE * index
+            + j * 256);
+    while (k < 256) {
+      if (neighborUpdate[k] == 1) {
+        neighborUpdateOffset++;
+      } else {
+        neighborUpdateOffsets[index] = neighborUpdateOffset;
+        j = 20;
+        k = 256;
+      }
+      k++;
+    }
+    j++;
+  }PRINTF("neighborUpdateOffset %u\n",neighborUpdateOffset);
+
+  xmem_pread(neighborUpdates[index], 7,
+      FIRST_NEIGHBOR_UPDATE_PAGE
+          + NEIGHBOR_UPDATE_PAGE_SIZE
+              * index+ (neighborUpdateOffset-1)*NEIGHBOR_UPDATE_CONTENT_SIZE
+              + NEIGHBOR_UPDATE_OFFSET_PAGE_SIZE
+              + NEIGHBOR_CLOCK_PAGE_SIZE);
+
+
+
+  j = 0;
+  k = 0;
+  uint16_t oldClock = 0;
+  unsigned char clockArray[256];
+  while (j < 16) {
+    k = 0;
+    xmem_pread(clockArray, 256,
+        FIRST_NEIGHBOR_UPDATE_PAGE + NEIGHBOR_UPDATE_PAGE_SIZE * index
+            + NEIGHBOR_UPDATE_OFFSET_PAGE_SIZE + j * 256);
+    while (k < 256) {
+      if ((clockArray[k] != 0) || (clockArray[k + 1] != 0)) {
+        neighborClockOffsets[index] += 2;
+      } else {
+        //neighborUpdateOffsets[i] = neighborUpdateOffset;
+        oldClock = get16(clockArray, k - 2);
+        //upToDate = 1;
+        j = 20;
+        k = 256;
+      }
+      k += 2;
+    }
+    j++;
+  } PRINTF("read old clock %u\n", oldClock);
+
+  uint16_t newClock = get16(buffer, 18);
+
+  PRINTF("[uid check] old data (instance_id, version, clock): %u, %u, %u\n",
+      neighborUpdates[index][0], neighborUpdates[index][1], oldClock);
+  PRINTF("[uid check] new data (instance_id, version, clock): %u, %u, %u\n",
+      buffer[16], buffer[17], newClock);
+  PRINTF("[uid check] dag_id_ok: %u\n", dag_id_ok);
+
+  //check if the received parameters are still up-to-date
+  if (dag_id_ok && //dag_id
+      (neighborUpdates[index][0] == buffer[16]) && //instance_id
+      (neighborUpdates[index][1] == buffer[17]) && //version
+      ((newClock - oldClock) < CLOCK_DIFF_THRESHOLD)) //clock
+      {
+    PRINTF("[uid check] OK\n");
+    uids_positive++;
+  } else {
+    cancelRestore = 1;
+  }
+
+  //if enough positive uids were received, restore all neighbors
+  if ((uids_positive >= RPL_RESTORE_UID_THRESHOLD)) {
+    restore_all_dios();
+    restored = 1;
+  }
+
+}
+#endif //RPL_RESTORE_ALL_ON_UID_THRESHOLD
+
+#ifdef RPL_RESTORE_SINGLE_ON_UID
+static uint8_t
+intCurrentSet = 0;
+
+//icmp6 handler for incomming uids from neighbor nodes, that restores each neighbor seperately if the corresponding uid was positive
+static void
+uid_input(void)
+{
+  uip_ipaddr_t from;
+  uip_ipaddr_t uid_dag_id;
+  uip_ipaddr_copy(&from, &UIP_IP_BUF->srcipaddr);
+  unsigned char *uid;
+  uid = UIP_ICMP_PAYLOAD;
+  uint16_t i;
+  rpl_dio_t dio;
+  uint16_t j;
+
+  PRINTF("RPL: received uid from ");
+  PRINT6ADDR(&from);
+  PRINTF("\n");
+
+  //read dag_id from the uid and from the saved state
+
+  for (i = 0; i < 8; i++) {
+    uid_dag_id.u16[i] = get16(uid, 2 * i);
+  }
+
+  PRINTF("RPL: uid[dag_id, instance_id, version, clock] ");
+  PRINT6ADDR(&uid_dag_id);
+  PRINTF(", %u, %u, %u\n", uid[16], uid[17], get16(uid, 18));
+
+  unsigned char baseConfig[47];
+  xmem_pread(baseConfig, 47, GENERAL_CONFIG_PAGE);
+
+  PRINTF("reading some invariant informations\n");
+
+  uip_ipaddr_t dag_id;
+
+  for (i = 0; i < 8; i++) {
+    uint16_t t = get16(baseConfig, 16 + i * 2);
+    dag_id.u16[i] = t;
+    if(dag_id.u16[i] != uid_dag_id.u16[i]) return; // dont restore this neighbor if dag_id is not consistent
+  }
+
+  PRINTF("read dag_id: ");PRINT6ADDR(&dag_id);PRINTF("\n");
+
+  //read saved prefix
+  uip_ipaddr_t prefix;
+  for (i = 0; i < 8; i++) {
+    uint16_t t = get16(baseConfig, 32 + i * 2);
+    prefix.u16[i] = t;
+  }
+
+  PRINTF("read prefix: ");PRINT6ADDR(&prefix);PRINTF("\n");
+
+  PRINTF("read dag_id "); PRINT6ADDR(&dag_id); PRINTF(" prefix "); PRINT6ADDR(&prefix); PRINTF("\n");
+
+  uint8_t *index;
+  index = getNeighborIndex(from);
+
+  PRINTF("parentIndex %u\n", index[0]);
+
+  //read the saved clock
+  j = 0;
+  uint16_t k = 0;
+  uint16_t oldClock = 0;
+  unsigned char clockArray[256];
+  while (j < 16) {
+    k = 0;
+    xmem_pread(clockArray, 256,
+        FIRST_NEIGHBOR_UPDATE_PAGE
+        + NEIGHBOR_UPDATE_PAGE_SIZE * index[0]
+        + NEIGHBOR_UPDATE_OFFSET_PAGE_SIZE
+        + j * 256);
+    while (k < 256) {
+      if ((clockArray[k] != 0) || (clockArray[k + 1] != 0)) {
+        neighborClockOffsets[index[0]] += 2;
+      } else {
+        oldClock = get16(clockArray, k - 2);
+        j = 20;
+        k = 256;
+      }
+      k += 2;
+    }
+    j++;
+  }
+  PRINTF("read clock %u\n", oldClock);
+
+  uint16_t newClock = get16(uid, 18);
+
+  if(!((newClock - oldClock) < CLOCK_DIFF_THRESHOLD)) return; // check clocks for threshold
+
+  //read and check for instance_id and version
+  j = 0;
+  uint16_t neighborUpdateOffset = 0;
+  unsigned char neighborUpdate[256];
+  while (j < 16) {
+    k = 0;
+    xmem_pread(neighborUpdate, 256,
+        FIRST_NEIGHBOR_UPDATE_PAGE + NEIGHBOR_UPDATE_PAGE_SIZE * index[0]
+            + j * 256);
+    while (k < 256) {
+      if (neighborUpdate[k] == 1) {
+        neighborUpdateOffset++;
+      } else {
+        neighborUpdateOffsets[index[0]] = neighborUpdateOffset;
+        j = 20;
+        k = 256;
+      }
+      k++;
+    }
+    j++;
+  }PRINTF("neighborUpdateOffset %u\n",neighborUpdateOffset);
+
+  xmem_pread(neighborUpdates[index[0]], 7,
+      FIRST_NEIGHBOR_UPDATE_PAGE
+          + NEIGHBOR_UPDATE_PAGE_SIZE
+              * index[0]+ (neighborUpdateOffset-1)*NEIGHBOR_UPDATE_CONTENT_SIZE
+              + NEIGHBOR_UPDATE_OFFSET_PAGE_SIZE
+              + NEIGHBOR_CLOCK_PAGE_SIZE);
+
+
+  if((neighborUpdates[index[0]][0] != uid[16]) || (neighborUpdates[index[0]][1] != uid[17])) return; // check for instance_id and version consistency
+
+
+
+  //if we are here, the received data from this neighbor is consistent with what we saved. now set some default values, read the saved state and hand the dio structure over to rpl
+  memset(&dio, 0, sizeof(dio));
+
+  /* Set default values in case the DIO configuration option is missing. */
+  dio.dag_intdoubl = baseConfig[2];
+  dio.dag_intmin = baseConfig[3];
+  dio.dag_redund = baseConfig[4];
+  dio.dag_min_hoprankinc = get16(baseConfig, 8);
+  dio.dag_max_rankinc = get16(baseConfig, 10);
+  dio.ocp = get16(baseConfig, 12);
+  dio.default_lifetime = baseConfig[5];
+  dio.lifetime_unit = get16(baseConfig, 14);
+
+  unsigned char neighborConfig[32];
+  xmem_pread(neighborConfig, 32,
+      FIRST_NEIGHBOR_CONFIG_PAGE + NEIGHBOR_CONFIG_PAGE_SIZE * index[0]);
+
+  for (j = 0; j < 8; j++) {
+    uint16_t t = get16(neighborConfig, 0 + j * 2);
+    from.u16[j] = t;
+  }
+
+  PRINTF("RPL: received dio from ");
+  PRINT6ADDR(&from);
+  PRINTF("\n");
+
+
+
+
+
+  dio.instance_id = neighborUpdates[index[0]][0];
+  dio.version = neighborUpdates[index[0]][1];
+  dio.rank = get16(neighborUpdates[index[0]], 5);
+
+  PRINTF("RPL: Incoming DIO (id, ver, rank) = (%u,%u,%u)\n",
+      (unsigned)dio.instance_id,
+      (unsigned)dio.version,
+      (unsigned)dio.rank);
+
+  dio.grounded = neighborUpdates[index[0]][3];
+  dio.mop = baseConfig[1];
+  dio.preference = neighborUpdates[index[0]][4];
+  dio.dtsn = neighborUpdates[index[0]][2];
+
+  dio.dag_id = dag_id;
+
+  PRINTF("RPL: DAG conf:dbl=%d, min=%d red=%d maxinc=%d mininc=%d ocp=%d d_l=%u l_u=%u\n",
+      dio.dag_intdoubl, dio.dag_intmin, dio.dag_redund,
+      dio.dag_max_rankinc, dio.dag_min_hoprankinc, dio.ocp,
+      dio.default_lifetime, dio.lifetime_unit);
+
+  dio.prefix_info.length = baseConfig[6];
+  dio.prefix_info.flags = baseConfig[7];
+  dio.prefix_info.lifetime = 0;
+  dio.prefix_info.prefix = prefix;
+
+  PRINTF("RPL: Copying prefix information, length %u, flags %u, lifetime %u, prefix ", dio.prefix_info.length, dio.prefix_info.flags, dio.prefix_info.lifetime); PRINT6ADDR(&dio.prefix_info.prefix); PRINTF("\n");
+
+  //let rpl do the rest
+  rpl_process_dio(&from, &dio);
+
+  //restore the (local) dio interval
+  if (!intCurrentSet) {
+    rpl_instance_t *instance;
+    instance = rpl_get_instance(dio.instance_id);
+
+    unsigned char intCurrent[256];
+    xmem_pread(intCurrent, 256, DIO_INT_CURRENT_PAGE);
+
+    i = 0;
+    uint8_t current = RPL_DIO_INTERVAL_MIN;
+    while (i < 256) {
+      if (intCurrent[i] != 0) {
+        current = intCurrent[i];
+      } else {
+        dioIntOffset = i;
+        i = 256;
+      }
+      i++;
+    }
+    PRINTF("intCurrent %u\n", current);
+    instance->dio_intcurrent = current;
+    intCurrentSet = 1;
+  }
+
+}
+#endif //RPL_RESTORE_SINGLE_ON_UID
+
+/*
+ * called by uid_request_input. outputs the requested uid
+ */
+void
+uid_output(uip_ipaddr_t *to)
+{
+  unsigned char *buffer;
+  uint8_t i;
+  buffer = UIP_ICMP_PAYLOAD;
+
+
+   PRINTF("RPL: sending uid to ");   PRINT6ADDR(to);   PRINTF("\n");
+
+   PRINTF("RPL: uid[dag_id, instance_id, version, clock] ");
+   PRINT6ADDR(&default_instance->current_dag->dag_id);
+   PRINTF(", %u, %u, %u\n", default_instance->instance_id,
+   default_instance->current_dag->version, clock);
+
+
+  //dag_id
+  for (i = 0; i < 8; i++) {
+    set16(buffer, 2 * i, default_instance->current_dag->dag_id.u16[i]);
+  }
+
+  buffer[16] = default_instance->instance_id;
+
+  buffer[17] = default_instance->current_dag->version;
+
+  set16(buffer, 18, clock);
+
+  uip_icmp6_send(to, ICMP6_RPL, RPL_CODE_UID, 20);
+}
+
+/*
+ * icmp6 handler for incooming uid requests. calls uid_output to answer the request
+ */
+static void
+uid_request_input(void)
+{
+  uip_ipaddr_t from;
+  uip_ipaddr_copy(&from, &UIP_IP_BUF->srcipaddr);
+
+  PRINTF("RPL: received uid_request from ");  PRINT6ADDR(&from);  PRINTF("\n");
+
+  uid_output(&from);
+}
+
+#endif //RPL_RESTORE_USE_UIDS
+
+
+
+/*
+ * entry point for the restore before the rest of rpl gets initialized
+ */
+void
+invoke_restore()
+{
+  uint16_t i = 0;
+
+  //read the base configuration
+  xmem_pread(baseConfig, 47, GENERAL_CONFIG_PAGE);
+
+  //read how many neighbors were saved
+  unsigned char countPage[1024];
+  xmem_pread(countPage, 1024, NEIGHBOR_COUNT_PAGE);
+  uint8_t count = 0;
+  i = 0;
+  while (i < 1024) {
+    if (countPage[i] != 0) {
+      count = countPage[i];
+    } else {
+      neighborCountOffset = i;
+      i = 1024;
+    }
+    i++;
+  }
+
+  PRINTF("read parent count %u\n", count);
+
+  for (i = 0; i < count; i++) { //for each neighbor that was stored
+    PRINTF("reading %u of %u neighbors\n", (i + 1), count);
+
+    // read the ip6 adresses for this neighbor
+    uip_ipaddr_t from;
+    uip_lladdr_t fromLL;
+    uip_ds6_nbr_t *nbr;
+    uint16_t j;
+
+    unsigned char neighborConfig[32];
+    xmem_pread(neighborConfig, 32,
+    FIRST_NEIGHBOR_CONFIG_PAGE + NEIGHBOR_CONFIG_PAGE_SIZE * i);
+
+    for (j = 0; j < 8; j++) {
+      uint16_t t = get16(neighborConfig, 0 + j * 2);
+      from.u16[j] = t;
+    }
+    for (j = 0; j < 8; j++) {
+      uint16_t t = get16(neighborConfig, 16 + j * 2);
+      fromLL.addr[j] = t;
+    }
+    getNeighborIndex(from);
+
+    PRINTF("RPL: read data from neighbor ");
+    PRINT6ADDR(&from);
+    PRINTF("\n");
+
+    //add this neighbor to the neighbor table
+    if ((nbr = uip_ds6_nbr_lookup(&from)) == NULL) {
+      if ((nbr = uip_ds6_nbr_add(&from, &fromLL, 0,
+      NBR_REACHABLE)) != NULL) {
+        stimer_set(&nbr->reachable, UIP_ND6_REACHABLE_TIME / 1000);
+        PRINTF("RPL: Neighbor added to neighbor cache ");PRINT6ADDR(&from);PRINTF(", ");PRINT6ADDR(&fromLL);PRINTF("\n");
+      } else {
+        PRINTF("RPL: Out of memory, dropping DIO from ");PRINT6ADDR(&from);PRINTF(", ");PRINTLLADDR((uip_lladdr_t *)packetbuf_addr(PACKETBUF_ADDR_SENDER));PRINTF("\n");
+        return;
+      }
+    } else {
+      PRINTF("RPL: Neighbor already in neighbor cache\n");
+    }
+  }
+
+#ifdef RPL_RESTORE_USE_UIDS
+  //if we should use uids, send them out to all rpl neighbors
+  unsigned char *buffer;
+  uip_ipaddr_t tmpaddr;
+  buffer = UIP_ICMP_PAYLOAD;
+  buffer[0] = buffer[1] = 0;
+  PRINTF("sending uid request multicast\n");
+  uip_create_linklocal_rplnodes_mcast(&tmpaddr);
+  uip_icmp6_send(&tmpaddr, ICMP6_RPL, RPL_CODE_UID_REQUEST, 2);
+
+#else
+  // if not, just restore all neighbors
+  restore_all_dios();
+#endif
+}
+
+/*
+ * save node specific data, if necessary
+ */
+static void
+writeNodeUpdate(rpl_dio_t *dio, uint8_t index, uint16_t in_clock)
+{
+  PRINTF("save some specific variant informations\n");
+
+  unsigned char toWrite[7] = { 1 };
+  toWrite[0] = dio->instance_id;
+  toWrite[1] = dio->version;
+  toWrite[2] = dio->dtsn;
+  toWrite[3] = dio->grounded;
+  toWrite[4] = dio->preference;
+  set16(toWrite, 5, dio->rank);
+
+  PRINTF("(instance_id, version, dtsn, grounded, preference, rank): %u, %u, %u, %u, %u, %u\n", toWrite[0], toWrite[1], toWrite[2], toWrite[3], toWrite[4], dio->rank);
+
+  //calculate the hash for this node update. the calculation could be replaced by any hash algorithm
+  uint16_t hash = 0;
+  hash += toWrite[0] + toWrite[1] + toWrite[3] + toWrite[4] + toWrite[5]
+      + toWrite[6];
+
+  if (neighborUpdateHashes[index] != hash) { //if the hashes are unequal (data has changed) write the update
+    PRINTF("state has changed\n");
+    neighborUpdateHashes[index] = hash;
+    unsigned long pageOffset = FIRST_NEIGHBOR_UPDATE_PAGE
+        + NEIGHBOR_UPDATE_OFFSET_PAGE_SIZE + NEIGHBOR_CLOCK_PAGE_SIZE
+        + NEIGHBOR_UPDATE_CONTENT_SIZE * neighborUpdateOffsets[index]
+        + NEIGHBOR_UPDATE_PAGE_SIZE * index;
+    PRINTF("node update index %u, size*index %lu\n",index,pageOffset);
+    xmem_pwrite(toWrite, 7, pageOffset);
+
+
+    unsigned char offset[1] = { 1 };
+
+    offset[0] = 1;    //pageOffsets[index]+1;
+
+    pageOffset = FIRST_NEIGHBOR_UPDATE_PAGE + neighborUpdateOffsets[index]
+        + NEIGHBOR_UPDATE_PAGE_SIZE * index;
+    xmem_pwrite(offset, 1, pageOffset);
+
+    neighborUpdateOffsets[index] += 1;
+
+  }
+
+  // independent from that, write the received clock value
+  unsigned long offset = FIRST_NEIGHBOR_UPDATE_PAGE
+      + NEIGHBOR_UPDATE_OFFSET_PAGE_SIZE
+      + NEIGHBOR_UPDATE_PAGE_SIZE * index + neighborClockOffsets[index];
+  unsigned char clockArray[2];
+  set16(clockArray, 0, in_clock);
+  xmem_pwrite(clockArray, 2, offset);
+  neighborClockOffsets[index] += 2;
+
+}
+
+/*
+ * save the base config, invariant rpl-global informations
+ */
+static void
+writeBaseConfig(rpl_dio_t *dio)
+{
+
+  PRINTF("saving base config\n");
+
+  unsigned char toWrite[47] = { 1 };
+
+  toWrite[1] = dio->mop;
+  toWrite[2] = dio->dag_intdoubl;
+  toWrite[3] = dio->dag_intmin;
+  toWrite[4] = dio->dag_redund;
+  toWrite[5] = dio->default_lifetime;
+  toWrite[6] = dio->prefix_info.length;
+  toWrite[7] = dio->prefix_info.flags;
+
+  set16(toWrite, 8, dio->dag_max_rankinc);
+  set16(toWrite, 10, dio->dag_min_hoprankinc);
+  set16(toWrite, 12, dio->ocp);
+  set16(toWrite, 14, dio->lifetime_unit);
+
+  uint16_t i = 0;
+
+
+  for (i = 0; i < 8; i++) {
+    set16(toWrite, 16 + 2 * i, dio->dag_id.u16[i]);
+  }
+
+
+  for (i = 0; i < 8; i++) {
+    set16(toWrite, 32 + 2 * i, dio->prefix_info.prefix.u16[i]);
+  }
+
+  xmem_pwrite(toWrite, 47, GENERAL_CONFIG_PAGE);
+
+  baseConfigSaved = 1;
+
+  PRINTF("done\n");
+}
+
+/*
+ * save the ip6 adresses for a new neighbor
+ */
+static void
+writeNodeConfig(uip_ipaddr_t *from, uip_ds6_nbr_t *nbr,
+    uint8_t index)
+{
+  PRINTF("never seen this one, save some specific invariant informations\n");
+  unsigned char nodeConfig[32] = { 1 };
+  uint16_t i = 0;
+
+  for (i = 0; i < 8; i++) {
+    set16(nodeConfig, i * 2, from->u16[i]);
+  }
+
+  for (i = 0; i < 8; i++) {
+    set16(nodeConfig, 16 + 2 * i, uip_ds6_nbr_get_ll(nbr)->addr[i]);
+  }
+
+  PRINT6ADDR(from);PRINTF(", ");PRINT6ADDR(uip_ds6_nbr_get_ll(nbr));PRINTF("\n");
+
+  xmem_pwrite(nodeConfig, 32,
+  FIRST_NEIGHBOR_CONFIG_PAGE + NEIGHBOR_CONFIG_PAGE_SIZE * index);
+
+  unsigned char parentCount[1] = { 1 };
+  parentCount[0] = getNeighborCount();
+
+  xmem_pwrite(parentCount, 1, NEIGHBOR_COUNT_PAGE + neighborCountOffset);
+
+  neighborCountOffset += 1;
+
+}
+
+#endif //RPL_RESTORE
+/*---------------------------------------------------------------------------*/
+static void
+dis_input(void) {
   rpl_instance_t *instance;
   rpl_instance_t *end;
 
+#ifdef RPL_RESTORE
+  clock_tick(CLOCK_INCOMING_DIS, "CLOCK_INCOMING_DIS");
+#endif
+
   /* DAG Information Solicitation */
-  PRINTF("RPL: Received a DIS from ");
-  PRINT6ADDR(&UIP_IP_BUF->srcipaddr);
+  PRINTF("RPL: Received a DIS from ");PRINT6ADDR(&UIP_IP_BUF->srcipaddr);
+  //uip_debug_ipaddr_print(&UIP_IP_BUF->srcipaddr);
   PRINTF("\n");
 
   for(instance = &instance_table[0], end = instance + RPL_MAX_INSTANCES;
@@ -268,9 +1146,7 @@ dis_output(uip_ipaddr_t *addr)
     addr = &tmpaddr;
   }
 
-  PRINTF("RPL: Sending a DIS to ");
-  PRINT6ADDR(addr);
-  PRINTF("\n");
+  PRINTF("RPL: Sending a DIS to ");PRINT6ADDR(addr);PRINTF("\n");
 
   uip_icmp6_send(addr, ICMP6_RPL, RPL_CODE_DIS, 2);
 }
@@ -337,7 +1213,12 @@ dio_input(void)
   PRINTF(", %u)\n", dio.preference);
 
   /* Check if there are any DIO suboptions. */
-  for(; i < buffer_length; i += len) {
+#ifdef RPL_RESTORE
+  for (; i < buffer_length - 2; i += len) {
+#else
+    for (; i < buffer_length; i += len) {
+#endif
+
     subopt_type = buffer[i];
     if(subopt_type == RPL_OPTION_PAD1) {
       len = 1;
@@ -459,6 +1340,28 @@ dio_input(void)
   RPL_DEBUG_DIO_INPUT(&from, &dio);
 #endif
 
+#ifdef RPL_RESTORE
+  uint16_t in_clock = get16(buffer, i);
+  PRINTF("RPL: received clock %u\n", in_clock);
+
+  if (!baseConfigSaved) { //save the base config, if not done already
+    writeBaseConfig(&dio);
+  }
+
+  uint8_t *index;
+
+  index = getNeighborIndex(from);
+
+  PRINTF("parent index: %u\n", index[0]);
+
+  if (index[1]) { // received first dio of this neighbour, so save some basic informations about him
+    writeNodeConfig(&from, nbr, index[0]);
+  }
+
+  writeNodeUpdate(&dio, index[0], in_clock); // write the node update
+  PRINTF("done\n");
+#endif
+
   rpl_process_dio(&from, &dio);
 
  discard:
@@ -492,6 +1395,17 @@ dio_output(rpl_instance_t *instance, uip_ipaddr_t *uc_addr)
   buffer[pos++] = instance->instance_id;
   buffer[pos++] = dag->version;
   is_root = (dag->rank == ROOT_RANK(instance));
+
+#ifdef RPL_RESTORE
+  //save the new current dio interval
+  unsigned char intCurrent[1] = { 1 };
+
+  intCurrent[0] = instance->dio_intcurrent;
+  intCurrent[0] += 1;
+  xmem_pwrite(intCurrent, 1, DIO_INT_CURRENT_PAGE + dioIntOffset);
+
+  dioIntOffset += 1;
+#endif
 
 #if RPL_LEAF_ONLY
   PRINTF("RPL: LEAF ONLY DIO rank set to INFINITE_RANK\n");
@@ -593,6 +1507,12 @@ dio_output(rpl_instance_t *instance, uip_ipaddr_t *uc_addr)
            dag->prefix_info.length);
   }
 
+#ifdef RPL_RESTORE
+  //add the current clock to the end of the dio message
+  set16(buffer, pos, clock);
+  pos += 2;
+#endif
+
 #if RPL_LEAF_ONLY
 #if (DEBUG) & DEBUG_PRINT
   if(uc_addr == NULL) {
@@ -606,16 +1526,14 @@ dio_output(rpl_instance_t *instance, uip_ipaddr_t *uc_addr)
   uip_icmp6_send(uc_addr, ICMP6_RPL, RPL_CODE_DIO, pos);
 #else /* RPL_LEAF_ONLY */
   /* Unicast requests get unicast replies! */
-  if(uc_addr == NULL) {
+  if (uc_addr == NULL) {
     PRINTF("RPL: Sending a multicast-DIO with rank %u\n",
         (unsigned)instance->current_dag->rank);
     uip_create_linklocal_rplnodes_mcast(&addr);
     uip_icmp6_send(&addr, ICMP6_RPL, RPL_CODE_DIO, pos);
   } else {
     PRINTF("RPL: Sending unicast-DIO with rank %u to ",
-        (unsigned)instance->current_dag->rank);
-    PRINT6ADDR(uc_addr);
-    PRINTF("\n");
+        (unsigned)instance->current_dag->rank);PRINT6ADDR(uc_addr);PRINTF("\n");
     uip_icmp6_send(uc_addr, ICMP6_RPL, RPL_CODE_DIO, pos);
   }
 #endif /* RPL_LEAF_ONLY */
@@ -649,6 +1567,11 @@ dao_input_storing(void)
   rpl_parent_t *parent;
   uip_ds6_nbr_t *nbr;
   int is_root;
+
+#ifdef RPL_RESTORE
+  //increase the local clock
+  clock_tick(CLOCK_INCOMING_DAO, "CLOCK_INCOMING_DAO");
+#endif
 
   prefixlen = 0;
   parent = NULL;
@@ -1360,6 +2283,12 @@ rpl_icmp6_register_handlers()
   uip_icmp6_register_input_handler(&dio_handler);
   uip_icmp6_register_input_handler(&dao_handler);
   uip_icmp6_register_input_handler(&dao_ack_handler);
+
+#ifdef RPL_RESTORE_USE_UIDS
+  //register icmp6 uid handlers
+  uip_icmp6_register_input_handler(&uid_handler);
+  uip_icmp6_register_input_handler(&uid_request_handler);
+#endif
 }
 /*---------------------------------------------------------------------------*/
 

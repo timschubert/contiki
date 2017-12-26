@@ -338,4 +338,91 @@
 #define RPL_DIS_START_DELAY             5
 #endif
 
+/*
+ * RPL restore procedure
+ */
+#ifdef RPL_RESTORE
+
+/*
+ * restoring strategy
+ */
+#ifdef RPL_RESTORE_USE_UIDS
+
+/*
+ * cancel the restore if a uid is not consistent with what we saved for this neighbor
+ */
+#define RPL_RESTORE_CANCEL_ON_NEGATIVE_UID
+
+/*
+ * restore each neighbor separately if the corresponding uid is positive,
+ * otherwise restore all neighbors at once, if at least RPL_RESTORE_UID_THRESHOLD uids were positive
+ */
+#ifndef RPL_RESTORE_SINGLE_ON_UID
+#define RPL_RESTORE_ALL_ON_UID_THRESHOLD
+#define RPL_RESTORE_UID_THRESHOLD   2
+#endif
+
+#endif
+
+/*
+ * memory layout for persistent routing information
+ */
+#define GENERAL_CONFIG_PAGE_SZIE    50
+#define NEIGHBOR_CONFIG_PAGE_SIZE   32
+#define NEIGHBOR_COUNT_PAGE_SIZE    1024
+#define NEIGHBOR_UPDATE_PAGE_SIZE   XMEM_ERASE_UNIT_SIZE
+#define NEIGHBOR_UPDATE_OFFSET_PAGE_SIZE 4096
+#define NEIGHBOR_CLOCK_PAGE_SIZE    4096
+#define NEIGHBOR_UPDATE_CONTENT_SIZE 7
+#define DIO_INT_CURRENT_PAGE_SIZE   256
+
+#define RPL_RESTORE_INITIALIZED_FLAG XMEM_ERASE_UNIT_SIZE * 5
+#define GENERAL_CONFIG_PAGE         XMEM_ERASE_UNIT_SIZE * 5 + 1
+#define FIRST_NEIGHBOR_CONFIG_PAGE  GENERAL_CONFIG_PAGE+GENERAL_CONFIG_PAGE_SZIE
+#define NEIGHBOR_COUNT_PAGE         FIRST_NEIGHBOR_CONFIG_PAGE+NBR_TABLE_MAX_NEIGHBORS*NEIGHBOR_CONFIG_PAGE_SIZE
+#define DIO_INT_CURRENT_PAGE        NEIGHBOR_COUNT_PAGE+NEIGHBOR_COUNT_PAGE_SIZE
+#define FIRST_NEIGHBOR_UPDATE_PAGE  RPL_RESTORE_INITIALIZED_FLAG + XMEM_ERASE_UNIT_SIZE
+
+
+/*
+ * clock configuration
+ */
+#define CLOCK_DIFF_THRESHOLD        16
+
+#define CLOCK_GLOBAL_REPAIR         CLOCK_DIFF_THRESHOLD
+#define CLOCK_CHANGED_ROOT          CLOCK_DIFF_THRESHOLD
+#define CLOCK_PREFIX_CHANGED        CLOCK_DIFF_THRESHOLD
+#define CLOCK_LEAVE_INSTANCE        CLOCK_DIFF_THRESHOLD
+#define CLOCK_LEAVE_DAG             CLOCK_DIFF_THRESHOLD
+#define CLOCK_NEW_DAG               CLOCK_DIFF_THRESHOLD
+#define CLOCK_JOINED_INSTANCE       CLOCK_DIFF_THRESHOLD
+#define CLOCK_DAG_ADDED             CLOCK_DIFF_THRESHOLD
+
+#define CLOCK_LOCAL_REPAIR          CLOCK_DIFF_THRESHOLD/2
+#define CLOCK_REMOVED_PARENT        CLOCK_DIFF_THRESHOLD/2
+#define CLOCK_DEFAULT_ROUTE_CHANGED CLOCK_DIFF_THRESHOLD/2
+#define CLOCK_PREFERRED_PARENT_CHANGED CLOCK_DIFF_THRESHOLD/2
+#define CLOCK_NEW_PARENT            CLOCK_DIFF_THRESHOLD/2
+#define CLOCK_INCOMING_DIS          CLOCK_DIFF_THRESHOLD/2
+
+#define CLOCK_INCOMING_DIO          1
+#define CLOCK_INCOMING_DAO          1
+
+extern uint16_t clock;
+
+/*
+ * "global" functions and data
+ */
+void invoke_restore();
+void clock_tick(uint8_t tick, char *text);
+extern uint8_t stateFound;
+
+/*
+ * uid icmp6 codes
+ */
+#define RPL_CODE_UID                0x90
+#define RPL_CODE_UID_REQUEST        0x91
+
+#endif
+
 #endif /* RPL_CONF_H */

@@ -79,6 +79,10 @@ static rpl_of_t * const objective_functions[] = RPL_SUPPORTED_OFS;
 #define RPL_GROUNDED                    RPL_CONF_GROUNDED
 #endif /* !RPL_CONF_GROUNDED */
 
+#ifdef RPL_RESTORE
+uint16_t clock;
+#endif
+
 /*---------------------------------------------------------------------------*/
 /* Per-parent RPL information */
 NBR_TABLE_GLOBAL(rpl_parent_t, rpl_parents);
@@ -254,6 +258,9 @@ rpl_set_preferred_parent(rpl_dag_t *dag, rpl_parent_t *p)
     nbr_table_unlock(rpl_parents, dag->preferred_parent);
     nbr_table_lock(rpl_parents, p);
     dag->preferred_parent = p;
+#ifdef RPL_RESTORE
+  clock_tick(CLOCK_PREFERRED_PARENT_CHANGED, "CLOCK_PREFERRED_PARENT_CHANGED");
+#endif
   }
 }
 /*---------------------------------------------------------------------------*/
@@ -438,6 +445,10 @@ rpl_set_root(uint8_t instance_id, uip_ipaddr_t *dag_id)
 
   rpl_reset_dio_timer(instance);
 
+#ifdef RPL_RESTORE
+  clock_tick(CLOCK_CHANGED_ROOT, "CLOCK_CHANGED_ROOT");
+#endif
+
   return dag;
 }
 /*---------------------------------------------------------------------------*/
@@ -458,6 +469,9 @@ rpl_repair_root(uint8_t instance_id)
   RPL_LOLLIPOP_INCREMENT(instance->dtsn_out);
   PRINTF("RPL: rpl_repair_root initiating global repair with version %d\n", instance->current_dag->version);
   rpl_reset_dio_timer(instance);
+#ifdef RPL_RESTORE
+  clock_tick(CLOCK_GLOBAL_REPAIR, "CLOCK_GLOBAL_REPAIR");
+#endif
   return 1;
 }
 /*---------------------------------------------------------------------------*/
@@ -503,6 +517,10 @@ check_prefix(rpl_prefix_t *last_prefix, rpl_prefix_t *new_prefix)
       uip_ds6_addr_add(&ipaddr, 0, ADDR_AUTOCONF);
     }
   }
+
+#ifdef RPL_RESTORE
+  clock_tick(CLOCK_PREFIX_CHANGED, "CLOCK_PREFIX_CHANGED");
+#endif
 }
 /*---------------------------------------------------------------------------*/
 int
@@ -555,6 +573,11 @@ rpl_set_default_route(rpl_instance_t *instance, uip_ipaddr_t *from)
       return 0;
     }
   }
+
+#ifdef RPL_RESTORE
+  clock_tick(CLOCK_DEFAULT_ROUTE_CHANGED, "CLOCK_DEFAULT_ROUTE_CHANGED");
+#endif
+
   return 1;
 }
 /*---------------------------------------------------------------------------*/
@@ -650,6 +673,10 @@ rpl_free_instance(rpl_instance_t *instance)
   }
 
   instance->used = 0;
+
+#ifdef RPL_RESTORE
+  clock_tick(CLOCK_LEAVE_INSTANCE, "CLOCK_LEAVE_INSTANCE");
+#endif
 }
 /*---------------------------------------------------------------------------*/
 void
@@ -674,6 +701,10 @@ rpl_free_dag(rpl_dag_t *dag)
     remove_parents(dag, 0);
   }
   dag->used = 0;
+
+#ifdef RPL_RESTORE
+  clock_tick(CLOCK_LEAVE_DAG, "CLOCK_LEAVE_DAG");
+#endif
 }
 /*---------------------------------------------------------------------------*/
 rpl_parent_t *
@@ -702,6 +733,10 @@ rpl_add_parent(rpl_dag_t *dag, rpl_dio_t *dio, uip_ipaddr_t *addr)
 #endif /* RPL_WITH_MC */
     }
   }
+
+#ifdef RPL_RESTORE
+  clock_tick(CLOCK_NEW_PARENT, "CLOCK_NEW_PARENT");
+#endif
 
   return p;
 }
@@ -801,6 +836,10 @@ rpl_select_dag(rpl_instance_t *instance, rpl_parent_t *p)
     best_dag->joined = 1;
     instance->current_dag->joined = 0;
     instance->current_dag = best_dag;
+
+#ifdef RPL_RESTORE
+  clock_tick(CLOCK_NEW_DAG, "CLOCK_NEW_DAG");
+#endif
   }
 
   instance->of->update_metric_container(instance);
@@ -940,6 +979,10 @@ rpl_remove_parent(rpl_parent_t *parent)
   rpl_nullify_parent(parent);
 
   nbr_table_remove(rpl_parents, parent);
+
+#ifdef RPL_RESTORE
+  clock_tick(CLOCK_REMOVED_PARENT, "CLOCK_REMOVED_PARENT");
+#endif
 }
 /*---------------------------------------------------------------------------*/
 void
@@ -1179,6 +1222,23 @@ rpl_join_instance(uip_ipaddr_t *from, rpl_dio_t *dio)
   }
 
   instance->of->reset(dag);
+
+  PRINTF("RPL: Joining Instance, DIO (id, ver, rank) = (%u,%u,%u)\n",
+      (unsigned)dio->instance_id,
+      (unsigned)dio->version,
+      (unsigned)dio->rank);
+
+  PRINTF("RPL: Joining Instance, DAG conf:dbl=%d, min=%d red=%d maxinc=%d mininc=%d ocp=%d d_l=%u l_u=%u\n",
+      dio->dag_intdoubl, dio->dag_intmin, dio->dag_redund,
+      dio->dag_max_rankinc, dio->dag_min_hoprankinc, dio->ocp,
+      dio->default_lifetime, dio->lifetime_unit);
+
+  PRINTF("instance == null %u\n", (rpl_get_instance(dio->instance_id) == NULL));
+
+
+#ifdef RPL_RESTORE
+  clock_tick(CLOCK_JOINED_INSTANCE, "CLOCK_JOINED_INSTANCE");
+#endif
 }
 
 #if RPL_MAX_DAG_PER_INSTANCE > 1
@@ -1262,6 +1322,9 @@ rpl_add_dag(uip_ipaddr_t *from, rpl_dio_t *dio)
   rpl_process_parent_event(instance, p);
   p->dtsn = dio->dtsn;
 
+#ifdef RPL_RESTORE
+  clock_tick(CLOCK_DAG_ADDED, "CLOCK_DAG_ADDED");
+#endif
   return dag;
 }
 #endif /* RPL_MAX_DAG_PER_INSTANCE > 1 */
@@ -1301,6 +1364,10 @@ global_repair(uip_ipaddr_t *from, rpl_dag_t *dag, rpl_dio_t *dio)
          dag->version, dag->rank);
 
   RPL_STAT(rpl_stats.global_repairs++);
+
+#ifdef RPL_RESTORE
+  clock_tick(CLOCK_GLOBAL_REPAIR, "CLOCK_GLOBAL_REPAIR");
+#endif
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1333,6 +1400,10 @@ rpl_local_repair(rpl_instance_t *instance)
   }
 
   RPL_STAT(rpl_stats.local_repairs++);
+
+#ifdef RPL_RESTORE
+  clock_tick(CLOCK_LOCAL_REPAIR, "CLOCK_LOCAL_REPAIR");
+#endif
 }
 /*---------------------------------------------------------------------------*/
 void
@@ -1440,6 +1511,9 @@ rpl_process_dio(uip_ipaddr_t *from, rpl_dio_t *dio)
   rpl_dag_t *dag, *previous_dag;
   rpl_parent_t *p;
 
+#ifdef RPL_RESTORE
+  clock_tick(CLOCK_INCOMING_DIO, "CLOCK_INCOMING_DIO");
+#endif
 #if RPL_WITH_MULTICAST
   /* If the root is advertising MOP 2 but we support MOP 3 we can still join
    * In that scenario, we suppress DAOs for multicast targets */
@@ -1450,6 +1524,17 @@ rpl_process_dio(uip_ipaddr_t *from, rpl_dio_t *dio)
     PRINTF("RPL: Ignoring a DIO with an unsupported MOP: %d\n", dio->mop);
     return;
   }
+
+  PRINTF("RPL: Incoming DIO (id, ver, rank) = (%u,%u,%u)\n",
+         (unsigned)dio->instance_id,
+         (unsigned)dio->version,
+         (unsigned)dio->rank);
+
+  PRINTF("RPL: DAG conf:dbl=%d, min=%d red=%d maxinc=%d mininc=%d ocp=%d d_l=%u l_u=%u\n",
+         dio->dag_intdoubl, dio->dag_intmin, dio->dag_redund,
+         dio->dag_max_rankinc, dio->dag_min_hoprankinc, dio->ocp,
+         dio->default_lifetime, dio->lifetime_unit);
+
 
   dag = get_dag(dio->instance_id, &dio->dag_id);
   instance = rpl_get_instance(dio->instance_id);
@@ -1479,11 +1564,13 @@ rpl_process_dio(uip_ipaddr_t *from, rpl_dio_t *dio)
       PRINTF("RPL: old version received => inconsistency detected\n");
       if(dag->joined) {
         rpl_reset_dio_timer(instance);
+        PRINTF("dag->joined");
         return;
       }
     }
   }
 
+  PRINTF("before join instance == null %u\n", (rpl_get_instance(dio->instance_id) == NULL));
   if(instance == NULL) {
     PRINTF("RPL: New instance detected (ID=%u): Joining...\n", dio->instance_id);
     if(add_nbr_from_dio(from, dio)) {
@@ -1541,6 +1628,7 @@ rpl_process_dio(uip_ipaddr_t *from, rpl_dio_t *dio)
     if(dio->rank != INFINITE_RANK) {
       instance->dio_counter++;
     }
+    PRINTF("dag->rank == ROOT_RANK(instance)\n");
     return;
   }
 
@@ -1626,6 +1714,7 @@ rpl_process_dio(uip_ipaddr_t *from, rpl_dio_t *dio)
     uip_ds6_defrt_add(from, RPL_DEFAULT_ROUTE_INFINITE_LIFETIME ? 0 : RPL_LIFETIME(instance, instance->default_lifetime));
   }
   p->dtsn = dio->dtsn;
+  PRINTF("done processing dio\n");
 }
 /*---------------------------------------------------------------------------*/
 /** @} */
