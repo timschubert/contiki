@@ -65,6 +65,10 @@ rpl_parent_t *RPL_PROBING_SELECT_FUNC(rpl_dag_t *dag);
 clock_time_t RPL_PROBING_DELAY_FUNC(rpl_dag_t *dag);
 #endif /* RPL_PROBING_DELAY_FUNC */
 
+#ifdef RPL_RESTORE
+uint8_t stateFound;
+#endif
+
 /*---------------------------------------------------------------------------*/
 static struct ctimer periodic_timer;
 
@@ -207,6 +211,13 @@ rpl_reset_periodic_timer(void)
   next_dis = RPL_DIS_INTERVAL / 2 +
     ((uint32_t)RPL_DIS_INTERVAL * (uint32_t)random_rand()) / RANDOM_RAND_MAX -
     RPL_DIS_START_DELAY;
+
+#ifdef RPL_RESTORE
+  // give the rpl restore four additional seconds before the dis is sent
+  if(stateFound) {
+  next_dis = RPL_DIS_INTERVAL-4;
+  }
+#endif
   ctimer_set(&periodic_timer, CLOCK_SECOND, handle_periodic_timer, NULL);
 }
 /*---------------------------------------------------------------------------*/

@@ -47,6 +47,8 @@
 #include "net/ipv6/uip-ds6-route.h"
 #include "net/rpl/rpl-ns.h"
 #include "net/ipv6/multicast/uip-mcast6.h"
+#include "dev/xmem.h"
+#include "sys/timer.h"
 
 /*---------------------------------------------------------------------------*/
 /** \brief Is IPv6 address addr the link-local, all-RPL-nodes
