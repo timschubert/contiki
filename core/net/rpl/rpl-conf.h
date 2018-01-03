@@ -345,8 +345,15 @@
 
 /*
  * restoring strategy
+ *
+ * check the neighborhood for consistency
  */
 #ifdef RPL_RESTORE_USE_UIDS
+
+/*
+ * restore each neighbor separately if the corresponding uid is positive
+ */
+//#define RPL_RESTORE_SINGLE_ON_UID
 
 /*
  * cancel the restore if a uid is not consistent with what we saved for this neighbor
@@ -354,15 +361,15 @@
 #define RPL_RESTORE_CANCEL_ON_NEGATIVE_UID
 
 /*
- * restore each neighbor separately if the corresponding uid is positive,
- * otherwise restore all neighbors at once, if at least RPL_RESTORE_UID_THRESHOLD uids were positive
+ * restore all neighbors at once, if at least RPL_RESTORE_UID_THRESHOLD uids were positive
  */
-#ifndef RPL_RESTORE_SINGLE_ON_UID
 #define RPL_RESTORE_ALL_ON_UID_THRESHOLD
-#define RPL_RESTORE_UID_THRESHOLD   2
-#endif
 
-#endif
+#define RPL_RESTORE_UID_THRESHOLD   2
+
+#endif // strategy
+
+#endif // RPL_RESTORE
 
 /*
  * memory layout for persistent routing information
@@ -422,7 +429,5 @@ extern uint8_t stateFound;
  */
 #define RPL_CODE_UID                0x90
 #define RPL_CODE_UID_REQUEST        0x91
-
-#endif
 
 #endif /* RPL_CONF_H */

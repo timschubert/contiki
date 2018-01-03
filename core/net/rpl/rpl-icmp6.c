@@ -915,9 +915,10 @@ invoke_restore()
 
     //add this neighbor to the neighbor table
     if ((nbr = uip_ds6_nbr_lookup(&from)) == NULL) {
-      if ((nbr = uip_ds6_nbr_add(&from, &fromLL, 0,
-      NBR_REACHABLE)) != NULL) {
-        stimer_set(&nbr->reachable, UIP_ND6_REACHABLE_TIME / 1000);
+      if ((nbr = uip_ds6_nbr_add(&from, &fromLL, 0, NBR_REACHABLE,
+                                 NBR_TABLE_REASON_UNDEFINED, NULL)) != NULL) {
+        // already performed by nbr_add
+        //stimer_set(&nbr->reachable, UIP_ND6_REACHABLE_TIME / 1000);
         PRINTF("RPL: Neighbor added to neighbor cache ");PRINT6ADDR(&from);PRINTF(", ");PRINT6ADDR(&fromLL);PRINTF("\n");
       } else {
         PRINTF("RPL: Out of memory, dropping DIO from ");PRINT6ADDR(&from);PRINTF(", ");PRINTLLADDR((uip_lladdr_t *)packetbuf_addr(PACKETBUF_ADDR_SENDER));PRINTF("\n");
@@ -1161,6 +1162,7 @@ dio_input(void)
   int i;
   int len;
   uip_ipaddr_t from;
+  uip_ds6_nbr_t *nbr;
 
   memset(&dio, 0, sizeof(dio));
 

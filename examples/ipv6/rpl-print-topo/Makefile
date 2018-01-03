@@ -20,4 +20,13 @@ ifeq ($(MAKE_WITH_NON_STORING),1)
 CFLAGS += -DWITH_NON_STORING=1
 endif
 
+ifdef RPL_RESTORE
+CFLAGS+= -DRPL_RESTORE=1
+
+ifdef RPL_RESTORE_USE_UIDS
+CFLAGS+= -DRPL_RESTORE_USE_UIDS=1
+endif
+
+endif
+
 include $(CONTIKI)/Makefile.include
