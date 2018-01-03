@@ -25,7 +25,7 @@
       <identifier>z11</identifier>
       <description>RPL Sink #sink</description>
       <source EXPORT="discard">[CONTIKI_DIR]/examples/ipv6/rpl-print-topo/rpl-eval-sink.c</source>
-      <commands EXPORT="discard">make rpl-eval-sink.z1 TARGET=z1</commands>
+      <commands EXPORT="discard">make rpl-eval-sink.z1 TARGET=z1 WITH_COMPOWER=1</commands>
       <firmware EXPORT="copy">[CONTIKI_DIR]/examples/ipv6/rpl-print-topo/rpl-eval-sink.z1</firmware>
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
       <moteinterface>org.contikios.cooja.interfaces.RimeAddress</moteinterface>
