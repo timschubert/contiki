@@ -467,7 +467,7 @@ restore_all_dios()
 #ifdef RPL_RESTORE_USE_UIDS
 
 #ifdef RPL_RESTORE_ALL_ON_UID_THRESHOLD
-static uint8_t uids_requested = 0;
+//static uint8_t uids_requested = 0;
 static uint8_t uids_positive = 0;
 static uint8_t restored = 0;
 
@@ -1160,7 +1160,7 @@ dio_input(void)
   rpl_dio_t dio;
   uint8_t subopt_type;
   int i;
-  int len;
+  int len = 0;
   uip_ipaddr_t from;
 
   memset(&dio, 0, sizeof(dio));
@@ -1567,7 +1567,7 @@ dao_input_storing(void)
   uip_ds6_route_t *rep;
   uint8_t buffer_length;
   int pos;
-  int len;
+  int len = 0;
   int i;
   int learned_from;
   rpl_parent_t *parent;
