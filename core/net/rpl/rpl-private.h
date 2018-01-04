@@ -310,6 +310,9 @@ struct rpl_dio {
   rpl_prefix_t destination_prefix;
   rpl_prefix_t prefix_info;
   struct rpl_metric_container mc;
+#ifdef RPL_RESTORE
+  uint16_t in_clock;
+#endif
 };
 typedef struct rpl_dio rpl_dio_t;
 
