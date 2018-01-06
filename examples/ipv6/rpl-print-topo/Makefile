@@ -3,8 +3,6 @@ CONTIKI=../../..
 
 PROJECT_SOURCEFILES += rpl-eval-common.c
 
-APPS += powertrace
-
 CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
 
 ifdef WITH_COMPOWER

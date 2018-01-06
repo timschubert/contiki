@@ -45,7 +45,7 @@
       <identifier>z12</identifier>
       <description>RPL source #source</description>
       <source EXPORT="discard">[CONTIKI_DIR]/examples/ipv6/rpl-print-topo/rpl-eval-source.c</source>
-      <commands EXPORT="discard">make rpl-eval-source.z1 TARGET=z1 RPL_RESTORE=1 RPL_RESTORE_USE_UIDS=1</commands>
+      <commands EXPORT="discard">make rpl-eval-source.z1 TARGET=z1 WITH_COMPOWER=1 RPL_RESTORE=1 RPL_RESTORE_USE_UIDS=1</commands>
       <firmware EXPORT="copy">[CONTIKI_DIR]/examples/ipv6/rpl-print-topo/rpl-eval-source.z1</firmware>
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
       <moteinterface>org.contikios.cooja.interfaces.RimeAddress</moteinterface>

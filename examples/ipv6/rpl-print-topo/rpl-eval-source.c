@@ -55,9 +55,6 @@ PROCESS_THREAD(rpl_eval_source, ev, data)
 {
   static struct etimer periodic;
   static struct ctimer backoff_timer;
-#if WITH_COMPOWER
-  static int print = 0;
-#endif
 
   PROCESS_BEGIN();
 
@@ -89,8 +86,10 @@ PROCESS_THREAD(rpl_eval_source, ev, data)
          UIP_HTONS(client_conn->lport), UIP_HTONS(client_conn->rport));
 
   printf("RPL_CONF_STATS is %d\n", RPL_CONF_STATS);
+
 #if WITH_COMPOWER
   powertrace_sniff(POWERTRACE_ON);
+  //powertrace_start(CLOCK_SECOND);
 #endif
 
   etimer_set(&periodic, SEND_INTERVAL);
@@ -101,7 +100,6 @@ PROCESS_THREAD(rpl_eval_source, ev, data)
       char *str;
       str = data;
       if(str[0] == 'r') {
-        // TODO switch to hardened version
       }
     }
 
@@ -110,16 +108,6 @@ PROCESS_THREAD(rpl_eval_source, ev, data)
       ctimer_set(&backoff_timer, SEND_TIME, send_packet, NULL);
 
       rpl_eval_print_status();
-
-#if WITH_COMPOWER
-      if (print == 0) {
-	powertrace_print("#P");
-      }
-      if (++print == 3) {
-	print = 0;
-      }
-#endif
-
     }
   }
 

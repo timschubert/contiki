@@ -38,9 +38,6 @@ PROCESS_THREAD(rpl_eval_sink, ev, data)
 {
   static struct etimer periodic;
   static uip_ipaddr_t server_addr;
-#if WITH_COMPOWER
-  static int print = 0;
-#endif
 
   PROCESS_BEGIN();
 
@@ -75,6 +72,7 @@ PROCESS_THREAD(rpl_eval_sink, ev, data)
 
 #if WITH_COMPOWER
   powertrace_sniff(POWERTRACE_ON);
+  //powertrace_start(CLOCK_SECOND);
 #endif
 
   etimer_set(&periodic, SEND_INTERVAL);
@@ -89,7 +87,6 @@ PROCESS_THREAD(rpl_eval_sink, ev, data)
       char *str;
       str = data;
       if(str[0] == 'r') {
-        // TODO switch to hardened version
       }
     }
 
@@ -97,16 +94,6 @@ PROCESS_THREAD(rpl_eval_sink, ev, data)
       etimer_reset(&periodic);
 
       rpl_eval_print_status();
-
-#if WITH_COMPOWER
-      if (print == 0) {
-	powertrace_print("#P");
-      }
-      if (++print == 3) {
-	print = 0;
-      }
-#endif
-
     }
   }
 
