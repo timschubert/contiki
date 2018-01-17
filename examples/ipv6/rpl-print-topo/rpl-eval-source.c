@@ -44,9 +44,12 @@ send_packet(void *ptr)
   char buf[MAX_PAYLOAD_LEN];
 
   seq_id++;
-  printf("DATA;send;%d;%d\n",
-         server_ipaddr.u8[sizeof(server_ipaddr.u8) - 1], seq_id);
-  sprintf(buf, "Hello");
+
+  printf("DATA;send;");
+  PRINT6ADDR(&server_ipaddr);
+  printf(";%d\n", seq_id);
+
+  sprintf(buf, "%d", seq_id);
   uip_udp_packet_sendto(client_conn, buf, strlen(buf),
                         &server_ipaddr, UIP_HTONS(UDP_SERVER_PORT));
 }

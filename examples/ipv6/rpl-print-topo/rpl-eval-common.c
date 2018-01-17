@@ -147,5 +147,7 @@ rpl_eval_print_status(void)
   rpl_eval_print_neighbors();
   rpl_eval_print_routes();
   rpl_eval_rpl_print_neighbor_list();
+#ifdef WITH_COMPOWER
   powertrace_print("");
+#endif
 }
