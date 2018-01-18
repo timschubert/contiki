@@ -47,7 +47,7 @@ PROCESS_THREAD(rpl_eval_sink, ev, data)
 
   NETSTACK_RADIO.set_value(RADIO_PARAM_CHANNEL, RF_CHANNEL);
 
-  rpl_init();
+  //rpl_init();
 
   rpl_eval_set_global_address();
   rpl_eval_set_server_address(&server_addr);

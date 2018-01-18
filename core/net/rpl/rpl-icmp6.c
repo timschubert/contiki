@@ -1214,14 +1214,10 @@ dio_input(void)
   PRINTF(", %u)\n", dio.preference);
 
   /* Check if there are any DIO suboptions. */
-  for (; i < buffer_length; i += len) {
-
 #ifdef RPL_RESTORE
-    /* clock appears to be transmitted in last 2 bytes of DIO, not documented */
-    if (i == buffer_length - 2) {
-      dio.in_clock = (uint16_t) buffer[i];
-      continue;
-    }
+  for (; i < buffer_length - 2; i += len) {
+#else
+  for (; i < buffer_length; i += len) {
 #endif
 
     subopt_type = buffer[i];
@@ -1346,29 +1342,30 @@ dio_input(void)
 #endif
 
 #ifdef RPL_RESTORE
+  dio.in_clock = get16(buffer, i);
   PRINTF("RPL: received clock %u\n", dio.in_clock);
 
+  uint8_t *index = getNeighborIndex(from);
+  PRINTF("parent index: %u\n", index[0]);
+#endif
+
+  rpl_process_dio(&from, &dio);
+
+#ifdef RPL_RESTORE
   uip_ds6_nbr_t *nbr = rpl_icmp6_update_nbr_table(&from, NBR_TABLE_REASON_RPL_DIO, NULL);
 
   if (!baseConfigSaved) { //save the base config, if not done already
     writeBaseConfig(&dio);
   }
 
-  uint8_t *index;
-
-  index = getNeighborIndex(from);
-
-  PRINTF("parent index: %u\n", index[0]);
-
   if (index[1]) { // received first dio of this neighbour, so save some basic informations about him
+    //uip_ds6_nbr_t *nbr ;
     writeNodeConfig(&from, nbr, index[0]);
   }
 
   writeNodeUpdate(&dio, index[0]); // write the node update
   PRINTF("done\n");
 #endif
-
-  rpl_process_dio(&from, &dio);
 
  discard:
   uip_clear_buf();

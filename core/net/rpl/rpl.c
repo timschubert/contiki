@@ -317,18 +317,18 @@ rpl_restore() {
   unsigned char read[1];
   xmem_pread(read,1,RPL_RESTORE_INITIALIZED_FLAG);
   if(read[0]==0) {
-    PRINTF("unused filesystem, initialize\n");
+    PRINTF("RESTORE;unused filesystem, initialize\n");
     unsigned char toWrite[1];
     toWrite[0] = 111;
     xmem_pwrite(toWrite,1,RPL_RESTORE_INITIALIZED_FLAG);
-    PRINTF("done\n");
+    PRINTF("RESTORE;done\n");
   } else if(read[0]==111) {
-    PRINTF("found a saved state\n");
+    PRINTF("RESTORE;found a saved state\n");
     stateFound = 1;
   }
 
   if (stateFound) {
-    PRINTF("restoring rpl\n");
+    PRINTF("RESTORE;restoring rpl\n");
     invoke_restore();
   }
 }
@@ -372,6 +372,7 @@ rpl_init(void)
   rpl_dag_init();
 
 #ifdef RPL_RESTORE
+  stateFound = 0;
   rpl_restore();
 #endif
 
