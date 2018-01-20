@@ -16,7 +16,7 @@ tcpip_handler(void)
     str[uip_datalen()] = '\0';
     seq_id++;
     printf("DATA;recv;");
-    PRINT6ADDR(&UIP_IP_BUF->srcipaddr);
+    uip_debug_ipaddr_print(&UIP_IP_BUF->srcipaddr);
     printf(";%s\n", str);
   }
 }

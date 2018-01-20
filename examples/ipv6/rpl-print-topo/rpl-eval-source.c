@@ -46,7 +46,7 @@ send_packet(void *ptr)
   seq_id++;
 
   printf("DATA;send;");
-  PRINT6ADDR(&server_ipaddr);
+  uip_debug_ipaddr_print(&server_ipaddr);
   printf(";%d\n", seq_id);
 
   sprintf(buf, "%d", seq_id);
