@@ -1,5 +1,7 @@
 #include "rpl-eval-common.h"
 
+#define UIP_IP_BUF   ((struct uip_ip_hdr *)&uip_buf[UIP_LLH_LEN])
+
 PROCESS(rpl_eval_sink, "RPL eval process");
 AUTOSTART_PROCESSES(&rpl_eval_sink);
 
