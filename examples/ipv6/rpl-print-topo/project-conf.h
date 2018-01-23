@@ -87,4 +87,24 @@
 #undef PERIOD
 #define PERIOD 5
 
+/* Configure Radio Transmission power
+ *   - min     = m17dBm (-17dBm)
+ *   - default = 0dBm
+ *   - max     = 3dBm
+ * To see all the valid values see `convert_power` function in
+ *     openlab/net/phy_rf2xx/phy_rf2xx.c
+ */
+#undef RF2XX_TX_POWER
+#define RF2XX_TX_POWER  PHY_POWER_m7dBm
+
+/* Configure Radio Transmission power
+ *   - min     = m101Bm (-101dBm)
+ *   - default = m101dBm
+ *   - max     = m48dBm (-48dBm)
+ * To see all the valid values see `enum rf2xx_phy_rx_threshold` in
+ *     openlab/periph/rf2xx/rf2xx_regs.h
+ */
+#undef RF2XX_RX_RSSI_THRESHOLD
+#define RF2XX_RX_RSSI_THRESHOLD  RF2XX_PHY_RX_THRESHOLD__m57dBm
+
 #endif
