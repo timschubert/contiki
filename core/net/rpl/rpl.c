@@ -57,7 +57,6 @@
 #include <string.h>
 
 #ifdef RPL_RESTORE
-uint8_t stateFound;
 uint16_t clock;
 #endif
 
@@ -311,26 +310,36 @@ rpl_ipv6_neighbor_callback(uip_ds6_nbr_t *nbr)
  */
 void
 rpl_restore() {
-  clock = 0;
-  xmem_init();
+	clock = 0;
+	xmem_init();
 
-  unsigned char read[1];
-  xmem_pread(read,1,RPL_RESTORE_INITIALIZED_FLAG);
-  if(read[0]==0) {
-    PRINTF("RESTORE;unused filesystem, initialize\n");
-    unsigned char toWrite[1];
-    toWrite[0] = 111;
-    xmem_pwrite(toWrite,1,RPL_RESTORE_INITIALIZED_FLAG);
-    PRINTF("RESTORE;done\n");
-  } else if(read[0]==111) {
-    PRINTF("RESTORE;found a saved state\n");
-    stateFound = 1;
+  PRINTF("Testing validation magic byte\n");
+	unsigned char magic_byte = 0;
+	xmem_pread(&magic_byte,1,RPL_RESTORE_INITIALIZED_FLAG);
+
+  PRINTF("Erasing validation magic byte\n");
+  if (xmem_erase(XMEM_ERASE_UNIT_SIZE,RPL_RESTORE_INITIALIZED_FLAG) < 0) {
+    PRINTF("Failed to erase magic byte\n");
   }
 
-  if (stateFound) {
-    PRINTF("RESTORE;restoring rpl\n");
-    invoke_restore();
+  //magic_byte = 0;
+	if(magic_byte == 0xba) {
+		PRINTF("found a saved state\n");
+		stateFound = 1;
+		PRINTF("restoring rpl\n");
+		invoke_restore();
+	} else {
+    PRINTF("Validation magic byte not set. Erasing RPL_RESTORE pages\n");
+    if (xmem_erase(RPL_RESTORE_PAGE_SIZE, RPL_RESTORE_INITIALIZED_FLAG) < 0) {
+      PRINTF("Failed to erase stored state.\n");
+    }
   }
+
+  PRINTF("Setting validation magic byte\n");
+  magic_byte = 0xba;
+  xmem_pwrite(&magic_byte,1,RPL_RESTORE_INITIALIZED_FLAG);
+
+  PRINTF("done\n");
 }
 #endif
 

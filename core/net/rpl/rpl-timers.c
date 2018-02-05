@@ -66,7 +66,7 @@ clock_time_t RPL_PROBING_DELAY_FUNC(rpl_dag_t *dag);
 #endif /* RPL_PROBING_DELAY_FUNC */
 
 #ifdef RPL_RESTORE
-uint8_t stateFound;
+extern uint8_t stateFound;
 #endif
 
 /*---------------------------------------------------------------------------*/

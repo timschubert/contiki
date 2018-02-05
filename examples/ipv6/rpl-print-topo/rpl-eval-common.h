@@ -5,9 +5,7 @@
 #include "net/ipv6/uip-ds6.h"
 #include "net/ip/uip-udp-packet.h"
 #include "sys/ctimer.h"
-#ifdef WITH_COMPOWER
 #include "powertrace.h"
-#endif
 #include <stdio.h>
 #include <string.h>
 
@@ -23,7 +21,7 @@
 #define UDP_EXAMPLE_ID  190
 
 #ifndef PERIOD
-#define PERIOD 2
+#define PERIOD 10
 #endif
 
 #define START_INTERVAL		(15 * CLOCK_SECOND)

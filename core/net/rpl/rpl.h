@@ -45,6 +45,10 @@
 #include "net/ipv6/uip-ds6.h"
 #include "sys/ctimer.h"
 
+#ifdef RPL_RESTORE
+uint8_t stateFound;
+#endif
+
 /*---------------------------------------------------------------------------*/
 typedef uint16_t rpl_rank_t;
 typedef uint16_t rpl_ocp_t;

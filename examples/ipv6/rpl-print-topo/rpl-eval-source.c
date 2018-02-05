@@ -90,10 +90,8 @@ PROCESS_THREAD(rpl_eval_source, ev, data)
 
   printf("RPL_CONF_STATS is %d\n", RPL_CONF_STATS);
 
-#if WITH_COMPOWER
   powertrace_sniff(POWERTRACE_ON);
-  //powertrace_start(CLOCK_SECOND);
-#endif
+  powertrace_start(CLOCK_SECOND * PERIOD);
 
   etimer_set(&periodic, SEND_INTERVAL);
   while(1) {

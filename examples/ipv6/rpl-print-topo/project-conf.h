@@ -105,6 +105,9 @@
  *     openlab/periph/rf2xx/rf2xx_regs.h
  */
 #undef RF2XX_RX_RSSI_THRESHOLD
-#define RF2XX_RX_RSSI_THRESHOLD  RF2XX_PHY_RX_THRESHOLD__m57dBm
+#define RF2XX_RX_RSSI_THRESHOLD  RF2XX_PHY_RX_THRESHOLD__m101dBm
+
+#undef ENERGEST_CONF_ON
+#define ENERGEST_CONF_ON 1
 
 #endif
