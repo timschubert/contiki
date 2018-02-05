@@ -74,8 +74,8 @@ PROCESS_THREAD(rpl_eval_sink, ev, data)
   PRINTF("RPL print process started nbr:%d routes:%d\n",
          NBR_TABLE_CONF_MAX_NEIGHBORS, UIP_CONF_MAX_ROUTES);
 
-  powertrace_sniff(POWERTRACE_ON);
-  powertrace_start(CLOCK_SECOND * PERIOD);
+  //powertrace_sniff(POWERTRACE_ON);
+  //powertrace_start(CLOCK_SECOND * PERIOD);
 
   etimer_set(&periodic, SEND_INTERVAL);
   while(1) {
