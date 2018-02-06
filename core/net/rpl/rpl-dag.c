@@ -58,7 +58,7 @@
 #include <limits.h>
 #include <string.h>
 
-#define DEBUG DEBUG_NONE
+#define DEBUG DEBUG_FULL
 #include "net/ip/uip-debug.h"
 
 /* A configurable function called after every RPL parent switch */
@@ -906,7 +906,7 @@ best_parent(rpl_dag_t *dag, int fresh_only)
     /* Exclude parents from other DAGs or announcing an infinite rank */
     if(p->dag != dag || p->rank == INFINITE_RANK || p->rank < ROOT_RANK(dag->instance)) {
       if(p->rank < ROOT_RANK(dag->instance)) {
-        PRINTF("RPL: Parent has invalid rank\n");
+        PRINTF("RPL: Parent has invalid rank = %u\n", p->rank);
       }
       continue;
     }

@@ -326,8 +326,10 @@ rpl_restore() {
 	if(magic_byte == 0xba) {
 		PRINTF("found a saved state\n");
 		stateFound = 1;
+#ifndef RPL_RESTORE_NO_INVOKE
 		PRINTF("restoring rpl\n");
 		invoke_restore();
+#endif
 	} else {
     PRINTF("Validation magic byte not set. Erasing RPL_RESTORE pages\n");
     if (xmem_erase(RPL_RESTORE_PAGE_SIZE, RPL_RESTORE_INITIALIZED_FLAG) < 0) {

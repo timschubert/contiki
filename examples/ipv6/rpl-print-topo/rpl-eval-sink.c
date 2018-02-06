@@ -28,13 +28,18 @@ init_dag(uip_ipaddr_t *ipaddr)
 {
   struct uip_ds6_addr *root_if = uip_ds6_addr_lookup(ipaddr);
   if(root_if != NULL) {
-    rpl_dag_t *dag;
-    dag = rpl_set_root(RPL_DEFAULT_INSTANCE,(uip_ip6addr_t *)ipaddr);
-    uip_ip6addr(ipaddr, UIP_DS6_DEFAULT_PREFIX, 0, 0, 0, 0, 0, 0, 0);
-    rpl_set_prefix(dag, ipaddr, 64);
-    PRINTF("created a new RPL dag\n");
+    rpl_dag_t *dag = rpl_set_root(RPL_DEFAULT_INSTANCE,(uip_ip6addr_t *)ipaddr);
+    if (dag) {
+      uip_ip6addr(ipaddr, UIP_DS6_DEFAULT_PREFIX, 0, 0, 0, 0, 0, 0, 0);
+      rpl_set_prefix(dag, ipaddr, 64);
+      printf("created a new RPL dag\n");
+    } else {
+      printf("failed to create a new RPL DAG\n");
+    }
+    //PRINTF("created a new RPL dag\n");
   } else {
-    PRINTF("failed to create a new RPL DAG\n");
+    //PRINTF("failed to create a new RPL DAG\n");
+    printf("Failed to look up root interface address\n");
   }
 }
 
