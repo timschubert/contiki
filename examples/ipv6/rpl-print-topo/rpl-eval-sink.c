@@ -82,6 +82,8 @@ PROCESS_THREAD(rpl_eval_sink, ev, data)
   //powertrace_sniff(POWERTRACE_ON);
   //powertrace_start(CLOCK_SECOND * PERIOD);
 
+  rpl_eval_print_local_addresses();
+
   etimer_set(&periodic, SEND_INTERVAL);
   while(1) {
     PROCESS_YIELD();

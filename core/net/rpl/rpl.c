@@ -323,7 +323,7 @@ rpl_restore() {
   }
 
   //magic_byte = 0;
-	if(magic_byte == 0xba) {
+	if(magic_byte == 0xab) {
 		PRINTF("found a saved state\n");
 		stateFound = 1;
 #ifndef RPL_RESTORE_NO_INVOKE

@@ -59,7 +59,7 @@
 #include <limits.h>
 #include <string.h>
 
-#define DEBUG DEBUG_FULL
+#define DEBUG DEBUG_NONE
 
 #include "net/ip/uip-debug.h"
 
@@ -813,6 +813,7 @@ uid_input(void)
 void
 uid_output(uip_ipaddr_t *to)
 {
+  printf("UID\n");
   unsigned char *buffer;
   uint8_t i;
   buffer = UIP_ICMP_PAYLOAD;
@@ -1127,6 +1128,7 @@ dis_input(void) {
 void
 dis_output(uip_ipaddr_t *addr)
 {
+  printf("DIS\n");
   unsigned char *buffer;
   uip_ipaddr_t tmpaddr;
 
@@ -1374,6 +1376,7 @@ dio_input(void)
 void
 dio_output(rpl_instance_t *instance, uip_ipaddr_t *uc_addr)
 {
+  printf("DIO\n");
   unsigned char *buffer;
   int pos;
   int is_root;
@@ -2005,6 +2008,7 @@ handle_dao_retransmission(void *ptr)
 void
 dao_output(rpl_parent_t *parent, uint8_t lifetime)
 {
+  printf("DAO\n");
   /* Destination Advertisement Object */
   uip_ipaddr_t prefix;
 
@@ -2262,6 +2266,7 @@ dao_ack_output(rpl_instance_t *instance, uip_ipaddr_t *dest, uint8_t sequence,
 	       uint8_t status)
 {
 #if RPL_WITH_DAO_ACK
+  printf("DAO ACK\n");
   unsigned char *buffer;
 
   PRINTF("RPL: Sending a DAO %s with sequence number %d to ", status < 128 ? "ACK" : "NACK", sequence);

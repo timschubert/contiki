@@ -143,7 +143,7 @@ rpl_eval_rpl_print_neighbor_list(void)
 void
 rpl_eval_print_status(void)
 {
-  rpl_eval_print_local_addresses();
+  //rpl_eval_print_local_addresses();
   rpl_eval_print_neighbors();
   rpl_eval_print_routes();
   rpl_eval_rpl_print_neighbor_list();
