@@ -20,7 +20,7 @@
 #define UDP_EXAMPLE_ID  190
 
 #ifndef PERIOD
-#define PERIOD 10
+#define PERIOD 1
 #endif
 
 #define START_INTERVAL		(15 * CLOCK_SECOND)
