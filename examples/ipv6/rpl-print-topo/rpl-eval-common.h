@@ -24,7 +24,7 @@
 #endif
 
 #define START_INTERVAL		(15 * CLOCK_SECOND)
-#define SEND_INTERVAL		(PERIOD * CLOCK_SECOND)
+#define SEND_INTERVAL		(CLOCK_SECOND / 2)
 #define SEND_TIME		(random_rand() % SEND_INTERVAL)
 
 void rpl_eval_tcpip_handler(void);
